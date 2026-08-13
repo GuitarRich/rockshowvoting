@@ -1,0 +1,376 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>October Anniversary Show — Setlist Vote</title>
+<style>
+  :root{
+    --bg:#0d0e12; --panel:#16181f; --panel2:#1d2029; --line:#2a2e3a;
+    --ink:#e9eaf0; --muted:#9298a8; --dim:#6b7182;
+    --amber:#e8a33d; --amber-dim:#7a5a22;
+    --green:#4fb477; --red:#d15b5b; --violet:#8b7fd4;
+  }
+  *{box-sizing:border-box}
+  body{
+    margin:0; background:var(--bg); color:var(--ink);
+    font:16px/1.5 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    padding-bottom:110px; -webkit-text-size-adjust:100%;
+  }
+  .wrap{max-width:860px;margin:0 auto;padding:0 16px}
+  header{padding:28px 0 18px;border-bottom:1px solid var(--line);margin-bottom:22px}
+  h1{font-size:26px;line-height:1.15;margin:0 0 6px;letter-spacing:-.01em}
+  h1 span{color:var(--amber)}
+  .sub{color:var(--muted);font-size:14px;margin:0}
+  .card{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:16px 18px;margin:0 0 22px}
+  .card h2{font-size:13px;text-transform:uppercase;letter-spacing:.09em;color:var(--amber);margin:0 0 10px}
+  .card p{margin:0 0 8px;font-size:14px;color:var(--muted)}
+  .card p:last-child{margin-bottom:0}
+  .card strong{color:var(--ink)}
+  .key{display:flex;flex-wrap:wrap;gap:14px;margin-top:12px;font-size:13px;color:var(--muted)}
+  .key b{color:var(--ink);font-weight:600}
+
+  label.namewrap{display:block;font-size:13px;color:var(--muted);margin-bottom:6px}
+  input[type=text]{
+    width:100%;padding:11px 13px;border-radius:9px;border:1px solid var(--line);
+    background:var(--panel2);color:var(--ink);font-size:16px;font-family:inherit;
+  }
+  input[type=text]:focus{outline:2px solid var(--amber);outline-offset:1px;border-color:transparent}
+
+  h3.sec{
+    font-size:12px;text-transform:uppercase;letter-spacing:.11em;color:var(--dim);
+    margin:26px 0 8px;padding-bottom:7px;border-bottom:1px solid var(--line);
+  }
+  .row{
+    display:flex;align-items:center;gap:12px;padding:9px 10px;border-radius:9px;
+    border:1px solid transparent;
+  }
+  .row + .row{margin-top:2px}
+  .row:nth-child(odd){background:rgba(255,255,255,.018)}
+  .row.must{border-color:var(--amber);background:rgba(232,163,61,.09)}
+  .row.yes{border-color:rgba(79,180,119,.5);background:rgba(79,180,119,.07)}
+  .row.no{opacity:.42}
+  .info{flex:1;min-width:0}
+  .title{font-weight:600;font-size:15px;display:block}
+  .meta{font-size:12.5px;color:var(--muted);display:block;margin-top:1px}
+  .badge{
+    display:inline-block;font-size:10.5px;font-weight:700;letter-spacing:.05em;
+    padding:1px 6px;border-radius:4px;margin-right:6px;vertical-align:1px;
+  }
+  .v1{background:rgba(139,127,212,.18);color:#a99ff0}
+  .v2{background:rgba(232,163,61,.16);color:var(--amber)}
+  .duet{background:rgba(79,180,119,.16);color:#6fd096}
+  .btns{display:flex;gap:5px;flex:0 0 auto}
+  .btns button{
+    font:600 12px/1 inherit;letter-spacing:.03em;color:var(--muted);cursor:pointer;
+    background:var(--panel2);border:1px solid var(--line);border-radius:7px;
+    padding:9px 0;width:46px;text-align:center;
+  }
+  .btns button:hover{color:var(--ink);border-color:#3a3f4e}
+  .btns button.on-must{background:var(--amber);border-color:var(--amber);color:#231a09}
+  .btns button.on-yes{background:var(--green);border-color:var(--green);color:#08210f}
+  .btns button.on-no{background:var(--red);border-color:var(--red);color:#2a0c0c}
+
+  .locked .row{background:rgba(232,163,61,.06);border-color:var(--amber-dim)}
+  .locknote{font-size:11px;color:var(--amber);font-weight:700;letter-spacing:.05em;flex:0 0 auto}
+  .pickone{padding:11px 10px;border-radius:9px;border:1px dashed var(--amber-dim);margin-top:8px}
+  .pickone > span{font-size:13px;color:var(--muted);display:block;margin-bottom:8px}
+  .opts{display:flex;flex-wrap:wrap;gap:6px}
+  .opts button{
+    font:600 13px/1 inherit;color:var(--muted);cursor:pointer;background:var(--panel2);
+    border:1px solid var(--line);border-radius:7px;padding:9px 12px;
+  }
+  .opts button.on{background:var(--amber);border-color:var(--amber);color:#231a09}
+
+  footer{
+    position:fixed;left:0;right:0;bottom:0;background:rgba(13,14,18,.96);
+    border-top:1px solid var(--line);backdrop-filter:blur(8px);padding:11px 0;
+  }
+  .fbar{display:flex;align-items:center;gap:14px;max-width:860px;margin:0 auto;padding:0 16px}
+  .stats{flex:1;min-width:0;font-size:13px;color:var(--muted);line-height:1.35}
+  .stats b{color:var(--ink);font-size:15px}
+  .gauge{height:5px;border-radius:3px;background:var(--panel2);margin-top:7px;overflow:hidden}
+  .gauge i{display:block;height:100%;width:0;background:var(--green);transition:width .18s}
+  .gauge i.over{background:var(--red)}
+  .gauge i.under{background:var(--amber)}
+  #copy{
+    font:700 14px/1 inherit;cursor:pointer;background:var(--amber);color:#231a09;
+    border:none;border-radius:9px;padding:14px 18px;flex:0 0 auto;
+  }
+  #copy:disabled{background:var(--panel2);color:var(--dim);cursor:not-allowed}
+  #out{
+    width:100%;height:230px;margin-top:14px;padding:12px;border-radius:9px;
+    background:var(--panel2);color:var(--ink);border:1px solid var(--line);
+    font:12.5px/1.5 ui-monospace,SFMono-Regular,Menlo,monospace;display:none;
+  }
+  @media(max-width:560px){
+    h1{font-size:21px}
+    .row{gap:8px;padding:8px 7px}
+    .btns button{width:41px;padding:10px 0}
+    .fbar{gap:10px}
+    #copy{padding:13px 14px;font-size:13px}
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<header>
+  <h1>October Anniversary Show — <span>Setlist Vote</span></h1>
+  <p class="sub">10-year wedding anniversary &middot; rock theme &middot; one continuous 90-minute set &middot; karaoke follows</p>
+</header>
+
+<div class="card">
+  <h2>How to vote</h2>
+  <p>Go through the list and mark each song <strong>MUST</strong> (fight for it), <strong>YES</strong> (happy to play it), or <strong>NO</strong> (leave it out). Anything you skip counts as neutral.</p>
+  <p>Use <strong>MUST</strong> sparingly &mdash; about 5 songs. It's a tie-breaker, not a second yes.</p>
+  <p>When you're done, put your name at the top and hit <strong>Copy my votes</strong>, then paste the text into the band chat &mdash; or enter your votes straight into the <a href="https://docs.google.com/spreadsheets/d/1_X0TnsND6b6GsiT5UC0sAaOG4zin1v6jsJXmtBvA254/edit" style="color:var(--amber)">shared Google Sheet</a>, which tallies itself.</p>
+  <div class="key">
+    <span><b>Scoring:</b> MUST = 3 &middot; YES = 1 &middot; NO = &minus;2</span>
+    <span><span class="badge v1">V1</span> male lead</span>
+    <span><span class="badge v2">V2</span> female lead</span>
+    <span><span class="badge duet">DUET</span> both</span>
+  </div>
+</div>
+
+<div class="card">
+  <label class="namewrap" for="voter">Your name</label>
+  <input type="text" id="voter" placeholder="e.g. Rich" autocomplete="off">
+</div>
+
+<h3 class="sec">Locked &mdash; organiser requests, not up for vote</h3>
+<div class="locked" id="locked"></div>
+
+<div class="pickone" id="pick-creed">
+  <span><strong>Creed</strong> is locked in &mdash; but which song? Pick one.</span>
+  <div class="opts"></div>
+</div>
+
+<div class="pickone" id="pick-nickelback">
+  <span><strong>Nickelback</strong> is locked in &mdash; but which song? Pick one.</span>
+  <div class="opts"></div>
+</div>
+
+<div id="ballot"></div>
+
+<textarea id="out" readonly spellcheck="false"></textarea>
+
+</div>
+
+<footer>
+  <div class="fbar">
+    <div class="stats">
+      <span id="line1"><b>0</b> in &middot; <b>0:00</b> of 90:00</span>
+      <div class="gauge"><i id="bar"></i></div>
+    </div>
+    <button id="copy" disabled>Copy my votes</button>
+  </div>
+</footer>
+
+<script>
+// ---- data -------------------------------------------------------------
+// s = runtime in seconds (live estimate). v = lead vocal.
+const LOCKED = [
+  {t:"Dance, Dance",     a:"Fall Out Boy", v:"V1", s:180, n:"named by the organiser"},
+  {t:"Creep",            a:"Radiohead",    v:"V1", s:236, n:"named by the organiser"}
+];
+
+const PICKS = {
+  creed:{label:"Creed", opts:[
+    {t:"Higher",               s:317},
+    {t:"My Sacrifice",         s:247},
+    {t:"One Last Breath",      s:239},
+    {t:"With Arms Wide Open",  s:275}
+  ]},
+  nickelback:{label:"Nickelback", opts:[
+    {t:"How You Remind Me",    s:223},
+    {t:"Rockstar",             s:254},
+    {t:"Burn It to the Ground",s:209},
+    {t:"Photograph",           s:259}
+  ]}
+};
+
+const SONGS = [
+ // --- arena & classic rock
+ {g:"Arena &amp; classic rock", t:"Any Way You Want It",          a:"Journey",          v:"V1",   s:203},
+ {g:"Arena &amp; classic rock", t:"Don't Stop Believin'",         a:"Journey",          v:"DUET", s:251},
+ {g:"Arena &amp; classic rock", t:"You Give Love a Bad Name",     a:"Bon Jovi",         v:"DUET", s:222},
+ {g:"Arena &amp; classic rock", t:"Livin' on a Prayer",           a:"Bon Jovi",         v:"DUET", s:249},
+ {g:"Arena &amp; classic rock", t:"It's My Life",                 a:"Bon Jovi",         v:"V1",   s:224},
+ {g:"Arena &amp; classic rock", t:"Pour Some Sugar on Me",        a:"Def Leppard",      v:"DUET", s:265},
+ {g:"Arena &amp; classic rock", t:"Photograph",                   a:"Def Leppard",      v:"DUET", s:248},
+ {g:"Arena &amp; classic rock", t:"Walk This Way",                a:"Aerosmith",        v:"DUET", s:211},
+ {g:"Arena &amp; classic rock", t:"I Don't Want to Miss a Thing", a:"Aerosmith",        v:"DUET", s:298},
+ {g:"Arena &amp; classic rock", t:"Jump",                         a:"Van Halen",        v:"V1",   s:244},
+ {g:"Arena &amp; classic rock", t:"Sweet Child o' Mine",          a:"Guns N' Roses",    v:"V1",   s:303},
+ {g:"Arena &amp; classic rock", t:"Eye of the Tiger",             a:"Survivor",         v:"V1",   s:245},
+ // --- radio rock / post-grunge
+ {g:"Radio rock &amp; post-grunge", t:"Kryptonite",               a:"3 Doors Down",     v:"V1",   s:233},
+ {g:"Radio rock &amp; post-grunge", t:"When I'm Gone",            a:"3 Doors Down",     v:"V1",   s:260},
+ {g:"Radio rock &amp; post-grunge", t:"Animal I Have Become",     a:"Three Days Grace", v:"V1",   s:232},
+ {g:"Radio rock &amp; post-grunge", t:"I Hate Everything About You", a:"Three Days Grace", v:"V1", s:231},
+ {g:"Radio rock &amp; post-grunge", t:"The Diary of Jane",        a:"Breaking Benjamin",v:"V1",   s:200},
+ {g:"Radio rock &amp; post-grunge", t:"Blow Me Away",             a:"Breaking Benjamin",v:"DUET", s:199},
+ {g:"Radio rock &amp; post-grunge", t:"Down with the Sickness",   a:"Disturbed",        v:"V1",   s:220},
+ {g:"Radio rock &amp; post-grunge", t:"The Sound of Silence",     a:"Disturbed",        v:"V1",   s:248},
+ // --- alt & nu-metal
+ {g:"Alt &amp; nu-metal", t:"In the End",                         a:"Linkin Park",      v:"DUET", s:216},
+ {g:"Alt &amp; nu-metal", t:"Numb",                               a:"Linkin Park",      v:"V2",   s:187},
+ {g:"Alt &amp; nu-metal", t:"Faint",                              a:"Linkin Park",      v:"V1",   s:162},
+ {g:"Alt &amp; nu-metal", t:"What I've Done",                     a:"Linkin Park",      v:"V1",   s:205},
+ {g:"Alt &amp; nu-metal", t:"Smells Like Teen Spirit",            a:"Nirvana",          v:"V1",   s:301},
+ {g:"Alt &amp; nu-metal", t:"Come as You Are",                    a:"Nirvana",          v:"V1",   s:219},
+ {g:"Alt &amp; nu-metal", t:"Zombie",                             a:"The Cranberries",  v:"V2",   s:306},
+ // --- female-fronted
+ {g:"Female-fronted", t:"Barracuda",                              a:"Heart",            v:"V2",   s:260},
+ {g:"Female-fronted", t:"Alone",                                  a:"Heart",            v:"V2",   s:218},
+ {g:"Female-fronted", t:"Hit Me With Your Best Shot",             a:"Pat Benatar",      v:"V2",   s:172},
+ {g:"Female-fronted", t:"I Love Rock 'n' Roll",                   a:"Joan Jett",        v:"V2",   s:176},
+ {g:"Female-fronted", t:"Bring Me to Life",                       a:"Evanescence",      v:"DUET", s:236},
+ {g:"Female-fronted", t:"Going Under",                            a:"Evanescence",      v:"V2",   s:214},
+ {g:"Female-fronted", t:"Misery Business",                        a:"Paramore",         v:"V2",   s:211},
+ {g:"Female-fronted", t:"Still Into You",                         a:"Paramore",         v:"V2",   s:216},
+ {g:"Female-fronted", t:"What's Up?",                             a:"4 Non Blondes",    v:"V2",   s:291},
+ {g:"Female-fronted", t:"You Oughta Know",                        a:"Alanis Morissette",v:"V2",   s:249},
+ {g:"Female-fronted", t:"Love Bites (So Do I)",                   a:"Halestorm",        v:"V2",   s:230},
+ {g:"Female-fronted", t:"One Way or Another",                     a:"Blondie",          v:"V2",   s:214},
+ {g:"Female-fronted", t:"Total Eclipse of the Heart",             a:"Bonnie Tyler",     v:"V2",   s:335}
+];
+
+const TARGET = 90*60;      // 90 minutes
+const GAP    = 25;         // seconds of changeover assumed per song
+
+// ---- state ------------------------------------------------------------
+const vote = {};                       // index -> 'must' | 'yes' | 'no'
+const picked = {creed:null, nickelback:null};
+
+// ---- helpers ----------------------------------------------------------
+const esc = s => s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+const unesc = s => s.replace(/&amp;/g,'&');
+const mmss = t => Math.floor(t/60) + ":" + String(Math.round(t%60)).padStart(2,'0');
+const badge = v => '<span class="badge '+(v==='V1'?'v1':v==='V2'?'v2':'duet')+'">'+v+'</span>';
+
+// ---- render locked ----------------------------------------------------
+document.getElementById('locked').innerHTML = LOCKED.map(s =>
+  '<div class="row"><div class="info"><span class="title">'+esc(s.t)+'</span>'+
+  '<span class="meta">'+badge(s.v)+esc(s.a)+' &middot; '+mmss(s.s)+' &middot; '+esc(s.n)+'</span></div>'+
+  '<span class="locknote">LOCKED</span></div>'
+).join('');
+
+for(const key of Object.keys(PICKS)){
+  const box = document.querySelector('#pick-'+key+' .opts');
+  box.innerHTML = PICKS[key].opts.map((o,i) =>
+    '<button type="button" data-k="'+key+'" data-i="'+i+'">'+esc(o.t)+' <span style="opacity:.6">'+mmss(o.s)+'</span></button>'
+  ).join('');
+}
+
+// ---- render ballot ----------------------------------------------------
+let html = '', lastGroup = '';
+SONGS.forEach((s,i) => {
+  if(s.g !== lastGroup){ html += '<h3 class="sec">'+s.g+'</h3>'; lastGroup = s.g; }
+  html +=
+    '<div class="row" id="r'+i+'">'+
+      '<div class="info"><span class="title">'+esc(s.t)+'</span>'+
+      '<span class="meta">'+badge(s.v)+esc(s.a)+' &middot; '+mmss(s.s)+'</span></div>'+
+      '<div class="btns">'+
+        '<button type="button" data-i="'+i+'" data-v="must" title="Fight for it">MUST</button>'+
+        '<button type="button" data-i="'+i+'" data-v="yes"  title="Happy to play it">YES</button>'+
+        '<button type="button" data-i="'+i+'" data-v="no"   title="Leave it out">NO</button>'+
+      '</div>'+
+    '</div>';
+});
+document.getElementById('ballot').innerHTML = html;
+
+// ---- interaction ------------------------------------------------------
+document.getElementById('ballot').addEventListener('click', e => {
+  const b = e.target.closest('button'); if(!b) return;
+  const i = +b.dataset.i, v = b.dataset.v;
+  vote[i] = (vote[i] === v) ? undefined : v;      // click again to clear
+  paintRow(i); refresh();
+});
+
+document.querySelectorAll('.pickone .opts').forEach(box => {
+  box.addEventListener('click', e => {
+    const b = e.target.closest('button'); if(!b) return;
+    const k = b.dataset.k, i = +b.dataset.i;
+    picked[k] = (picked[k] === i) ? null : i;
+    box.querySelectorAll('button').forEach((x,j) => x.classList.toggle('on', picked[k] === j));
+    refresh();
+  });
+});
+
+function paintRow(i){
+  const row = document.getElementById('r'+i), v = vote[i];
+  row.className = 'row' + (v ? ' '+v : '');
+  row.querySelectorAll('.btns button').forEach(b => {
+    b.className = (vote[i] === b.dataset.v) ? 'on-'+b.dataset.v : '';
+  });
+}
+
+function refresh(){
+  let n = LOCKED.length, secs = LOCKED.reduce((a,s) => a+s.s, 0);
+  for(const k of Object.keys(PICKS)){
+    if(picked[k] !== null){ n++; secs += PICKS[k].opts[picked[k]].s; }
+  }
+  Object.keys(vote).forEach(i => {
+    if(vote[i] === 'must' || vote[i] === 'yes'){ n++; secs += SONGS[i].s; }
+  });
+  const total = secs + n*GAP;
+  document.getElementById('line1').innerHTML =
+    '<b>'+n+'</b> song'+(n===1?'':'s')+' in &middot; <b>'+mmss(total)+'</b> of 90:00';
+  const bar = document.getElementById('bar');
+  bar.style.width = Math.min(100, total/TARGET*100) + '%';
+  bar.className = total > TARGET ? 'over' : (total < TARGET*0.85 ? 'under' : '');
+  document.getElementById('copy').disabled = (n <= LOCKED.length);
+}
+
+// ---- output -----------------------------------------------------------
+function buildText(){
+  const name = (document.getElementById('voter').value || 'UNNAMED').trim();
+  const grab = v => SONGS.map((s,i) => vote[i]===v ? s : null).filter(Boolean);
+  const must = grab('must'), yes = grab('yes'), no = grab('no');
+  const list = arr => arr.length ? arr.map(s => '  - '+unesc(s.t)+' — '+s.a).join('\n') : '  (none)';
+
+  let secs = LOCKED.reduce((a,s)=>a+s.s,0), n = LOCKED.length;
+  for(const k of Object.keys(PICKS)) if(picked[k]!==null){ n++; secs += PICKS[k].opts[picked[k]].s; }
+  [...must,...yes].forEach(s => { n++; secs += s.s; });
+
+  const codes = v => SONGS.map((s,i) => vote[i]===v ? i+1 : null).filter(x=>x!==null).join(',');
+
+  return [
+    'SETLIST VOTE — October anniversary show',
+    'Voter: ' + name,
+    '',
+    'Creed pick:      ' + (picked.creed      !== null ? PICKS.creed.opts[picked.creed].t           : '(no pick)'),
+    'Nickelback pick: ' + (picked.nickelback !== null ? PICKS.nickelback.opts[picked.nickelback].t : '(no pick)'),
+    '',
+    'MUST PLAY ('+must.length+')', list(must),
+    '',
+    'YES ('+yes.length+')', list(yes),
+    '',
+    'NO ('+no.length+')', list(no),
+    '',
+    'Running total with locked songs: ' + n + ' songs, ~' + mmss(secs + n*GAP) + ' of 90:00',
+    '',
+    '#RAW ' + name + '|C:' + (picked.creed ?? '-') + '|N:' + (picked.nickelback ?? '-') +
+      '|M:' + codes('must') + '|Y:' + codes('yes') + '|X:' + codes('no')
+  ].join('\n');
+}
+
+document.getElementById('copy').addEventListener('click', async () => {
+  const txt = buildText(), btn = document.getElementById('copy');
+  const out = document.getElementById('out');
+  let ok = false;
+  try{ await navigator.clipboard.writeText(txt); ok = true; }catch(e){ ok = false; }
+  out.style.display = 'block';
+  out.value = txt;
+  if(!ok){ out.focus(); out.select(); }
+  btn.textContent = ok ? 'Copied!' : 'Select & copy below';
+  setTimeout(() => { btn.textContent = 'Copy my votes'; }, 2600);
+  out.scrollIntoView({behavior:'smooth', block:'center'});
+});
+
+refresh();
+</script>
+</body>
+</html>
