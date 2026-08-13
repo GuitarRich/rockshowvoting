@@ -9,6 +9,8 @@
  *  2. Extensions -> Apps Script. Delete whatever is in Code.gs and paste this in.
  *  3. Change ADMIN_KEY below to something only you know.
  *  4. Run  setupSheet  once (Run menu). Approve the permission prompt.
+ *     Then run  fixLengths  once — it rewrites the Length column as plain text
+ *     so Sheets stops turning "3:23" into a time value.
  *     It fixes the voter column names, adds the Energy/Tags columns, widens the
  *     score formulas so new rows keep working, and colour-codes the votes.
  *  5. Deploy -> New deployment -> gear icon -> Web app.
@@ -78,6 +80,55 @@ function setupSheet() {
       .setRanges([body]).build();
   }));
   return 'Sheet ready. Voters: ' + VOTERS.join(', ');
+}
+
+/**
+ * ONE-TIME REPAIR — run this from the editor if runtimes look wrong or the
+ * results page says it can't read the lengths.
+ *
+ * Sheets coerces "3:23" into a time value, which then reads back as a Date and
+ * renders as "3:23:00" or "3:23:00 AM" depending on locale. This rewrites the
+ * whole Length column as PLAIN TEXT "m:ss" so nothing can reinterpret it again.
+ */
+function fixLengths() {
+  var sh = sheet_();
+  var last = sh.getLastRow();
+  if (last <= HEADER_ROW) return 'Nothing to do.';
+  var head = sh.getRange(HEADER_ROW, 1, 1, sh.getLastColumn()).getDisplayValues()[0];
+  var col = idx_(head)['length'];
+  if (col === undefined) return 'No Length column found.';
+
+  var n = last - HEADER_ROW;
+  var rng = sh.getRange(HEADER_ROW + 1, col + 1, n, 1);
+  var disp = rng.getDisplayValues();
+  var out = [], fixed = 0, bad = [];
+
+  for (var i = 0; i < n; i++) {
+    var raw = String(disp[i][0] || '').trim();
+    var t = raw.toUpperCase().replace(/\s*[AP]M$/, '');
+    var m = t.match(/^(\d{1,3}):([0-5]?\d)(?::([0-5]\d))?$/);
+    var secs = 0;
+    if (m) {
+      if (m[3] === undefined) secs = (+m[1]) * 60 + (+m[2]);
+      else {
+        secs = (+m[1]) * 3600 + (+m[2]) * 60 + (+m[3]);
+        if (secs > 900) secs = (+m[1]) * 60 + (+m[2]);   // "3:23:00" means 3m23s
+      }
+    }
+    if (secs > 0 && secs <= 900) {
+      out.push([Math.floor(secs / 60) + ':' + ('0' + (secs % 60)).slice(-2)]);
+      fixed++;
+    } else {
+      out.push([raw]);
+      if (raw) bad.push(raw);
+    }
+  }
+
+  rng.setNumberFormat('@');   // plain text — stops Sheets coercing it ever again
+  rng.setValues(out);
+  SpreadsheetApp.flush();
+  return 'Normalised ' + fixed + ' of ' + n + ' lengths to plain text m:ss.' +
+         (bad.length ? ' Could not read: ' + bad.slice(0, 6).join(', ') : '');
 }
 
 function idx_(head) {

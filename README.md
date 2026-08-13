@@ -69,11 +69,16 @@ reading a time cell back as a Date and reformatting it is timezone-dependent and
 produces wildly wrong runtimes. If the results page refuses to build a set, the
 fix is:
 
-> select the Length column -> Format -> Number -> Plain text, then retype a value
+> run **`fixLengths`** from the Apps Script editor
 
-`parseLen()` on both pages accepts only `m:ss` / `h:mm:ss` and rejects anything
-over 15 minutes. It deliberately does **not** try to salvage a date string -
-guessing produced wrong runtimes, and a wrong length silently breaks the
+That rewrites the whole Length column as plain text `m:ss` and sets the column
+format to text, so Sheets can never reinterpret it again. (Manual equivalent:
+select the Length column, Format -> Number -> Plain text, retype the values.)
+
+`parseLen()` on both pages accepts `m:ss`, `h:mm:ss` and Sheets' rendered forms
+(`3:23:00`, `3:23:00 AM`), treating anything longer than 15 minutes as a
+misparse. It deliberately does **not** salvage a raw date string - guessing at
+one produced badly wrong runtimes, and a wrong length silently breaks the
 90-minute cap. Unreadable lengths block the build with a banner instead.
 
 ## Adding or removing songs

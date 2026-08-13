@@ -233,19 +233,22 @@ const META = {
   "One Way or Another":{e:4,tags:["opener"]},
   "Total Eclipse of the Heart":{e:2,tags:["ballad"]}
 };
-// Length must be "m:ss" (or "h:mm:ss"). Anything else returns 0 and the caller
-// refuses to build a set. An earlier version scraped the clock digits out of the
-// date string Sheets returns for a time-typed cell — those digits are shifted by
-// the sheet's timezone, so it produced wildly wrong runtimes. Guessing is worse
-// than failing here: a wrong length silently breaks the 90-minute cap.
-const MAX_SONG = 15*60;   // nothing in a covers set is longer; above this is a parse error
+// Length must be m:ss. Sheets renders a time-typed "3:23" as "3:23:00" (and
+// sometimes with AM/PM), so h:mm:ss that comes out longer than any real song is
+// re-read as m:ss. Anything else returns 0 and the caller refuses to build —
+// an earlier version guessed at date strings and produced wildly wrong runtimes.
+const MAX_SONG = 15*60;
 function parseLen(v){
-  const t = String(v==null?'':v).trim();
+  const t = String(v==null?'':v).trim().toUpperCase().replace(/\s*[AP]M$/,'');
   const m = t.match(/^(\d{1,3}):([0-5]?\d)(?::([0-5]\d))?$/);
   if(!m) return 0;
-  const secs = m[3] !== undefined
-    ? (+m[1])*3600 + (+m[2])*60 + (+m[3])   // h:mm:ss
-    : (+m[1])*60 + (+m[2]);                 // m:ss
+  let secs;
+  if(m[3] === undefined){
+    secs = (+m[1])*60 + (+m[2]);                        // "3:23"
+  } else {
+    secs = (+m[1])*3600 + (+m[2])*60 + (+m[3]);         // "0:03:23"
+    if(secs > MAX_SONG) secs = (+m[1])*60 + (+m[2]);    // "3:23:00" is 3m23s
+  }
   return (secs > 0 && secs <= MAX_SONG) ? secs : 0;
 }
 
