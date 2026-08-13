@@ -1,0 +1,318 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Setlist Vote — Admin</title>
+<style>
+  :root{
+    --bg:#0d0e12; --panel:#16181f; --panel2:#1d2029; --line:#2a2e3a;
+    --ink:#e9eaf0; --muted:#9298a8; --dim:#6b7182;
+    --amber:#e8a33d; --green:#4fb477; --red:#d15b5b; --violet:#8b7fd4;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--ink);
+    font:16px/1.5 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    padding-bottom:96px}
+  .wrap{max-width:1180px;margin:0 auto;padding:0 16px}
+  header{padding:26px 0 16px;border-bottom:1px solid var(--line);margin-bottom:20px}
+  h1{font-size:25px;margin:0 0 5px;letter-spacing:-.01em}
+  h1 span{color:var(--amber)}
+  .sub{color:var(--muted);font-size:14px;margin:0}
+  a{color:var(--amber)}
+  .card{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:16px 18px;margin:0 0 20px}
+  .card h2{font-size:12px;text-transform:uppercase;letter-spacing:.09em;color:var(--amber);margin:0 0 10px}
+  .card p{margin:0 0 8px;font-size:14px;color:var(--muted)}
+  .card p:last-child{margin-bottom:0}
+  .card strong{color:var(--ink)}
+  input,select,textarea{padding:9px 11px;border-radius:8px;border:1px solid var(--line);
+    background:var(--panel2);color:var(--ink);font-size:14px;font-family:inherit;width:100%}
+  input:focus,select:focus,textarea:focus{outline:2px solid var(--amber);outline-offset:1px;border-color:transparent}
+  textarea{height:110px;font:12.5px/1.5 ui-monospace,SFMono-Regular,Menlo,monospace}
+  .btn{font:700 14px/1 inherit;cursor:pointer;background:var(--amber);color:#231a09;border:none;
+    border-radius:9px;padding:12px 18px}
+  .btn.ghost{background:var(--panel2);color:var(--ink);border:1px solid var(--line)}
+  .btn.danger{background:var(--red);color:#2a0c0c}
+  .btn:disabled{background:var(--panel2);color:var(--dim);cursor:not-allowed}
+  .btnrow{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-top:10px}
+  .status{font-size:13px;color:var(--muted);margin-top:10px}
+  .status.err{color:var(--red)} .status.ok{color:var(--green)}
+  .hide{display:none}
+
+  .scroll{overflow-x:auto;border:1px solid var(--line);border-radius:12px;background:var(--panel)}
+  table{width:100%;border-collapse:collapse;font-size:13.5px;min-width:900px}
+  th,td{text-align:left;padding:5px 7px;border-bottom:1px solid var(--line);vertical-align:middle}
+  th{font-size:11px;text-transform:uppercase;letter-spacing:.07em;color:var(--dim);white-space:nowrap}
+  td input,td select{padding:6px 8px;font-size:13px}
+  td.narrow{width:78px} td.mid{width:120px} td.act{width:44px}
+  tr.dirty td{background:rgba(232,163,61,.07)}
+  tr.doomed{opacity:.4}
+  tr.doomed td input,tr.doomed td select{text-decoration:line-through}
+  tr.locked td:first-child{border-left:2px solid var(--amber)}
+  .x{font:700 13px/1 inherit;cursor:pointer;background:transparent;border:1px solid var(--line);
+    color:var(--muted);border-radius:6px;padding:6px 9px;width:auto}
+  .x:hover{border-color:var(--red);color:var(--red)}
+  .x.on{background:var(--red);border-color:var(--red);color:#2a0c0c}
+  .votes{font-size:11px;color:var(--dim);white-space:nowrap}
+  .grid3{display:grid;grid-template-columns:2fr 2fr 1fr 1fr 1fr 2fr;gap:8px;align-items:end}
+  .grid3 label{font-size:11px;text-transform:uppercase;letter-spacing:.06em;color:var(--dim);display:block;margin-bottom:4px}
+  @media(max-width:760px){ .grid3{grid-template-columns:1fr 1fr} }
+
+  footer{position:fixed;left:0;right:0;bottom:0;background:rgba(13,14,18,.96);
+    border-top:1px solid var(--line);backdrop-filter:blur(8px);padding:11px 0}
+  .fbar{display:flex;align-items:center;gap:14px;max-width:1180px;margin:0 auto;padding:0 16px}
+  .fbar .msg{flex:1;min-width:0;font-size:13px;color:var(--muted)}
+  .fbar .msg b{color:var(--ink)}
+  .fbar .msg.ok{color:var(--green)} .fbar .msg.err{color:var(--red)}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<header>
+  <h1>Setlist Vote — <span>Admin</span></h1>
+  <p class="sub">Edit the song list. Changes write to the Google Sheet and both pages pick them up on next load &middot;
+    <a href="index.html">ballot</a> &middot; <a href="results.html">results</a></p>
+</header>
+
+<div class="card" id="gate">
+  <h2>Admin key</h2>
+  <p>The key you set as <strong>ADMIN_KEY</strong> in <code>apps-script.gs</code>. Not stored anywhere &mdash; retype it each visit.</p>
+  <div style="max-width:340px"><input type="password" id="key" placeholder="admin key" autocomplete="off"></div>
+  <div class="btnrow"><button class="btn" id="unlock">Unlock</button></div>
+  <div class="status" id="gateStatus"></div>
+</div>
+
+<div id="main" class="hide">
+
+  <div class="card">
+    <h2>Add a song</h2>
+    <div class="grid3">
+      <div><label>Song</label><input id="aSong" placeholder="Dream On"></div>
+      <div><label>Artist</label><input id="aArtist" placeholder="Aerosmith"></div>
+      <div><label>Lead</label><select id="aLead"><option>V1</option><option>V2</option><option>DUET</option></select></div>
+      <div><label>Length</label><input id="aLen" placeholder="4:28"></div>
+      <div><label>Energy 1&ndash;5</label><input id="aEnergy" type="number" min="1" max="5" value="3"></div>
+      <div><label>Section</label><input id="aSection" placeholder="Arena &amp; classic rock" list="sections">
+        <datalist id="sections"></datalist></div>
+    </div>
+    <div class="grid3" style="margin-top:10px">
+      <div style="grid-column:1/-1"><label>Tags (optional, comma separated)</label>
+        <input id="aTags" placeholder="opener, heavy, ballad, dedication, closer, lift, dip"></div>
+    </div>
+    <div class="btnrow"><button class="btn" id="addBtn">Add to the list</button></div>
+    <p style="margin-top:10px">Tags steer the running order: <strong>opener</strong> / <strong>closer</strong> pin it to the ends,
+      <strong>heavy</strong> clusters it at the peak, <strong>ballad</strong> or <strong>dedication</strong> places it after the peak
+      (dedication is the one protected from being voted out), <strong>lift</strong> follows the ballad, <strong>dip</strong> sits a third in.</p>
+  </div>
+
+  <div class="card">
+    <h2>Bulk add</h2>
+    <p>One per line: <code>Song | Artist | Lead | Length | Energy | Section | tags</code>. Only song and artist are required.</p>
+    <textarea id="bulk" spellcheck="false" placeholder="Dream On | Aerosmith | V1 | 4:28 | 3 | Arena &amp; classic rock&#10;Cryin' | Aerosmith | V2 | 5:08 | 4 | Female-fronted"></textarea>
+    <div class="btnrow"><button class="btn ghost" id="bulkBtn">Queue these</button></div>
+  </div>
+
+  <div class="scroll"><table id="tbl"></table></div>
+
+</div>
+</div>
+
+<footer>
+  <div class="fbar">
+    <div class="msg" id="msg">Locked.</div>
+    <button class="btn ghost" id="reload">Reload</button>
+    <button class="btn" id="apply" disabled>Save changes</button>
+  </div>
+</footer>
+
+<script src="config.js"></script>
+<script>
+const API = (window.SETLIST_API || '').trim();
+let KEY = '', STATE = null;
+const pendingAdd = [];      // rows queued but not yet in the sheet
+const removals = new Set(); // 'Song|Artist'
+const edits = {};           // 'Song|Artist' -> {field: value}
+
+const esc = s => String(s??'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+const msg = (t, cls) => { const m=document.getElementById('msg'); m.className='msg'+(cls?' '+cls:''); m.innerHTML=t; };
+
+function dirtyCount(){
+  return pendingAdd.length + removals.size + Object.keys(edits).length;
+}
+function syncFooter(keepMsg){
+  const n = dirtyCount();
+  document.getElementById('apply').disabled = !n;
+  if(keepMsg) return;
+  if(!n){ msg('No unsaved changes.'); return; }
+  msg('<b>'+n+'</b> unsaved change'+(n===1?'':'s')+' — '+
+    pendingAdd.length+' to add, '+removals.size+' to remove, '+Object.keys(edits).length+' edited.');
+}
+
+// ---------------- load ----------------
+async function load(){
+  if(!API){ msg('config.js has no SETLIST_API URL — nothing to talk to.','err'); return; }
+  msg('Loading…');
+  const r = await fetch(API,{method:'GET'});
+  const j = await r.json();
+  if(!j.ok) throw new Error(j.error||'unknown error');
+  STATE = j.data;
+  pendingAdd.length = 0; removals.clear();
+  Object.keys(edits).forEach(k=>delete edits[k]);
+  draw();
+  const secs=[...new Set(STATE.rows.map(r=>r.section).filter(Boolean))];
+  document.getElementById('sections').innerHTML = secs.map(s=>'<option value="'+esc(s)+'">').join('');
+  syncFooter();
+}
+
+function draw(){
+  const vs = STATE.voters;
+  let h = '<thead><tr><th>#</th><th>Song</th><th>Artist</th><th>Lead</th><th>Len</th>'+
+    '<th>Energy</th><th>Tags</th><th>Section</th><th>Votes in</th><th></th></tr></thead><tbody>';
+
+  const rowHtml = (r, i, isNew) => {
+    const k = r.song+'|'+r.artist;
+    const e = edits[k] || {};
+    const cast = r.votes ? Object.values(r.votes).filter(v=>['MUST','YES','NO','X'].includes(v)).length : 0;
+    const locked = /^LOCKED/i.test(r.section||'');
+    const cls = [isNew?'dirty':'', removals.has(k)?'doomed':'', (!isNew && edits[k])?'dirty':'', locked?'locked':'']
+      .filter(Boolean).join(' ');
+    const f = (name, val, extra) => '<input data-k="'+esc(k)+'" data-f="'+name+'" value="'+
+      esc(e[name] ?? val)+'"'+(extra||'')+(isNew?' data-new="1"':'')+'>';
+    const lead = ['V1','V2','DUET'].map(o=>'<option'+((e.lead??r.lead)===o?' selected':'')+'>'+o+'</option>').join('');
+    return '<tr class="'+cls+'"><td class="act">'+(isNew?'new':(i??''))+'</td>'+
+      '<td>'+f('song', r.song)+'</td>'+
+      '<td>'+f('artist', r.artist)+'</td>'+
+      '<td class="narrow"><select data-k="'+esc(k)+'" data-f="lead"'+(isNew?' data-new="1"':'')+'>'+lead+'</select></td>'+
+      '<td class="narrow">'+f('length', r.len||r.length||'')+'</td>'+
+      '<td class="narrow">'+f('energy', r.energy||3,' type="number" min="1" max="5"')+'</td>'+
+      '<td class="mid">'+f('tags', (r.tags||[]).join?.(', ') ?? r.tags ?? '')+'</td>'+
+      '<td class="mid">'+f('section', r.section||'')+'</td>'+
+      '<td class="votes">'+(isNew?'—':cast+'/'+vs.length)+'</td>'+
+      '<td class="act"><button class="x'+(removals.has(k)?' on':'')+'" data-rm="'+esc(k)+'"'+
+        (isNew?' data-drop="'+esc(k)+'"':'')+'>&times;</button></td></tr>';
+  };
+
+  let n=0;
+  STATE.rows.forEach(r=>{ h += rowHtml(r, /^LOCKED/i.test(r.section)?'—':++n, false); });
+  pendingAdd.forEach(r=>{ h += rowHtml(r, null, true); });
+  document.getElementById('tbl').innerHTML = h + '</tbody>';
+}
+
+// ---------------- interaction ----------------
+document.getElementById('tbl').addEventListener('input', e=>{
+  const el = e.target; if(!el.dataset.f) return;
+  const k = el.dataset.k;
+  if(el.dataset.new){
+    const row = pendingAdd.find(r=>r.song+'|'+r.artist===k);
+    if(row){ row[el.dataset.f==='length'?'length':el.dataset.f] = el.value; }
+  } else {
+    (edits[k] ||= {})[el.dataset.f] = el.value;
+    el.closest('tr').classList.add('dirty');
+  }
+  syncFooter();
+});
+document.getElementById('tbl').addEventListener('change', e=>{
+  if(e.target.tagName==='SELECT') e.target.dispatchEvent(new Event('input',{bubbles:true}));
+});
+document.getElementById('tbl').addEventListener('click', e=>{
+  const b = e.target.closest('button[data-rm]'); if(!b) return;
+  const k = b.dataset.rm;
+  if(b.dataset.drop){
+    const i = pendingAdd.findIndex(r=>r.song+'|'+r.artist===k);
+    if(i>=0) pendingAdd.splice(i,1);
+  } else {
+    removals.has(k) ? removals.delete(k) : removals.add(k);
+  }
+  draw(); syncFooter();
+});
+
+function queue(row){
+  if(!row.song || !row.artist) return false;
+  const k = row.song+'|'+row.artist;
+  if(STATE.rows.some(r=>r.song+'|'+r.artist===k) || pendingAdd.some(r=>r.song+'|'+r.artist===k)){
+    msg('“'+esc(row.song)+'” by '+esc(row.artist)+' is already on the list.','err');
+    return false;
+  }
+  pendingAdd.push(row);
+  return true;
+}
+
+document.getElementById('addBtn').onclick = ()=>{
+  const g = id => document.getElementById(id).value.trim();
+  const ok = queue({section:g('aSection')||'Added', song:g('aSong'), artist:g('aArtist'),
+    lead:g('aLead'), length:g('aLen')||'3:30', energy:+g('aEnergy')||3, tags:g('aTags')});
+  if(ok){ ['aSong','aArtist','aLen','aTags'].forEach(i=>document.getElementById(i).value=''); draw(); syncFooter(); }
+};
+
+document.getElementById('bulkBtn').onclick = ()=>{
+  const lines = document.getElementById('bulk').value.split('\n').map(s=>s.trim()).filter(Boolean);
+  let added=0;
+  lines.forEach(l=>{
+    const p = l.split('|').map(s=>s.trim());
+    if(queue({song:p[0], artist:p[1], lead:(p[2]||'V1').toUpperCase(), length:p[3]||'3:30',
+      energy:+p[4]||3, section:p[5]||'Added', tags:p[6]||''})) added++;
+  });
+  if(added){ document.getElementById('bulk').value=''; msg('Queued '+added+' song'+(added===1?'':'s')+'.','ok'); }
+  draw(); syncFooter();
+};
+
+// ---------------- save ----------------
+document.getElementById('apply').onclick = async ()=>{
+  const btn = document.getElementById('apply');
+  btn.disabled = true; msg('Saving…');
+  const update = Object.entries(edits).map(([k,v])=>({key:k, ...v,
+    energy: v.energy!==undefined ? +v.energy : undefined,
+    tags:   v.tags!==undefined ? v.tags.split(/[,;]\s*/).filter(Boolean) : undefined}));
+  try{
+    const r = await fetch(API,{method:'POST',
+      headers:{'Content-Type':'text/plain;charset=utf-8'},
+      body:JSON.stringify({action:'admin', key:KEY,
+        add: pendingAdd.map(a=>({...a, tags:String(a.tags||'').split(/[,;]\s*/).filter(Boolean)})),
+        update, remove:[...removals]})});
+    const j = await r.json();
+    if(!j.ok) throw new Error(j.error||'unknown error');
+    STATE = j.data;
+    pendingAdd.length=0; removals.clear(); Object.keys(edits).forEach(k=>delete edits[k]);
+    draw();
+    msg('Saved — <b>'+j.result.added+'</b> added, <b>'+j.result.removed+
+        '</b> removed, <b>'+j.result.updated+'</b> updated.','ok');
+    syncFooter(true);
+  }catch(e){
+    msg('Save failed: '+esc(e.message),'err');
+    syncFooter(true);
+  }
+};
+
+document.getElementById('reload').onclick = ()=>load().catch(e=>msg('Reload failed: '+esc(e.message),'err'));
+
+document.getElementById('unlock').onclick = async ()=>{
+  KEY = document.getElementById('key').value;
+  const st = document.getElementById('gateStatus');
+  if(!KEY){ st.className='status err'; st.textContent='Enter the key first.'; return; }
+  st.className='status'; st.textContent='Checking…';
+  try{
+    // a no-op admin call — succeeds only if the key is right
+    const r = await fetch(API,{method:'POST',headers:{'Content-Type':'text/plain;charset=utf-8'},
+      body:JSON.stringify({action:'admin', key:KEY, add:[], update:[], remove:[]})});
+    const j = await r.json();
+    if(!j.ok) throw new Error(j.error||'unknown error');
+    document.getElementById('gate').classList.add('hide');
+    document.getElementById('main').classList.remove('hide');
+    STATE = j.data; draw();
+    const secs=[...new Set(STATE.rows.map(x=>x.section).filter(Boolean))];
+    document.getElementById('sections').innerHTML = secs.map(s=>'<option value="'+esc(s)+'">').join('');
+    syncFooter();
+  }catch(e){
+    st.className='status err';
+    st.textContent = /admin key/i.test(e.message) ? 'That key is not right.' : 'Could not reach the backend: '+e.message;
+  }
+};
+document.getElementById('key').addEventListener('keydown', e=>{
+  if(e.key==='Enter') document.getElementById('unlock').click();
+});
+
+if(!API){ msg('config.js has no SETLIST_API URL — set that up first.','err'); }
+</script>
+</body>
+</html>

@@ -126,15 +126,7 @@
 <h3 class="sec">Locked &mdash; organiser requests, not up for vote</h3>
 <div class="locked" id="locked"></div>
 
-<div class="pickone" id="pick-Creed">
-  <span><strong>Creed</strong> is locked in &mdash; but which song? Pick one.</span>
-  <div class="opts"></div>
-</div>
-
-<div class="pickone" id="pick-Nickelback">
-  <span><strong>Nickelback</strong> is locked in &mdash; but which song? Pick one.</span>
-  <div class="opts"></div>
-</div>
+<div id="picks"></div>
 
 <div id="ballot"></div>
 
@@ -211,14 +203,84 @@ const TARGET = 90*60, GAP = 25;
 const API    = (window.SETLIST_API || '').trim();
 const VOTERS = window.SETLIST_VOTERS || ["Rich","Ashley","CJ","Justin","Isaac","Julie","Organiser"];
 
-const vote = {};                                  // index -> must|yes|no
-const picked = {Creed:null, Nickelback:null};
+// The sheet is the source of truth. The arrays above are only a fallback for
+// when the backend is unreachable, so the page still shows something usable.
+let MODEL = {locked:[], picks:{}, songs:[]};
+const vote = {};            // song key -> must|yes|no
+const picked = {};          // artist -> song title
 let me = null;
 
-const esc   = s => s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
-const unesc = s => s.replace(/&amp;/g,'&');
+const esc   = s => String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+const unesc = s => String(s).replace(/&amp;/g,'&');
+const secsOf = t => { const p=String(t||'').split(':'); return p.length===2 ? (+p[0])*60+(+p[1]) : 210; };
 const mmss  = t => Math.floor(t/60)+":"+String(Math.round(t%60)).padStart(2,'0');
-const badge = v => '<span class="badge '+(v==='V1'?'v1':v==='V2'?'v2':'duet')+'">'+v+'</span>';
+const badge = v => '<span class="badge '+(v==='V1'?'v1':v==='V2'?'v2':'duet')+'">'+(v||'?')+'</span>';
+const keyOf = s => s.t+'|'+s.a;
+
+function fallbackModel(){
+  return {
+    locked: LOCKED.map(s=>({t:s.t,a:s.a,v:s.v,s:s.s,n:s.n})),
+    picks:  Object.fromEntries(Object.entries(PICKS).map(([k,v])=>[k,v.map(o=>({t:o.t,s:o.s}))])),
+    songs:  SONGS.map(s=>({g:unesc(s.g),t:unesc(s.t),a:s.a,v:s.v,s:s.s}))
+  };
+}
+
+function modelFromSheet(rows){
+  const m = {locked:[], picks:{}, songs:[]};
+  rows.forEach(r=>{
+    const locked = /^LOCKED/i.test(r.section), pick = /pick ONE/i.test(r.section);
+    if(pick){ (m.picks[r.artist] ||= []).push({t:r.song, s:secsOf(r.len)}); }
+    else if(locked){ m.locked.push({t:r.song,a:r.artist,v:r.lead,s:secsOf(r.len),n:'named by the organiser'}); }
+    else { m.songs.push({g:r.section||'Songs', t:r.song, a:r.artist, v:r.lead, s:secsOf(r.len)}); }
+  });
+  return m;
+}
+
+// ---- render -----------------------------------------------------------
+function renderAll(){
+  document.getElementById('locked').innerHTML = MODEL.locked.map(s =>
+    '<div class="row"><div class="info"><span class="title">'+esc(s.t)+'</span>'+
+    '<span class="meta">'+badge(s.v)+esc(s.a)+' &middot; '+mmss(s.s)+' &middot; '+esc(s.n)+'</span></div>'+
+    '<span class="locknote">LOCKED</span></div>').join('')
+    || '<p style="color:var(--muted);font-size:14px;margin:0">None.</p>';
+
+  document.getElementById('picks').innerHTML = Object.entries(MODEL.picks).map(([artist,opts])=>
+    '<div class="pickone"><span><strong>'+esc(artist)+'</strong> is locked in &mdash; but which song? Pick one.</span>'+
+    '<div class="opts" data-artist="'+esc(artist)+'">'+opts.map(o=>
+      '<button type="button" data-artist="'+esc(artist)+'" data-song="'+esc(o.t)+'">'+
+      esc(o.t)+' <span style="opacity:.6">'+mmss(o.s)+'</span></button>').join('')+'</div></div>').join('');
+
+  let html='', lastG=null;
+  MODEL.songs.forEach(s=>{
+    if(s.g!==lastG){ html+='<h3 class="sec">'+esc(s.g)+'</h3>'; lastG=s.g; }
+    const k=keyOf(s);
+    html += '<div class="row" data-key="'+esc(k)+'"><div class="info">'+
+      '<span class="title">'+esc(s.t)+'</span>'+
+      '<span class="meta">'+badge(s.v)+esc(s.a)+' &middot; '+mmss(s.s)+'</span></div>'+
+      '<div class="btns">'+
+        ['must','yes','no'].map(v=>'<button type="button" data-key="'+esc(k)+
+          '" data-v="'+v+'">'+v.toUpperCase()+'</button>').join('')+
+      '</div></div>';
+  });
+  document.getElementById('ballot').innerHTML = html;
+  MODEL.songs.forEach(s=>paintRow(keyOf(s)));
+  Object.keys(MODEL.picks).forEach(paintPick);
+  refresh();
+}
+
+function paintRow(k){
+  const row = document.querySelector('.row[data-key="'+CSS.escape(k)+'"]');
+  if(!row) return;
+  const v = vote[k];
+  row.className = 'row'+(v?' '+v:'');
+  row.querySelectorAll('.btns button').forEach(b=>{
+    b.className = (v===b.dataset.v) ? 'on-'+b.dataset.v : '';
+  });
+}
+function paintPick(artist){
+  document.querySelectorAll('.opts[data-artist="'+CSS.escape(artist)+'"] button')
+    .forEach(b=>b.classList.toggle('on', picked[artist]===b.dataset.song));
+}
 
 // ---- who am i ---------------------------------------------------------
 document.getElementById('who').innerHTML =
@@ -228,64 +290,31 @@ document.getElementById('who').addEventListener('click', e=>{
   me = b.dataset.v;
   document.querySelectorAll('#who button').forEach(x=>x.classList.toggle('on', x.dataset.v===me));
   pull();
-  refresh();
 });
 
-// ---- render -----------------------------------------------------------
-document.getElementById('locked').innerHTML = LOCKED.map(s =>
-  '<div class="row"><div class="info"><span class="title">'+esc(s.t)+'</span>'+
-  '<span class="meta">'+badge(s.v)+esc(s.a)+' &middot; '+mmss(s.s)+' &middot; '+esc(s.n)+'</span></div>'+
-  '<span class="locknote">LOCKED</span></div>').join('');
-
-for(const k of Object.keys(PICKS)){
-  document.querySelector('#pick-'+k+' .opts').innerHTML = PICKS[k].map((o,i)=>
-    '<button type="button" data-k="'+k+'" data-i="'+i+'">'+esc(o.t)+
-    ' <span style="opacity:.6">'+mmss(o.s)+'</span></button>').join('');
-}
-
-let html='', lastG='';
-SONGS.forEach((s,i)=>{
-  if(s.g!==lastG){ html+='<h3 class="sec">'+s.g+'</h3>'; lastG=s.g; }
-  html += '<div class="row" id="r'+i+'"><div class="info">'+
-    '<span class="title">'+esc(s.t)+'</span>'+
-    '<span class="meta">'+badge(s.v)+esc(s.a)+' &middot; '+mmss(s.s)+'</span></div>'+
-    '<div class="btns">'+
-      '<button type="button" data-i="'+i+'" data-v="must">MUST</button>'+
-      '<button type="button" data-i="'+i+'" data-v="yes">YES</button>'+
-      '<button type="button" data-i="'+i+'" data-v="no">NO</button>'+
-    '</div></div>';
-});
-document.getElementById('ballot').innerHTML = html;
-
+// ---- interaction ------------------------------------------------------
 document.getElementById('ballot').addEventListener('click', e=>{
   const b=e.target.closest('button'); if(!b) return;
-  const i=+b.dataset.i, v=b.dataset.v;
-  vote[i] = (vote[i]===v) ? undefined : v;
-  paintRow(i); refresh();
+  const k=b.dataset.key, v=b.dataset.v;
+  vote[k] = (vote[k]===v) ? undefined : v;
+  paintRow(k); refresh();
 });
-document.querySelectorAll('.pickone .opts').forEach(box=>{
-  box.addEventListener('click', e=>{
-    const b=e.target.closest('button'); if(!b) return;
-    const k=b.dataset.k, i=+b.dataset.i;
-    picked[k] = (picked[k]===i) ? null : i;
-    box.querySelectorAll('button').forEach((x,j)=>x.classList.toggle('on', picked[k]===j));
-    refresh();
-  });
+document.getElementById('picks').addEventListener('click', e=>{
+  const b=e.target.closest('button'); if(!b) return;
+  const a=b.dataset.artist, s=b.dataset.song;
+  picked[a] = (picked[a]===s) ? undefined : s;
+  paintPick(a); refresh();
 });
-
-function paintRow(i){
-  const row=document.getElementById('r'+i), v=vote[i];
-  row.className='row'+(v?' '+v:'');
-  row.querySelectorAll('.btns button').forEach(b=>{
-    b.className = (vote[i]===b.dataset.v) ? 'on-'+b.dataset.v : '';
-  });
-}
 
 function refresh(){
-  let n=LOCKED.length, secs=LOCKED.reduce((a,s)=>a+s.s,0);
-  for(const k of Object.keys(PICKS)) if(picked[k]!==null){ n++; secs+=PICKS[k][picked[k]].s; }
-  Object.keys(vote).forEach(i=>{
-    if(vote[i]==='must'||vote[i]==='yes'){ n++; secs+=SONGS[i].s; }
+  let n=MODEL.locked.length, secs=MODEL.locked.reduce((a,s)=>a+s.s,0);
+  Object.entries(MODEL.picks).forEach(([artist,opts])=>{
+    const p = opts.find(o=>o.t===picked[artist]);
+    if(p){ n++; secs+=p.s; }
+  });
+  MODEL.songs.forEach(s=>{
+    const v=vote[keyOf(s)];
+    if(v==='must'||v==='yes'){ n++; secs+=s.s; }
   });
   const total=secs+n*GAP;
   document.getElementById('line1').innerHTML =
@@ -301,32 +330,34 @@ function refresh(){
 // ---- payload ----------------------------------------------------------
 function payload(){
   const votes={};
-  SONGS.forEach((s,i)=>{
-    const v=vote[i];
-    votes[unesc(s.t)+'|'+s.a] = v ? v.toUpperCase() : '';
+  MODEL.songs.forEach(s=>{
+    const v=vote[keyOf(s)];
+    votes[keyOf(s)] = v ? v.toUpperCase() : '';
   });
-  for(const k of Object.keys(PICKS)){
-    PICKS[k].forEach((o,i)=>{ votes[o.t+'|'+k] = (picked[k]===i) ? 'X' : ''; });
-  }
+  Object.entries(MODEL.picks).forEach(([artist,opts])=>{
+    opts.forEach(o=>{ votes[o.t+'|'+artist] = (picked[artist]===o.t) ? 'X' : ''; });
+  });
   return {voter: me, votes};
 }
 
 function buildText(){
-  const grab=v=>SONGS.map((s,i)=>vote[i]===v?s:null).filter(Boolean);
+  const grab=v=>MODEL.songs.filter(s=>vote[keyOf(s)]===v);
   const must=grab('must'), yes=grab('yes'), no=grab('no');
-  const list=a=>a.length?a.map(s=>'  - '+unesc(s.t)+' — '+s.a).join('\n'):'  (none)';
-  let secs=LOCKED.reduce((a,s)=>a+s.s,0), n=LOCKED.length;
-  for(const k of Object.keys(PICKS)) if(picked[k]!==null){ n++; secs+=PICKS[k][picked[k]].s; }
+  const list=a=>a.length?a.map(s=>'  - '+s.t+' — '+s.a).join('\n'):'  (none)';
+  let secs=MODEL.locked.reduce((a,s)=>a+s.s,0), n=MODEL.locked.length;
+  Object.entries(MODEL.picks).forEach(([artist,opts])=>{
+    const p=opts.find(o=>o.t===picked[artist]); if(p){n++;secs+=p.s;}
+  });
   [...must,...yes].forEach(s=>{n++;secs+=s.s;});
+  const pickLines = Object.keys(MODEL.picks).map(a=>a+' pick: '+(picked[a]||'(no pick)'));
   return ['SETLIST VOTE — October anniversary show','Voter: '+(me||'UNNAMED'),'',
-    'Creed pick:      '+(picked.Creed!==null?PICKS.Creed[picked.Creed].t:'(no pick)'),
-    'Nickelback pick: '+(picked.Nickelback!==null?PICKS.Nickelback[picked.Nickelback].t:'(no pick)'),'',
+    ...pickLines,'',
     'MUST PLAY ('+must.length+')',list(must),'','YES ('+yes.length+')',list(yes),'',
     'NO ('+no.length+')',list(no),'',
     'Running total with locked songs: '+n+' songs, ~'+mmss(secs+n*GAP)+' of 90:00'].join('\n');
 }
 
-// ---- load existing votes ---------------------------------------------
+// ---- load song list + existing votes ---------------------------------
 async function pull(){
   const note=document.getElementById('loadnote');
   if(!API){
@@ -334,39 +365,41 @@ async function pull(){
     note.textContent='Sheet sync is not switched on yet — saving will copy your votes to the clipboard instead.';
     return;
   }
-  note.className='loadnote'; note.textContent='Checking the sheet for your existing votes…';
+  note.className='loadnote'; note.textContent='Loading the song list and your votes…';
   try{
     const r=await fetch(API,{method:'GET'});
     const j=await r.json();
     if(!j.ok) throw new Error(j.error||'unknown error');
+    MODEL = modelFromSheet(j.data.rows);
+
     const byKey={};
     j.data.rows.forEach(row=>{ byKey[row.song+'|'+row.artist]=row; });
     let found=0;
-    SONGS.forEach((s,i)=>{
-      const row=byKey[unesc(s.t)+'|'+s.a]; if(!row) return;
-      const v=(row.votes[me]||'').toLowerCase();
-      vote[i] = ['must','yes','no'].includes(v) ? v : undefined;
-      if(vote[i]) found++;
-      paintRow(i);
-    });
-    for(const k of Object.keys(PICKS)){
-      picked[k]=null;
-      PICKS[k].forEach((o,i)=>{
-        const row=byKey[o.t+'|'+k];
-        if(row && (row.votes[me]||'').toUpperCase()==='X') picked[k]=i;
+    Object.keys(vote).forEach(k=>delete vote[k]);
+    Object.keys(picked).forEach(k=>delete picked[k]);
+    if(me){
+      MODEL.songs.forEach(s=>{
+        const row=byKey[keyOf(s)]; if(!row) return;
+        const v=(row.votes[me]||'').toLowerCase();
+        if(['must','yes','no'].includes(v)){ vote[keyOf(s)]=v; found++; }
       });
-      document.querySelectorAll('#pick-'+k+' .opts button')
-        .forEach((x,j)=>x.classList.toggle('on', picked[k]===j));
+      Object.entries(MODEL.picks).forEach(([artist,opts])=>{
+        opts.forEach(o=>{
+          const row=byKey[o.t+'|'+artist];
+          if(row && (row.votes[me]||'').toUpperCase()==='X') picked[artist]=o.t;
+        });
+      });
     }
+    renderAll();
     note.className='loadnote ok';
-    note.textContent = found
-      ? 'Loaded your '+found+' existing votes — change whatever you like and save again.'
-      : 'No votes from you yet. Off you go.';
+    note.textContent = !me ? 'Song list loaded from the sheet. Pick your name to start.'
+      : (found ? 'Loaded your '+found+' existing votes — change whatever you like and save again.'
+               : 'No votes from you yet. Off you go.');
   }catch(e){
     note.className='loadnote err';
-    note.textContent='Could not reach the sheet ('+e.message+'). You can still vote — saving will copy to your clipboard instead.';
+    note.textContent='Could not reach the sheet ('+e.message+'). Showing the built-in list — saving will copy to your clipboard instead.';
+    renderAll();
   }
-  refresh();
 }
 
 // ---- save -------------------------------------------------------------
@@ -377,7 +410,7 @@ document.getElementById('save').addEventListener('click', async ()=>{
   btn.disabled=true; msg.className='savemsg'; msg.textContent='Saving…';
   try{
     const r=await fetch(API,{method:'POST',
-      headers:{'Content-Type':'text/plain;charset=utf-8'},   // simple request — avoids a CORS preflight
+      headers:{'Content-Type':'text/plain;charset=utf-8'},   // simple request — no CORS preflight
       body:JSON.stringify(payload())});
     const j=await r.json();
     if(!j.ok) throw new Error(j.error||'unknown error');
@@ -403,7 +436,9 @@ function fallbackCopy(quiet){
   out.scrollIntoView({behavior:'smooth',block:'center'});
 }
 
-refresh();
+MODEL = fallbackModel();
+renderAll();
+pull();
 </script>
 </body>
 </html>

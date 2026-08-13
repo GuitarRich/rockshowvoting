@@ -607,8 +607,11 @@ if(!API) document.getElementById('apiCard').classList.add('hide');
 function fromApi(payload){
   const voters = payload.voters;
   const rows = payload.rows.map(r=>{
+    // sheet columns win; the built-in map is only a fallback for older rows
     const key = META[r.song+'|'+r.artist] ? r.song+'|'+r.artist : r.song;
-    const m = META[key] || {e:3};
+    const fb = META[key] || {e:3};
+    const m = { e: (r.energy>0 ? r.energy : fb.e),
+                tags: (r.tags && r.tags.length ? r.tags : (fb.tags||[])) };
     const p = (r.len||'').split(':');
     const secs = p.length===2 ? (+p[0])*60 + (+p[1]) : 0;
     let score=0, musts=0, xs=0;
@@ -622,7 +625,7 @@ function fromApi(payload){
     return {song:r.song, artist:r.artist, lead:(r.lead||'').toUpperCase(),
       lenTxt:r.len, secs, sec:r.section,
       isLocked:/^LOCKED/i.test(r.section), isPick:/pick ONE/i.test(r.section),
-      votes:r.votes, score, musts, xs, e:m.e, tags:m.tags||[]};
+      votes:r.votes, score, musts, xs, e:m.e, tags:m.tags};
   });
   return {voters, rows};
 }
