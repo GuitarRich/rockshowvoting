@@ -1,0 +1,669 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Setlist Vote — Live Results</title>
+<style>
+  :root{
+    --bg:#0d0e12; --panel:#16181f; --panel2:#1d2029; --line:#2a2e3a;
+    --ink:#e9eaf0; --muted:#9298a8; --dim:#6b7182;
+    --amber:#e8a33d; --green:#4fb477; --red:#d15b5b; --violet:#8b7fd4;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--ink);
+    font:16px/1.5 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif}
+  .wrap{max-width:1180px;margin:0 auto;padding:0 16px 70px}
+  header{padding:26px 0 16px;border-bottom:1px solid var(--line);margin-bottom:20px}
+  h1{font-size:25px;margin:0 0 5px;letter-spacing:-.01em}
+  h1 span{color:var(--amber)}
+  .sub{color:var(--muted);font-size:14px;margin:0}
+  a{color:var(--amber)}
+
+  .tabs{display:flex;gap:6px;margin:0 0 18px;flex-wrap:wrap}
+  .tabs button{font:600 13px/1 inherit;color:var(--muted);cursor:pointer;background:var(--panel);
+    border:1px solid var(--line);border-radius:8px;padding:11px 15px}
+  .tabs button.on{background:var(--amber);border-color:var(--amber);color:#231a09}
+
+  .card{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:16px 18px;margin:0 0 20px}
+  .card h2{font-size:12px;text-transform:uppercase;letter-spacing:.09em;color:var(--amber);margin:0 0 10px}
+  .card p{margin:0 0 8px;font-size:14px;color:var(--muted)}
+  .card p:last-child{margin-bottom:0}
+  .card strong{color:var(--ink)}
+  .card ol{margin:6px 0 0;padding-left:20px;font-size:14px;color:var(--muted)}
+  .card ol li{margin-bottom:5px}
+  input[type=text],textarea{width:100%;padding:11px 13px;border-radius:9px;border:1px solid var(--line);
+    background:var(--panel2);color:var(--ink);font-size:14px;font-family:inherit}
+  textarea{height:130px;font:12.5px/1.5 ui-monospace,SFMono-Regular,Menlo,monospace}
+  .btn{font:700 14px/1 inherit;cursor:pointer;background:var(--amber);color:#231a09;border:none;
+    border-radius:9px;padding:12px 18px;margin-top:10px}
+  .btn.ghost{background:var(--panel2);color:var(--ink);border:1px solid var(--line)}
+  .btnrow{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+  .status{font-size:13px;color:var(--muted);margin-top:10px}
+  .status.err{color:var(--red)}
+  .status.ok{color:var(--green)}
+
+  table{width:100%;border-collapse:collapse;font-size:13.5px}
+  th,td{text-align:left;padding:7px 8px;border-bottom:1px solid var(--line);vertical-align:middle}
+  th{font-size:11px;text-transform:uppercase;letter-spacing:.07em;color:var(--dim);
+    position:sticky;top:0;background:var(--bg);z-index:2;cursor:pointer;white-space:nowrap}
+  th.nosort{cursor:default}
+  td.song{font-weight:600}
+  td.artist,td.len{color:var(--muted);font-size:12.5px;white-space:nowrap}
+  td.c{text-align:center}
+  .scroll{overflow-x:auto;border:1px solid var(--line);border-radius:12px;background:var(--panel)}
+  .v{display:inline-block;min-width:44px;text-align:center;font-size:10.5px;font-weight:700;
+    letter-spacing:.04em;padding:3px 5px;border-radius:5px}
+  .v.MUST{background:var(--amber);color:#231a09}
+  .v.YES{background:rgba(79,180,119,.22);color:#79d69c}
+  .v.NO{background:rgba(209,91,91,.22);color:#eb8888}
+  .v.X{background:var(--violet);color:#150f2e}
+  .v.none{color:#3d424f}
+  .score{font-weight:700;font-variant-numeric:tabular-nums}
+  .score.pos{color:var(--green)} .score.neg{color:var(--red)} .score.zero{color:var(--dim)}
+  .badge{display:inline-block;font-size:10px;font-weight:700;letter-spacing:.05em;
+    padding:1px 5px;border-radius:4px;margin-right:5px}
+  .v1{background:rgba(139,127,212,.18);color:#a99ff0}
+  .v2{background:rgba(232,163,61,.16);color:var(--amber)}
+  .duet{background:rgba(79,180,119,.16);color:#6fd096}
+  .lock{background:rgba(232,163,61,.14);color:var(--amber)}
+  tr.inset{background:rgba(79,180,119,.055)}
+  tr.cut{opacity:.45}
+
+  .setrow{display:flex;align-items:center;gap:12px;padding:9px 12px;border-bottom:1px solid var(--line)}
+  .setrow:last-child{border-bottom:none}
+  .num{font:700 13px/1 ui-monospace,monospace;color:var(--dim);width:24px;flex:0 0 auto;text-align:right}
+  .setrow .info{flex:1;min-width:0}
+  .setrow .t{font-weight:600;display:block}
+  .setrow .m{font-size:12.5px;color:var(--muted);display:block;margin-top:1px}
+  .tag{font-size:10px;font-weight:700;letter-spacing:.05em;padding:2px 6px;border-radius:4px;
+    background:var(--panel2);color:var(--muted);flex:0 0 auto}
+  .tag.hi{background:rgba(232,163,61,.16);color:var(--amber)}
+  .stats{display:flex;flex-wrap:wrap;gap:10px;margin-bottom:14px}
+  .stat{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:11px 15px;min-width:118px}
+  .stat b{display:block;font-size:21px;line-height:1.15;font-variant-numeric:tabular-nums}
+  .stat span{font-size:11px;text-transform:uppercase;letter-spacing:.07em;color:var(--dim)}
+  .stat.warn b{color:var(--red)}
+  .warn{background:rgba(209,91,91,.09);border:1px solid rgba(209,91,91,.4);border-radius:10px;
+    padding:11px 14px;font-size:13.5px;color:#eb8888;margin-bottom:14px}
+  .hide{display:none}
+  @media(max-width:640px){
+    h1{font-size:20px}
+    th,td{padding:6px 5px;font-size:12.5px}
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<header>
+  <h1>Setlist Vote — <span>Live Results</span></h1>
+  <p class="sub">October anniversary show &middot; one continuous 90-minute set &middot; <a href="index.html">back to the ballot</a></p>
+</header>
+
+<div class="tabs">
+  <button data-tab="load" class="on">Load votes</button>
+  <button data-tab="set">Generated setlist</button>
+  <button data-tab="grid">Who voted what</button>
+  <button data-tab="rank">Full ranking</button>
+</div>
+
+<!-- ============ LOAD ============ -->
+<section id="tab-load">
+  <div class="card" id="apiCard">
+    <h2>Live from the sheet</h2>
+    <p id="apiMsg">Loading the current votes…</p>
+    <div class="btnrow"><button class="btn" id="apiBtn">Refresh now</button></div>
+    <div class="status" id="apiStatus"></div>
+  </div>
+
+  <div class="card">
+    <h2>Fallback &mdash; published CSV</h2>
+    <p>Only needed if the Apps Script backend isn't set up. In the Sheet: <strong>File &rarr; Share &rarr; Publish to web</strong>, choose <strong>Comma-separated values (.csv)</strong>, publish, and paste the link below.</p>
+    <input type="text" id="csvurl" placeholder="https://docs.google.com/spreadsheets/d/e/…/pub?output=csv" autocomplete="off">
+    <div class="btnrow">
+      <button class="btn ghost" id="fetchBtn">Fetch votes</button>
+      <button class="btn ghost" id="linkBtn">Copy a bookmarkable link</button>
+    </div>
+    <div class="status" id="fetchStatus"></div>
+  </div>
+
+  <div class="card">
+    <h2>Fallback &mdash; paste it in</h2>
+    <p>If publishing is blocked, select the whole table in the sheet (including the header row), copy, and paste here. Works with the copied tab-separated text or raw CSV.</p>
+    <textarea id="paste" placeholder="#&#9;Section&#9;Song&#9;Artist&#9;Lead&#9;Length&#9;Rich&#9;Ashley&#9;…" spellcheck="false"></textarea>
+    <div class="btnrow"><button class="btn" id="pasteBtn">Read pasted votes</button></div>
+    <div class="status" id="pasteStatus"></div>
+  </div>
+</section>
+
+<!-- ============ SETLIST ============ -->
+<section id="tab-set" class="hide">
+  <div id="setStats"></div>
+  <div id="setWarn"></div>
+  <div class="card" style="padding:0;overflow:hidden">
+    <div id="setlist"></div>
+  </div>
+  <div class="btnrow" style="margin-bottom:20px">
+    <button class="btn" id="copySet">Copy setlist as text</button>
+  </div>
+  <div class="card">
+    <h2>How this order was built</h2>
+    <ol>
+      <li>Locked organiser requests go in automatically. For Creed and Nickelback, whichever song has the most <strong>X</strong> marks wins.</li>
+      <li>Everything else is ranked by score and taken from the top until the set hits ~90 minutes (25s of changeover assumed per song).</li>
+      <li><strong>A floor of 8 female-led songs is enforced</strong>, regardless of score &mdash; with no interval, your male vocalist cannot carry the whole 90 minutes. If the vote comes back short, the highest-scoring V2 songs are promoted in.</li>
+      <li>The order is then built against an energy curve: strong open, a dip around a third in, the heavy cluster at ~60&ndash;70%, the dedication ballad straight after the peak, then a lift into the closer.</li>
+      <li>No three songs in a row share a lead vocalist, and no two songs by the same artist sit next to each other.</li>
+    </ol>
+  </div>
+</section>
+
+<!-- ============ GRID ============ -->
+<section id="tab-grid" class="hide">
+  <div class="card">
+    <h2>Every vote, by person</h2>
+    <p>Green rows are the songs that made the generated set. <strong>MUST</strong> = 3, <strong>YES</strong> = 1, <strong>NO</strong> = &minus;2. Click any column header to sort.</p>
+  </div>
+  <div class="scroll"><table id="gridTable"></table></div>
+</section>
+
+<!-- ============ RANK ============ -->
+<section id="tab-rank" class="hide">
+  <div class="card">
+    <h2>Full ranking</h2>
+    <p>Every candidate, highest score first. The cut line shows where the 90 minutes runs out.</p>
+  </div>
+  <div class="scroll"><table id="rankTable"></table></div>
+</section>
+
+</div>
+
+<script src="config.js"></script>
+<script>
+// ===================== song metadata =====================
+// e = energy 1-5, tags steer the running order.
+const META = {
+  "Dance, Dance":{e:4},
+  "Creep":{e:2,tags:["dip"]},
+  "Higher":{e:3},"My Sacrifice":{e:3},"One Last Breath":{e:2,tags:["ballad"]},
+  "With Arms Wide Open":{e:2,tags:["ballad"]},
+  "How You Remind Me":{e:3},"Rockstar":{e:3},"Burn It to the Ground":{e:4},"Photograph|Nickelback":{e:3},
+  "Any Way You Want It":{e:4,tags:["opener"]},
+  "Don't Stop Believin'":{e:4,tags:["closer"]},
+  "You Give Love a Bad Name":{e:4,tags:["opener"]},
+  "Livin' on a Prayer":{e:5,tags:["closer"]},
+  "It's My Life":{e:4},
+  "Pour Some Sugar on Me":{e:4,tags:["closer"]},
+  "Photograph|Def Leppard":{e:4},
+  "Walk This Way":{e:4},
+  "I Don't Want to Miss a Thing":{e:1,tags:["ballad","dedication"]},
+  "Jump":{e:4,tags:["opener"]},
+  "Sweet Child o' Mine":{e:3},
+  "Eye of the Tiger":{e:4,tags:["opener"]},
+  "Kryptonite":{e:3},"When I'm Gone":{e:3},
+  "Animal I Have Become":{e:4,tags:["heavy"]},
+  "I Hate Everything About You":{e:4,tags:["heavy"]},
+  "The Diary of Jane":{e:4,tags:["heavy"]},
+  "Blow Me Away":{e:4,tags:["heavy"]},
+  "Down with the Sickness":{e:5,tags:["heavy"]},
+  "The Sound of Silence":{e:2,tags:["dip"]},
+  "In the End":{e:4},"Numb":{e:3},"Faint":{e:5,tags:["heavy"]},"What I've Done":{e:3},
+  "Smells Like Teen Spirit":{e:4},"Come as You Are":{e:3},"Zombie":{e:3},
+  "Barracuda":{e:4},"Alone":{e:2,tags:["ballad"]},
+  "Hit Me With Your Best Shot":{e:4,tags:["opener"]},
+  "I Love Rock 'n' Roll":{e:4,tags:["opener"]},
+  "Bring Me to Life":{e:4},"Going Under":{e:4},
+  "Misery Business":{e:4},"Still Into You":{e:4,tags:["lift"]},
+  "What's Up?":{e:3},"You Oughta Know":{e:4},
+  "Love Bites (So Do I)":{e:4,tags:["heavy"]},
+  "One Way or Another":{e:4,tags:["opener"]},
+  "Total Eclipse of the Heart":{e:2,tags:["ballad"]}
+};
+const TARGET = 90*60, GAP = 25;
+const V2_FLOOR = 6;        // songs led outright by the female vocalist
+const SHARED_FLOOR = 9;    // V2 + duets combined — recovery windows for V1
+
+let DATA = null;   // {voters:[], rows:[]}
+let sortKey = 'score', sortDir = -1;
+
+// ===================== parsing =====================
+function splitRows(text){
+  // auto-detect delimiter: tab (sheet copy) or comma (csv)
+  const tabs = (text.match(/\t/g)||[]).length;
+  const delim = tabs > text.split('\n').length ? '\t' : ',';
+  const rows=[]; let row=[], cell='', q=false;
+  for(let i=0;i<text.length;i++){
+    const c=text[i];
+    if(q){
+      if(c==='"'){ if(text[i+1]==='"'){cell+='"';i++;} else q=false; }
+      else cell+=c;
+    } else if(c==='"'){ q=true; }
+    else if(c===delim){ row.push(cell); cell=''; }
+    else if(c==='\n'){ row.push(cell); rows.push(row); row=[]; cell=''; }
+    else if(c!=='\r'){ cell+=c; }
+  }
+  row.push(cell); rows.push(row);
+  return rows.filter(r => r.some(x => x.trim()!==''));
+}
+
+function parse(text){
+  const rows = splitRows(text);
+  const hi = rows.findIndex(r =>
+    r.some(c=>c.trim().toLowerCase()==='song') && r.some(c=>c.trim().toLowerCase()==='artist'));
+  if(hi < 0) throw new Error("Couldn't find a header row containing 'Song' and 'Artist'.");
+  const head = rows[hi].map(c=>c.trim());
+  const col = n => head.findIndex(c=>c.toLowerCase()===n);
+  const iSec=col('section'), iSong=col('song'), iArt=col('artist'),
+        iLead=col('lead'), iLen=col('length'), iScore=col('score');
+  if(iSong<0||iArt<0) throw new Error("Header row is missing a Song or Artist column.");
+  const vStart = iLen+1, vEnd = (iScore>0?iScore:head.length);
+  const voters = head.slice(vStart, vEnd).map(s=>s.trim()).filter(Boolean);
+  if(!voters.length) throw new Error("No voter columns found between 'Length' and 'SCORE'.");
+
+  const rowsOut = [];
+  for(let r=hi+1;r<rows.length;r++){
+    const R = rows[r];
+    const song=(R[iSong]||'').trim(); if(!song) continue;
+    const sec=(R[iSec]||'').trim(), artist=(R[iArt]||'').trim();
+    const votes={};
+    voters.forEach((v,k)=>{ votes[v] = (R[vStart+k]||'').trim().toUpperCase(); });
+    const lenTxt=(R[iLen]||'').trim();
+    const p=lenTxt.split(':'); const secs = p.length===2 ? (+p[0])*60 + (+p[1]) : 0;
+    const isLocked = /^LOCKED/i.test(sec);
+    const isPick = /pick ONE/i.test(sec);
+    const key = META[song+'|'+artist] ? song+'|'+artist : song;
+    const m = META[key] || {e:3};
+    let score=0, musts=0, xs=0;
+    voters.forEach(v=>{
+      const val=votes[v];
+      if(val==='MUST'){score+=3;musts++;}
+      else if(val==='YES'){score+=1;}
+      else if(val==='NO'){score-=2;}
+      else if(val==='X'){xs++;}
+    });
+    rowsOut.push({song,artist,lead:(R[iLead]||'').trim().toUpperCase(),lenTxt,secs,
+      sec,isLocked,isPick,votes,score,musts,xs,e:m.e,tags:m.tags||[]});
+  }
+  if(!rowsOut.length) throw new Error("Found the header but no song rows underneath it.");
+  return {voters, rows:rowsOut};
+}
+
+// ===================== selection =====================
+function buildSet(D){
+  const chosen=[], notes=[];
+  // locked, non-pick
+  D.rows.filter(r=>r.isLocked && !r.isPick).forEach(r=>chosen.push({...r,why:'locked'}));
+  // pick-one groups, by X count
+  const groups={};
+  D.rows.filter(r=>r.isPick).forEach(r=>{ (groups[r.artist] ||= []).push(r); });
+  Object.entries(groups).forEach(([artist,list])=>{
+    const best=[...list].sort((a,b)=>b.xs-a.xs || b.score-a.score)[0];
+    if(best.xs===0) notes.push('No '+artist+' song has any X marks yet — defaulting to '+best.song+'.');
+    chosen.push({...best,why:'locked'});
+  });
+
+  const pool = D.rows.filter(r=>!r.isLocked).sort((a,b)=>
+    b.score-a.score || b.musts-a.musts || b.e-a.e);
+
+  const dur = () => chosen.reduce((a,s)=>a+s.secs+GAP,0);
+  const has = s => chosen.some(c=>c.song===s.song && c.artist===s.artist);
+  for(const s of pool){
+    if(dur() + s.secs + GAP > TARGET) continue;
+    chosen.push({...s,why:'voted'});
+  }
+
+  // swap `s` in, dropping the weakest voted song that `drop` allows
+  function promote(s, why, reason, dropOk){
+    const victims = chosen.filter(c=>c.why==='voted' && dropOk(c))
+      .sort((a,b)=>a.score-b.score || a.e-b.e);
+    if(!victims.length) return false;
+    const v = victims[0];
+    chosen.splice(chosen.indexOf(v),1);
+    chosen.push({...s,why:why});
+    notes.push(reason+' — '+s.song+' is in, '+v.song+' drops out.');
+    return true;
+  }
+
+  // 1. the anniversary moment must survive the vote
+  const hasDed = chosen.some(c=>c.tags.includes('dedication')||c.tags.includes('ballad'));
+  if(!hasDed){
+    const cand = pool.filter(s=>s.tags.includes('dedication'))
+      .concat(pool.filter(s=>s.tags.includes('ballad')))
+      .filter(s=>!has(s));
+    if(cand.length) promote(cand[0], 'protected',
+      'It is a 10-year anniversary and the vote left no slow song for the couple',
+      c=>!c.tags.includes('dedication'));
+  }
+
+  // 2. female-lead floors — with no interval, V1 cannot carry 90 minutes alone
+  const isV2 = s=>s.lead==='V2', isShared = s=>s.lead==='V2'||s.lead==='DUET';
+  let v2n = chosen.filter(isV2).length;
+  for(const s of pool.filter(s=>isV2(s) && !has(s))){
+    if(v2n >= V2_FLOOR) break;
+    if(promote(s,'balance','Female-lead floor of '+V2_FLOOR,
+      c=>!isShared(c) && !c.tags.includes('dedication'))) v2n++;
+  }
+  let shared = chosen.filter(isShared).length;
+  for(const s of pool.filter(s=>isShared(s) && !has(s))){
+    if(shared >= SHARED_FLOOR) break;
+    if(promote(s,'balance','Vocal-rest floor of '+SHARED_FLOOR+' non-V1-only songs',
+      c=>!isShared(c) && !c.tags.includes('dedication'))) shared++;
+  }
+  return {chosen, notes};
+}
+
+// ===================== ordering =====================
+// Two passes: a global best-fit assignment against an energy curve, then a
+// repair pass that swaps pairs to break up same-lead runs and same-artist
+// neighbours. Greedy left-to-right filling strands the leftovers at the end,
+// which is how a ballad ends up at position 20.
+function orderSet(list){
+  const n = list.length;
+  if(!n) return [];
+  const curve = f => f<0.10 ? 4.5 : f<0.32 ? 3.1 : f<0.52 ? 3.9 : f<0.80 ? 4.8 : 4.4;
+
+  // --- fit cost of putting song s at slot i (position only, no neighbours)
+  function fit(s,i){
+    const f = n>1 ? i/(n-1) : 0;
+    let c = Math.abs(s.e - curve(f));
+    if(s.tags.includes('dedication')) c += Math.abs(f-0.74)*14;
+    else if(s.tags.includes('ballad')) c += (f>0.55 && f<0.86) ? 0 : 5;
+    if(s.tags.includes('heavy')) c += (f>0.48 && f<0.84) ? 0 : 1.6;
+    if(s.tags.includes('dip'))   c += (f>0.16 && f<0.46) ? 0 : 3.2;
+    if(s.tags.includes('lift'))  c += (f>0.74) ? 0 : 1.0;
+    if(s.tags.includes('opener')) c += f<0.12 ? -1.6 : (f>0.85 ? 1.5 : 0.3);
+    if(s.tags.includes('closer')) c += (i===n-1) ? -3.2 : (f>0.85 ? -0.4 : 0.6);
+    if(f>0.90 && s.e<3.5) c += 3;        // never limp over the finish line
+    if(f<0.08 && s.e<4)   c += 3;        // never open cold
+    return c - s.score*0.015;
+  }
+
+  // --- pass 1: repeatedly take the globally cheapest (song, slot) pair
+  const free = new Set(list.map((_,i)=>i));
+  const slots = new Array(n).fill(null);
+  const openSlots = new Set(list.map((_,i)=>i));
+  while(free.size){
+    let bs=-1, bi=-1, bc=Infinity;
+    for(const si of free) for(const i of openSlots){
+      const c = fit(list[si], i);
+      if(c < bc){ bc=c; bs=si; bi=i; }
+    }
+    slots[bi] = list[bs];
+    free.delete(bs); openSlots.delete(bi);
+  }
+
+  // --- pass 2: repair adjacency
+  const adj = arr => {
+    let p = 0;
+    for(let i=0;i<arr.length;i++){
+      const a=arr[i], b=arr[i-1], c=arr[i-2];
+      if(b && b.artist===a.artist) p += 10;
+      if(b && c && b.lead===a.lead && c.lead===a.lead) p += 6;
+      if(b && b.lead===a.lead) p += 1.2;
+    }
+    return p;
+  };
+  const cost = arr => arr.reduce((t,s,i)=>t+fit(s,i),0) + adj(arr);
+  let cur = slots.slice(), best = cost(cur);
+  for(let pass=0; pass<6; pass++){
+    let improved = false;
+    for(let i=0;i<n;i++) for(let j=i+1;j<n;j++){
+      const t = cur.slice();
+      [t[i],t[j]] = [t[j],t[i]];
+      const c = cost(t);
+      if(c < best - 1e-9){ cur = t; best = c; improved = true; }
+    }
+    if(!improved) break;
+  }
+  return cur;
+}
+
+// ===================== rendering =====================
+const mmss = t => Math.floor(t/60)+":"+String(Math.round(t%60)).padStart(2,'0');
+const esc = s => String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+const leadBadge = l => '<span class="badge '+(l==='V1'?'v1':l==='V2'?'v2':'duet')+'">'+(l||'?')+'</span>';
+
+function render(){
+  if(!DATA) return;
+  const {chosen, notes} = buildSet(DATA);
+  const ordered = orderSet(chosen);
+  const inSet = new Set(ordered.map(s=>s.song+'|'+s.artist));
+  const total = ordered.reduce((a,s)=>a+s.secs+GAP,0);
+  const v1 = ordered.filter(s=>s.lead==='V1').length;
+  const v2 = ordered.filter(s=>s.lead==='V2').length;
+  const du = ordered.filter(s=>s.lead==='DUET').length;
+  let longest = 0, streak = 0;
+  ordered.forEach(s=>{ if(s.lead==='V1'){ streak++; longest=Math.max(longest,streak);} else streak=0; });
+  const cast = DATA.voters.filter(v => DATA.rows.some(r => ['MUST','YES','NO','X'].includes(r.votes[v])));
+
+  // --- stats
+  document.getElementById('setStats').innerHTML = '<div class="stats">'+
+    '<div class="stat"><b>'+ordered.length+'</b><span>songs</span></div>'+
+    '<div class="stat"><b>'+mmss(total)+'</b><span>of 90:00</span></div>'+
+    '<div class="stat'+(v2<V2_FLOOR?' warn':'')+'"><b>'+v2+' + '+du+'</b><span>V2 &middot; duet</span></div>'+
+    '<div class="stat"><b>'+v1+'</b><span>V1 only</span></div>'+
+    '<div class="stat'+(longest>3?' warn':'')+'"><b>'+longest+'</b><span>longest V1 run</span></div>'+
+    '<div class="stat"><b>'+cast.length+'/'+DATA.voters.length+'</b><span>voted</span></div></div>';
+
+  let warn = '';
+  if(cast.length < DATA.voters.length){
+    const missing = DATA.voters.filter(v=>!cast.includes(v));
+    warn += '<div class="warn">Still waiting on: <strong>'+missing.map(esc).join(', ')+
+      '</strong>. This setlist will move as they vote.</div>';
+  }
+  if(longest > 3){
+    warn += '<div class="warn"><strong>'+longest+' V1-led songs back to back.</strong> '+
+      'With no interval that is a lot of unbroken singing — worth hand-swapping one for a V2 song nearby.</div>';
+  }
+  if(!ordered.some(s=>s.tags.includes('dedication')||s.tags.includes('ballad'))){
+    warn += '<div class="warn">No slow song made the set. For a 10-year anniversary you almost '+
+      'certainly want one moment for the couple.</div>';
+  }
+  notes.forEach(n => warn += '<div class="warn">'+esc(n)+'</div>');
+  document.getElementById('setWarn').innerHTML = warn;
+
+  // --- setlist
+  document.getElementById('setlist').innerHTML = ordered.map((s,i)=>{
+    const tag = s.why==='locked' ? '<span class="tag hi">LOCKED</span>'
+              : s.why==='balance' ? '<span class="tag hi">BALANCE</span>'
+              : '<span class="tag">'+(s.score>0?'+':'')+s.score+'</span>';
+    const d = s.tags.includes('dedication') ? ' &middot; <span style="color:var(--amber)">dedication</span>' : '';
+    return '<div class="setrow"><span class="num">'+(i+1)+'</span>'+
+      '<span class="info"><span class="t">'+esc(s.song)+'</span>'+
+      '<span class="m">'+leadBadge(s.lead)+esc(s.artist)+' &middot; '+esc(s.lenTxt)+d+'</span></span>'+
+      tag+'</div>';
+  }).join('');
+
+  // --- grid
+  const gv = DATA.voters;
+  let gh = '<thead><tr><th class="nosort">#</th><th data-k="song">Song</th><th data-k="artist">Artist</th>'+
+    '<th data-k="lead">Lead</th>'+gv.map(v=>'<th data-k="v:'+esc(v)+'">'+esc(v)+'</th>').join('')+
+    '<th data-k="score">Score</th><th data-k="musts">M</th></tr></thead>';
+  const sorted = [...DATA.rows].sort(cmp);
+  gh += '<tbody>'+sorted.map((r,i)=>{
+    const sel = inSet.has(r.song+'|'+r.artist);
+    const cls = r.isLocked ? '' : (sel?'inset':'cut');
+    return '<tr class="'+cls+'"><td class="len">'+(i+1)+'</td>'+
+      '<td class="song">'+esc(r.song)+(r.isLocked?' <span class="badge lock">LOCK</span>':'')+'</td>'+
+      '<td class="artist">'+esc(r.artist)+'</td><td>'+leadBadge(r.lead)+'</td>'+
+      gv.map(v=>{const x=r.votes[v]; return '<td class="c">'+
+        (x&&x!=='—'?'<span class="v '+esc(x)+'">'+esc(x)+'</span>':'<span class="v none">·</span>')+'</td>';}).join('')+
+      '<td class="c"><span class="score '+(r.score>0?'pos':r.score<0?'neg':'zero')+'">'+
+        (r.isPick?r.xs+' X':(r.score>0?'+':'')+r.score)+'</span></td>'+
+      '<td class="c len">'+(r.musts||'')+'</td></tr>';
+  }).join('')+'</tbody>';
+  document.getElementById('gridTable').innerHTML = gh;
+  document.querySelectorAll('#gridTable th[data-k]').forEach(th=>{
+    th.onclick = ()=>{ const k=th.dataset.k;
+      if(sortKey===k) sortDir*=-1; else {sortKey=k; sortDir=(k==='song'||k==='artist')?1:-1;}
+      render(); };
+  });
+
+  // --- ranking
+  const ranked = DATA.rows.filter(r=>!r.isLocked).sort((a,b)=>b.score-a.score||b.musts-a.musts);
+  let run=ordered.filter(s=>s.why==='locked').reduce((a,s)=>a+s.secs+GAP,0), cutShown=false;
+  let rh='<thead><tr><th class="nosort">#</th><th class="nosort">Song</th><th class="nosort">Artist</th>'+
+    '<th class="nosort">Lead</th><th class="nosort">Len</th><th class="nosort">Score</th>'+
+    '<th class="nosort">MUSTs</th><th class="nosort">NOs</th></tr></thead><tbody>';
+  ranked.forEach((r,i)=>{
+    const sel = inSet.has(r.song+'|'+r.artist);
+    if(!sel && !cutShown){
+      cutShown = true;
+      rh += '<tr><td colspan="8" style="color:var(--red);font-size:11.5px;letter-spacing:.08em;'+
+        'text-transform:uppercase;background:rgba(209,91,91,.07)">— 90-minute cut line —</td></tr>';
+    }
+    const nos = Object.values(r.votes).filter(x=>x==='NO').length;
+    rh += '<tr class="'+(sel?'inset':'cut')+'"><td class="len">'+(i+1)+'</td>'+
+      '<td class="song">'+esc(r.song)+'</td><td class="artist">'+esc(r.artist)+'</td>'+
+      '<td>'+leadBadge(r.lead)+'</td><td class="len">'+esc(r.lenTxt)+'</td>'+
+      '<td class="c"><span class="score '+(r.score>0?'pos':r.score<0?'neg':'zero')+'">'+
+        (r.score>0?'+':'')+r.score+'</span></td>'+
+      '<td class="c len">'+(r.musts||'')+'</td><td class="c len">'+(nos||'')+'</td></tr>';
+  });
+  document.getElementById('rankTable').innerHTML = rh+'</tbody>';
+
+  window.__setText = 'SETLIST — October anniversary show (auto-generated from votes)\n'+
+    ordered.length+' songs, ~'+mmss(total)+'\n\n'+
+    ordered.map((s,i)=>String(i+1).padStart(2)+'. '+s.song+' — '+s.artist+
+      '  ['+s.lead+', '+s.lenTxt+']'+(s.tags.includes('dedication')?'  <- dedication':'')).join('\n');
+}
+
+function cmp(a,b){
+  const k=sortKey; let x,y;
+  if(k.startsWith('v:')){ const v=k.slice(2); const ord={MUST:3,YES:2,X:2,'':1,NO:0};
+    x=ord[a.votes[v]]??1; y=ord[b.votes[v]]??1; }
+  else if(k==='song'||k==='artist'||k==='lead'){ return sortDir*String(a[k]).localeCompare(String(b[k])); }
+  else { x=a[k]; y=b[k]; }
+  return sortDir*(x-y);
+}
+
+// ===================== wiring =====================
+document.querySelectorAll('.tabs button').forEach(b=>{
+  b.onclick=()=>{
+    document.querySelectorAll('.tabs button').forEach(x=>x.classList.remove('on'));
+    b.classList.add('on');
+    ['load','set','grid','rank'].forEach(t=>
+      document.getElementById('tab-'+t).classList.toggle('hide', t!==b.dataset.tab));
+  };
+});
+function go(tab){ document.querySelector('.tabs button[data-tab="'+tab+'"]').click(); }
+
+function load(text, statusEl){
+  try{
+    DATA = parse(text);
+    render();
+    statusEl.className='status ok';
+    statusEl.textContent = 'Loaded '+DATA.rows.length+' songs and '+DATA.voters.length+' voters ('+DATA.voters.join(', ')+').';
+    go('set');
+  }catch(e){
+    statusEl.className='status err';
+    statusEl.textContent = 'Could not read that: '+e.message;
+  }
+}
+
+document.getElementById('fetchBtn').onclick = async ()=>{
+  const url=document.getElementById('csvurl').value.trim();
+  const st=document.getElementById('fetchStatus');
+  if(!url){ st.className='status err'; st.textContent='Paste the published CSV link first.'; return; }
+  st.className='status'; st.textContent='Fetching…';
+  try{
+    const r = await fetch(url);
+    if(!r.ok) throw new Error('HTTP '+r.status);
+    load(await r.text(), st);
+  }catch(e){
+    st.className='status err';
+    st.textContent='Fetch failed ('+e.message+'). Check the sheet is published to the web, '+
+      'or use the paste box below.';
+  }
+};
+document.getElementById('pasteBtn').onclick = ()=>{
+  const t=document.getElementById('paste').value.trim();
+  const st=document.getElementById('pasteStatus');
+  if(!t){ st.className='status err'; st.textContent='Nothing pasted yet.'; return; }
+  load(t, st);
+};
+document.getElementById('linkBtn').onclick = ()=>{
+  const url=document.getElementById('csvurl').value.trim();
+  if(!url) return;
+  const link=location.origin+location.pathname+'?csv='+encodeURIComponent(url);
+  navigator.clipboard.writeText(link).then(()=>{
+    const st=document.getElementById('fetchStatus');
+    st.className='status ok';
+    st.textContent='Copied. Bookmark that link and results load automatically.';
+  });
+};
+document.getElementById('copySet').onclick = ()=>{
+  if(window.__setText) navigator.clipboard.writeText(window.__setText).then(()=>{
+    const b=document.getElementById('copySet');
+    b.textContent='Copied!'; setTimeout(()=>b.textContent='Copy setlist as text',2200);
+  });
+};
+
+// ---- live backend (Apps Script) ----
+const API = (window.SETLIST_API || '').trim();
+if(!API) document.getElementById('apiCard').classList.add('hide');
+
+function fromApi(payload){
+  const voters = payload.voters;
+  const rows = payload.rows.map(r=>{
+    const key = META[r.song+'|'+r.artist] ? r.song+'|'+r.artist : r.song;
+    const m = META[key] || {e:3};
+    const p = (r.len||'').split(':');
+    const secs = p.length===2 ? (+p[0])*60 + (+p[1]) : 0;
+    let score=0, musts=0, xs=0;
+    voters.forEach(v=>{
+      const val=(r.votes[v]||'').toUpperCase();
+      if(val==='MUST'){score+=3;musts++;}
+      else if(val==='YES'){score+=1;}
+      else if(val==='NO'){score-=2;}
+      else if(val==='X'){xs++;}
+    });
+    return {song:r.song, artist:r.artist, lead:(r.lead||'').toUpperCase(),
+      lenTxt:r.len, secs, sec:r.section,
+      isLocked:/^LOCKED/i.test(r.section), isPick:/pick ONE/i.test(r.section),
+      votes:r.votes, score, musts, xs, e:m.e, tags:m.tags||[]};
+  });
+  return {voters, rows};
+}
+
+async function pullApi(silent){
+  const st=document.getElementById('apiStatus'), msg=document.getElementById('apiMsg');
+  if(!API){
+    document.getElementById('apiCard').classList.add('hide');
+    return false;
+  }
+  st.className='status'; st.textContent='Fetching…';
+  try{
+    const r = await fetch(API,{method:'GET'});
+    const j = await r.json();
+    if(!j.ok) throw new Error(j.error||'unknown error');
+    DATA = fromApi(j.data);
+    render();
+    msg.textContent='Reading live from the shared sheet. Reload any time for the latest.';
+    st.className='status ok';
+    st.textContent='Loaded '+DATA.rows.length+' songs, '+DATA.voters.length+' voters.';
+    if(!silent) go('set');
+    return true;
+  }catch(e){
+    st.className='status err';
+    st.textContent='Could not reach the sheet ('+e.message+'). Use one of the fallbacks below.';
+    return false;
+  }
+}
+document.getElementById('apiBtn').onclick = ()=>pullApi(false);
+
+// auto-load: API first, then ?csv=
+const qp = new URLSearchParams(location.search).get('csv');
+(async ()=>{
+  const ok = API ? await pullApi(true) : false;
+  if(!ok && qp){
+    document.getElementById('csvurl').value = qp;
+    document.getElementById('fetchBtn').click();
+  } else if(ok){
+    go('set');
+  }
+})();
+</script>
+</body>
+</html>

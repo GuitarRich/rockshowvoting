@@ -12,16 +12,15 @@
     --green:#4fb477; --red:#d15b5b; --violet:#8b7fd4;
   }
   *{box-sizing:border-box}
-  body{
-    margin:0; background:var(--bg); color:var(--ink);
+  body{margin:0;background:var(--bg);color:var(--ink);
     font:16px/1.5 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
-    padding-bottom:110px; -webkit-text-size-adjust:100%;
-  }
+    padding-bottom:126px;-webkit-text-size-adjust:100%}
   .wrap{max-width:860px;margin:0 auto;padding:0 16px}
   header{padding:28px 0 18px;border-bottom:1px solid var(--line);margin-bottom:22px}
   h1{font-size:26px;line-height:1.15;margin:0 0 6px;letter-spacing:-.01em}
   h1 span{color:var(--amber)}
   .sub{color:var(--muted);font-size:14px;margin:0}
+  a{color:var(--amber)}
   .card{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:16px 18px;margin:0 0 22px}
   .card h2{font-size:13px;text-transform:uppercase;letter-spacing:.09em;color:var(--amber);margin:0 0 10px}
   .card p{margin:0 0 8px;font-size:14px;color:var(--muted)}
@@ -30,21 +29,17 @@
   .key{display:flex;flex-wrap:wrap;gap:14px;margin-top:12px;font-size:13px;color:var(--muted)}
   .key b{color:var(--ink);font-weight:600}
 
-  label.namewrap{display:block;font-size:13px;color:var(--muted);margin-bottom:6px}
-  input[type=text]{
-    width:100%;padding:11px 13px;border-radius:9px;border:1px solid var(--line);
-    background:var(--panel2);color:var(--ink);font-size:16px;font-family:inherit;
-  }
-  input[type=text]:focus{outline:2px solid var(--amber);outline-offset:1px;border-color:transparent}
+  .whoami{font-size:13px;color:var(--muted);margin-bottom:8px}
+  .who{display:flex;flex-wrap:wrap;gap:6px}
+  .who button{font:600 14px/1 inherit;color:var(--muted);cursor:pointer;background:var(--panel2);
+    border:1px solid var(--line);border-radius:8px;padding:11px 15px}
+  .who button.on{background:var(--amber);border-color:var(--amber);color:#231a09}
+  .loadnote{font-size:13px;margin-top:10px;color:var(--muted)}
+  .loadnote.ok{color:var(--green)} .loadnote.err{color:var(--red)}
 
-  h3.sec{
-    font-size:12px;text-transform:uppercase;letter-spacing:.11em;color:var(--dim);
-    margin:26px 0 8px;padding-bottom:7px;border-bottom:1px solid var(--line);
-  }
-  .row{
-    display:flex;align-items:center;gap:12px;padding:9px 10px;border-radius:9px;
-    border:1px solid transparent;
-  }
+  h3.sec{font-size:12px;text-transform:uppercase;letter-spacing:.11em;color:var(--dim);
+    margin:26px 0 8px;padding-bottom:7px;border-bottom:1px solid var(--line)}
+  .row{display:flex;align-items:center;gap:12px;padding:9px 10px;border-radius:9px;border:1px solid transparent}
   .row + .row{margin-top:2px}
   .row:nth-child(odd){background:rgba(255,255,255,.018)}
   .row.must{border-color:var(--amber);background:rgba(232,163,61,.09)}
@@ -53,19 +48,14 @@
   .info{flex:1;min-width:0}
   .title{font-weight:600;font-size:15px;display:block}
   .meta{font-size:12.5px;color:var(--muted);display:block;margin-top:1px}
-  .badge{
-    display:inline-block;font-size:10.5px;font-weight:700;letter-spacing:.05em;
-    padding:1px 6px;border-radius:4px;margin-right:6px;vertical-align:1px;
-  }
+  .badge{display:inline-block;font-size:10.5px;font-weight:700;letter-spacing:.05em;
+    padding:1px 6px;border-radius:4px;margin-right:6px;vertical-align:1px}
   .v1{background:rgba(139,127,212,.18);color:#a99ff0}
   .v2{background:rgba(232,163,61,.16);color:var(--amber)}
   .duet{background:rgba(79,180,119,.16);color:#6fd096}
   .btns{display:flex;gap:5px;flex:0 0 auto}
-  .btns button{
-    font:600 12px/1 inherit;letter-spacing:.03em;color:var(--muted);cursor:pointer;
-    background:var(--panel2);border:1px solid var(--line);border-radius:7px;
-    padding:9px 0;width:46px;text-align:center;
-  }
+  .btns button{font:600 12px/1 inherit;letter-spacing:.03em;color:var(--muted);cursor:pointer;
+    background:var(--panel2);border:1px solid var(--line);border-radius:7px;padding:9px 0;width:46px;text-align:center}
   .btns button:hover{color:var(--ink);border-color:#3a3f4e}
   .btns button.on-must{background:var(--amber);border-color:var(--amber);color:#231a09}
   .btns button.on-yes{background:var(--green);border-color:var(--green);color:#08210f}
@@ -76,16 +66,12 @@
   .pickone{padding:11px 10px;border-radius:9px;border:1px dashed var(--amber-dim);margin-top:8px}
   .pickone > span{font-size:13px;color:var(--muted);display:block;margin-bottom:8px}
   .opts{display:flex;flex-wrap:wrap;gap:6px}
-  .opts button{
-    font:600 13px/1 inherit;color:var(--muted);cursor:pointer;background:var(--panel2);
-    border:1px solid var(--line);border-radius:7px;padding:9px 12px;
-  }
+  .opts button{font:600 13px/1 inherit;color:var(--muted);cursor:pointer;background:var(--panel2);
+    border:1px solid var(--line);border-radius:7px;padding:9px 12px}
   .opts button.on{background:var(--amber);border-color:var(--amber);color:#231a09}
 
-  footer{
-    position:fixed;left:0;right:0;bottom:0;background:rgba(13,14,18,.96);
-    border-top:1px solid var(--line);backdrop-filter:blur(8px);padding:11px 0;
-  }
+  footer{position:fixed;left:0;right:0;bottom:0;background:rgba(13,14,18,.96);
+    border-top:1px solid var(--line);backdrop-filter:blur(8px);padding:11px 0}
   .fbar{display:flex;align-items:center;gap:14px;max-width:860px;margin:0 auto;padding:0 16px}
   .stats{flex:1;min-width:0;font-size:13px;color:var(--muted);line-height:1.35}
   .stats b{color:var(--ink);font-size:15px}
@@ -93,22 +79,20 @@
   .gauge i{display:block;height:100%;width:0;background:var(--green);transition:width .18s}
   .gauge i.over{background:var(--red)}
   .gauge i.under{background:var(--amber)}
-  #copy{
-    font:700 14px/1 inherit;cursor:pointer;background:var(--amber);color:#231a09;
-    border:none;border-radius:9px;padding:14px 18px;flex:0 0 auto;
-  }
-  #copy:disabled{background:var(--panel2);color:var(--dim);cursor:not-allowed}
-  #out{
-    width:100%;height:230px;margin-top:14px;padding:12px;border-radius:9px;
-    background:var(--panel2);color:var(--ink);border:1px solid var(--line);
-    font:12.5px/1.5 ui-monospace,SFMono-Regular,Menlo,monospace;display:none;
-  }
+  #save{font:700 14px/1 inherit;cursor:pointer;background:var(--amber);color:#231a09;border:none;
+    border-radius:9px;padding:14px 18px;flex:0 0 auto}
+  #save:disabled{background:var(--panel2);color:var(--dim);cursor:not-allowed}
+  #out{width:100%;height:220px;margin-top:14px;padding:12px;border-radius:9px;background:var(--panel2);
+    color:var(--ink);border:1px solid var(--line);
+    font:12.5px/1.5 ui-monospace,SFMono-Regular,Menlo,monospace;display:none}
+  .savemsg{font-size:12.5px;margin-top:5px}
+  .savemsg.ok{color:var(--green)} .savemsg.err{color:var(--red)}
   @media(max-width:560px){
     h1{font-size:21px}
     .row{gap:8px;padding:8px 7px}
     .btns button{width:41px;padding:10px 0}
     .fbar{gap:10px}
-    #copy{padding:13px 14px;font-size:13px}
+    #save{padding:13px 14px;font-size:13px}
   }
 </style>
 </head>
@@ -122,9 +106,9 @@
 
 <div class="card">
   <h2>How to vote</h2>
-  <p>Go through the list and mark each song <strong>MUST</strong> (fight for it), <strong>YES</strong> (happy to play it), or <strong>NO</strong> (leave it out). Anything you skip counts as neutral.</p>
+  <p>Pick your name, then mark each song <strong>MUST</strong> (fight for it), <strong>YES</strong> (happy to play it) or <strong>NO</strong> (leave it out). Anything you skip counts as neutral.</p>
   <p>Use <strong>MUST</strong> sparingly &mdash; about 5 songs. It's a tie-breaker, not a second yes.</p>
-  <p>When you're done, put your name at the top and hit <strong>Copy my votes</strong>, then paste the text into the band chat &mdash; or enter your votes straight into the <a href="https://docs.google.com/spreadsheets/d/1_X0TnsND6b6GsiT5UC0sAaOG4zin1v6jsJXmtBvA254/edit" style="color:var(--amber)">shared Google Sheet</a>, which tallies itself.</p>
+  <p>Hit <strong>Save my votes</strong> at the bottom and they go straight into the shared sheet. Come back and change them whenever you like. See how it's going on the <a href="results.html">results page</a>.</p>
   <div class="key">
     <span><b>Scoring:</b> MUST = 3 &middot; YES = 1 &middot; NO = &minus;2</span>
     <span><span class="badge v1">V1</span> male lead</span>
@@ -134,19 +118,20 @@
 </div>
 
 <div class="card">
-  <label class="namewrap" for="voter">Your name</label>
-  <input type="text" id="voter" placeholder="e.g. Rich" autocomplete="off">
+  <p class="whoami">Who are you?</p>
+  <div class="who" id="who"></div>
+  <div class="loadnote" id="loadnote"></div>
 </div>
 
 <h3 class="sec">Locked &mdash; organiser requests, not up for vote</h3>
 <div class="locked" id="locked"></div>
 
-<div class="pickone" id="pick-creed">
+<div class="pickone" id="pick-Creed">
   <span><strong>Creed</strong> is locked in &mdash; but which song? Pick one.</span>
   <div class="opts"></div>
 </div>
 
-<div class="pickone" id="pick-nickelback">
+<div class="pickone" id="pick-Nickelback">
   <span><strong>Nickelback</strong> is locked in &mdash; but which song? Pick one.</span>
   <div class="opts"></div>
 </div>
@@ -162,36 +147,24 @@
     <div class="stats">
       <span id="line1"><b>0</b> in &middot; <b>0:00</b> of 90:00</span>
       <div class="gauge"><i id="bar"></i></div>
+      <div class="savemsg" id="savemsg"></div>
     </div>
-    <button id="copy" disabled>Copy my votes</button>
+    <button id="save" disabled>Save my votes</button>
   </div>
 </footer>
 
+<script src="config.js"></script>
 <script>
 // ---- data -------------------------------------------------------------
-// s = runtime in seconds (live estimate). v = lead vocal.
 const LOCKED = [
-  {t:"Dance, Dance",     a:"Fall Out Boy", v:"V1", s:180, n:"named by the organiser"},
-  {t:"Creep",            a:"Radiohead",    v:"V1", s:236, n:"named by the organiser"}
+  {t:"Dance, Dance", a:"Fall Out Boy", v:"V1", s:180, n:"named by the organiser"},
+  {t:"Creep",        a:"Radiohead",    v:"V1", s:236, n:"named by the organiser"}
 ];
-
 const PICKS = {
-  creed:{label:"Creed", opts:[
-    {t:"Higher",               s:317},
-    {t:"My Sacrifice",         s:247},
-    {t:"One Last Breath",      s:239},
-    {t:"With Arms Wide Open",  s:275}
-  ]},
-  nickelback:{label:"Nickelback", opts:[
-    {t:"How You Remind Me",    s:223},
-    {t:"Rockstar",             s:254},
-    {t:"Burn It to the Ground",s:209},
-    {t:"Photograph",           s:259}
-  ]}
+  Creed:[{t:"Higher",s:317},{t:"My Sacrifice",s:247},{t:"One Last Breath",s:239},{t:"With Arms Wide Open",s:275}],
+  Nickelback:[{t:"How You Remind Me",s:223},{t:"Rockstar",s:254},{t:"Burn It to the Ground",s:209},{t:"Photograph",s:259}]
 };
-
 const SONGS = [
- // --- arena & classic rock
  {g:"Arena &amp; classic rock", t:"Any Way You Want It",          a:"Journey",          v:"V1",   s:203},
  {g:"Arena &amp; classic rock", t:"Don't Stop Believin'",         a:"Journey",          v:"DUET", s:251},
  {g:"Arena &amp; classic rock", t:"You Give Love a Bad Name",     a:"Bon Jovi",         v:"DUET", s:222},
@@ -204,7 +177,6 @@ const SONGS = [
  {g:"Arena &amp; classic rock", t:"Jump",                         a:"Van Halen",        v:"V1",   s:244},
  {g:"Arena &amp; classic rock", t:"Sweet Child o' Mine",          a:"Guns N' Roses",    v:"V1",   s:303},
  {g:"Arena &amp; classic rock", t:"Eye of the Tiger",             a:"Survivor",         v:"V1",   s:245},
- // --- radio rock / post-grunge
  {g:"Radio rock &amp; post-grunge", t:"Kryptonite",               a:"3 Doors Down",     v:"V1",   s:233},
  {g:"Radio rock &amp; post-grunge", t:"When I'm Gone",            a:"3 Doors Down",     v:"V1",   s:260},
  {g:"Radio rock &amp; post-grunge", t:"Animal I Have Become",     a:"Three Days Grace", v:"V1",   s:232},
@@ -213,7 +185,6 @@ const SONGS = [
  {g:"Radio rock &amp; post-grunge", t:"Blow Me Away",             a:"Breaking Benjamin",v:"DUET", s:199},
  {g:"Radio rock &amp; post-grunge", t:"Down with the Sickness",   a:"Disturbed",        v:"V1",   s:220},
  {g:"Radio rock &amp; post-grunge", t:"The Sound of Silence",     a:"Disturbed",        v:"V1",   s:248},
- // --- alt & nu-metal
  {g:"Alt &amp; nu-metal", t:"In the End",                         a:"Linkin Park",      v:"DUET", s:216},
  {g:"Alt &amp; nu-metal", t:"Numb",                               a:"Linkin Park",      v:"V2",   s:187},
  {g:"Alt &amp; nu-metal", t:"Faint",                              a:"Linkin Park",      v:"V1",   s:162},
@@ -221,7 +192,6 @@ const SONGS = [
  {g:"Alt &amp; nu-metal", t:"Smells Like Teen Spirit",            a:"Nirvana",          v:"V1",   s:301},
  {g:"Alt &amp; nu-metal", t:"Come as You Are",                    a:"Nirvana",          v:"V1",   s:219},
  {g:"Alt &amp; nu-metal", t:"Zombie",                             a:"The Cranberries",  v:"V2",   s:306},
- // --- female-fronted
  {g:"Female-fronted", t:"Barracuda",                              a:"Heart",            v:"V2",   s:260},
  {g:"Female-fronted", t:"Alone",                                  a:"Heart",            v:"V2",   s:218},
  {g:"Female-fronted", t:"Hit Me With Your Best Shot",             a:"Pat Benatar",      v:"V2",   s:172},
@@ -237,138 +207,201 @@ const SONGS = [
  {g:"Female-fronted", t:"Total Eclipse of the Heart",             a:"Bonnie Tyler",     v:"V2",   s:335}
 ];
 
-const TARGET = 90*60;      // 90 minutes
-const GAP    = 25;         // seconds of changeover assumed per song
+const TARGET = 90*60, GAP = 25;
+const API    = (window.SETLIST_API || '').trim();
+const VOTERS = window.SETLIST_VOTERS || ["Rich","Ashley","CJ","Justin","Isaac","Julie","Organiser"];
 
-// ---- state ------------------------------------------------------------
-const vote = {};                       // index -> 'must' | 'yes' | 'no'
-const picked = {creed:null, nickelback:null};
+const vote = {};                                  // index -> must|yes|no
+const picked = {Creed:null, Nickelback:null};
+let me = null;
 
-// ---- helpers ----------------------------------------------------------
-const esc = s => s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+const esc   = s => s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
 const unesc = s => s.replace(/&amp;/g,'&');
-const mmss = t => Math.floor(t/60) + ":" + String(Math.round(t%60)).padStart(2,'0');
+const mmss  = t => Math.floor(t/60)+":"+String(Math.round(t%60)).padStart(2,'0');
 const badge = v => '<span class="badge '+(v==='V1'?'v1':v==='V2'?'v2':'duet')+'">'+v+'</span>';
 
-// ---- render locked ----------------------------------------------------
+// ---- who am i ---------------------------------------------------------
+document.getElementById('who').innerHTML =
+  VOTERS.map(v=>'<button type="button" data-v="'+esc(v)+'">'+esc(v)+'</button>').join('');
+document.getElementById('who').addEventListener('click', e=>{
+  const b=e.target.closest('button'); if(!b) return;
+  me = b.dataset.v;
+  document.querySelectorAll('#who button').forEach(x=>x.classList.toggle('on', x.dataset.v===me));
+  pull();
+  refresh();
+});
+
+// ---- render -----------------------------------------------------------
 document.getElementById('locked').innerHTML = LOCKED.map(s =>
   '<div class="row"><div class="info"><span class="title">'+esc(s.t)+'</span>'+
   '<span class="meta">'+badge(s.v)+esc(s.a)+' &middot; '+mmss(s.s)+' &middot; '+esc(s.n)+'</span></div>'+
-  '<span class="locknote">LOCKED</span></div>'
-).join('');
+  '<span class="locknote">LOCKED</span></div>').join('');
 
-for(const key of Object.keys(PICKS)){
-  const box = document.querySelector('#pick-'+key+' .opts');
-  box.innerHTML = PICKS[key].opts.map((o,i) =>
-    '<button type="button" data-k="'+key+'" data-i="'+i+'">'+esc(o.t)+' <span style="opacity:.6">'+mmss(o.s)+'</span></button>'
-  ).join('');
+for(const k of Object.keys(PICKS)){
+  document.querySelector('#pick-'+k+' .opts').innerHTML = PICKS[k].map((o,i)=>
+    '<button type="button" data-k="'+k+'" data-i="'+i+'">'+esc(o.t)+
+    ' <span style="opacity:.6">'+mmss(o.s)+'</span></button>').join('');
 }
 
-// ---- render ballot ----------------------------------------------------
-let html = '', lastGroup = '';
-SONGS.forEach((s,i) => {
-  if(s.g !== lastGroup){ html += '<h3 class="sec">'+s.g+'</h3>'; lastGroup = s.g; }
-  html +=
-    '<div class="row" id="r'+i+'">'+
-      '<div class="info"><span class="title">'+esc(s.t)+'</span>'+
-      '<span class="meta">'+badge(s.v)+esc(s.a)+' &middot; '+mmss(s.s)+'</span></div>'+
-      '<div class="btns">'+
-        '<button type="button" data-i="'+i+'" data-v="must" title="Fight for it">MUST</button>'+
-        '<button type="button" data-i="'+i+'" data-v="yes"  title="Happy to play it">YES</button>'+
-        '<button type="button" data-i="'+i+'" data-v="no"   title="Leave it out">NO</button>'+
-      '</div>'+
-    '</div>';
+let html='', lastG='';
+SONGS.forEach((s,i)=>{
+  if(s.g!==lastG){ html+='<h3 class="sec">'+s.g+'</h3>'; lastG=s.g; }
+  html += '<div class="row" id="r'+i+'"><div class="info">'+
+    '<span class="title">'+esc(s.t)+'</span>'+
+    '<span class="meta">'+badge(s.v)+esc(s.a)+' &middot; '+mmss(s.s)+'</span></div>'+
+    '<div class="btns">'+
+      '<button type="button" data-i="'+i+'" data-v="must">MUST</button>'+
+      '<button type="button" data-i="'+i+'" data-v="yes">YES</button>'+
+      '<button type="button" data-i="'+i+'" data-v="no">NO</button>'+
+    '</div></div>';
 });
 document.getElementById('ballot').innerHTML = html;
 
-// ---- interaction ------------------------------------------------------
-document.getElementById('ballot').addEventListener('click', e => {
-  const b = e.target.closest('button'); if(!b) return;
-  const i = +b.dataset.i, v = b.dataset.v;
-  vote[i] = (vote[i] === v) ? undefined : v;      // click again to clear
+document.getElementById('ballot').addEventListener('click', e=>{
+  const b=e.target.closest('button'); if(!b) return;
+  const i=+b.dataset.i, v=b.dataset.v;
+  vote[i] = (vote[i]===v) ? undefined : v;
   paintRow(i); refresh();
 });
-
-document.querySelectorAll('.pickone .opts').forEach(box => {
-  box.addEventListener('click', e => {
-    const b = e.target.closest('button'); if(!b) return;
-    const k = b.dataset.k, i = +b.dataset.i;
-    picked[k] = (picked[k] === i) ? null : i;
-    box.querySelectorAll('button').forEach((x,j) => x.classList.toggle('on', picked[k] === j));
+document.querySelectorAll('.pickone .opts').forEach(box=>{
+  box.addEventListener('click', e=>{
+    const b=e.target.closest('button'); if(!b) return;
+    const k=b.dataset.k, i=+b.dataset.i;
+    picked[k] = (picked[k]===i) ? null : i;
+    box.querySelectorAll('button').forEach((x,j)=>x.classList.toggle('on', picked[k]===j));
     refresh();
   });
 });
 
 function paintRow(i){
-  const row = document.getElementById('r'+i), v = vote[i];
-  row.className = 'row' + (v ? ' '+v : '');
-  row.querySelectorAll('.btns button').forEach(b => {
-    b.className = (vote[i] === b.dataset.v) ? 'on-'+b.dataset.v : '';
+  const row=document.getElementById('r'+i), v=vote[i];
+  row.className='row'+(v?' '+v:'');
+  row.querySelectorAll('.btns button').forEach(b=>{
+    b.className = (vote[i]===b.dataset.v) ? 'on-'+b.dataset.v : '';
   });
 }
 
 function refresh(){
-  let n = LOCKED.length, secs = LOCKED.reduce((a,s) => a+s.s, 0);
-  for(const k of Object.keys(PICKS)){
-    if(picked[k] !== null){ n++; secs += PICKS[k].opts[picked[k]].s; }
-  }
-  Object.keys(vote).forEach(i => {
-    if(vote[i] === 'must' || vote[i] === 'yes'){ n++; secs += SONGS[i].s; }
+  let n=LOCKED.length, secs=LOCKED.reduce((a,s)=>a+s.s,0);
+  for(const k of Object.keys(PICKS)) if(picked[k]!==null){ n++; secs+=PICKS[k][picked[k]].s; }
+  Object.keys(vote).forEach(i=>{
+    if(vote[i]==='must'||vote[i]==='yes'){ n++; secs+=SONGS[i].s; }
   });
-  const total = secs + n*GAP;
+  const total=secs+n*GAP;
   document.getElementById('line1').innerHTML =
     '<b>'+n+'</b> song'+(n===1?'':'s')+' in &middot; <b>'+mmss(total)+'</b> of 90:00';
-  const bar = document.getElementById('bar');
-  bar.style.width = Math.min(100, total/TARGET*100) + '%';
-  bar.className = total > TARGET ? 'over' : (total < TARGET*0.85 ? 'under' : '');
-  document.getElementById('copy').disabled = (n <= LOCKED.length);
+  const bar=document.getElementById('bar');
+  bar.style.width=Math.min(100,total/TARGET*100)+'%';
+  bar.className = total>TARGET ? 'over' : (total<TARGET*0.85 ? 'under' : '');
+  const btn=document.getElementById('save');
+  btn.disabled = !me;
+  btn.textContent = API ? 'Save my votes' : 'Copy my votes';
 }
 
-// ---- output -----------------------------------------------------------
+// ---- payload ----------------------------------------------------------
+function payload(){
+  const votes={};
+  SONGS.forEach((s,i)=>{
+    const v=vote[i];
+    votes[unesc(s.t)+'|'+s.a] = v ? v.toUpperCase() : '';
+  });
+  for(const k of Object.keys(PICKS)){
+    PICKS[k].forEach((o,i)=>{ votes[o.t+'|'+k] = (picked[k]===i) ? 'X' : ''; });
+  }
+  return {voter: me, votes};
+}
+
 function buildText(){
-  const name = (document.getElementById('voter').value || 'UNNAMED').trim();
-  const grab = v => SONGS.map((s,i) => vote[i]===v ? s : null).filter(Boolean);
-  const must = grab('must'), yes = grab('yes'), no = grab('no');
-  const list = arr => arr.length ? arr.map(s => '  - '+unesc(s.t)+' — '+s.a).join('\n') : '  (none)';
-
-  let secs = LOCKED.reduce((a,s)=>a+s.s,0), n = LOCKED.length;
-  for(const k of Object.keys(PICKS)) if(picked[k]!==null){ n++; secs += PICKS[k].opts[picked[k]].s; }
-  [...must,...yes].forEach(s => { n++; secs += s.s; });
-
-  const codes = v => SONGS.map((s,i) => vote[i]===v ? i+1 : null).filter(x=>x!==null).join(',');
-
-  return [
-    'SETLIST VOTE — October anniversary show',
-    'Voter: ' + name,
-    '',
-    'Creed pick:      ' + (picked.creed      !== null ? PICKS.creed.opts[picked.creed].t           : '(no pick)'),
-    'Nickelback pick: ' + (picked.nickelback !== null ? PICKS.nickelback.opts[picked.nickelback].t : '(no pick)'),
-    '',
-    'MUST PLAY ('+must.length+')', list(must),
-    '',
-    'YES ('+yes.length+')', list(yes),
-    '',
-    'NO ('+no.length+')', list(no),
-    '',
-    'Running total with locked songs: ' + n + ' songs, ~' + mmss(secs + n*GAP) + ' of 90:00',
-    '',
-    '#RAW ' + name + '|C:' + (picked.creed ?? '-') + '|N:' + (picked.nickelback ?? '-') +
-      '|M:' + codes('must') + '|Y:' + codes('yes') + '|X:' + codes('no')
-  ].join('\n');
+  const grab=v=>SONGS.map((s,i)=>vote[i]===v?s:null).filter(Boolean);
+  const must=grab('must'), yes=grab('yes'), no=grab('no');
+  const list=a=>a.length?a.map(s=>'  - '+unesc(s.t)+' — '+s.a).join('\n'):'  (none)';
+  let secs=LOCKED.reduce((a,s)=>a+s.s,0), n=LOCKED.length;
+  for(const k of Object.keys(PICKS)) if(picked[k]!==null){ n++; secs+=PICKS[k][picked[k]].s; }
+  [...must,...yes].forEach(s=>{n++;secs+=s.s;});
+  return ['SETLIST VOTE — October anniversary show','Voter: '+(me||'UNNAMED'),'',
+    'Creed pick:      '+(picked.Creed!==null?PICKS.Creed[picked.Creed].t:'(no pick)'),
+    'Nickelback pick: '+(picked.Nickelback!==null?PICKS.Nickelback[picked.Nickelback].t:'(no pick)'),'',
+    'MUST PLAY ('+must.length+')',list(must),'','YES ('+yes.length+')',list(yes),'',
+    'NO ('+no.length+')',list(no),'',
+    'Running total with locked songs: '+n+' songs, ~'+mmss(secs+n*GAP)+' of 90:00'].join('\n');
 }
 
-document.getElementById('copy').addEventListener('click', async () => {
-  const txt = buildText(), btn = document.getElementById('copy');
-  const out = document.getElementById('out');
-  let ok = false;
-  try{ await navigator.clipboard.writeText(txt); ok = true; }catch(e){ ok = false; }
-  out.style.display = 'block';
-  out.value = txt;
-  if(!ok){ out.focus(); out.select(); }
-  btn.textContent = ok ? 'Copied!' : 'Select & copy below';
-  setTimeout(() => { btn.textContent = 'Copy my votes'; }, 2600);
-  out.scrollIntoView({behavior:'smooth', block:'center'});
+// ---- load existing votes ---------------------------------------------
+async function pull(){
+  const note=document.getElementById('loadnote');
+  if(!API){
+    note.className='loadnote';
+    note.textContent='Sheet sync is not switched on yet — saving will copy your votes to the clipboard instead.';
+    return;
+  }
+  note.className='loadnote'; note.textContent='Checking the sheet for your existing votes…';
+  try{
+    const r=await fetch(API,{method:'GET'});
+    const j=await r.json();
+    if(!j.ok) throw new Error(j.error||'unknown error');
+    const byKey={};
+    j.data.rows.forEach(row=>{ byKey[row.song+'|'+row.artist]=row; });
+    let found=0;
+    SONGS.forEach((s,i)=>{
+      const row=byKey[unesc(s.t)+'|'+s.a]; if(!row) return;
+      const v=(row.votes[me]||'').toLowerCase();
+      vote[i] = ['must','yes','no'].includes(v) ? v : undefined;
+      if(vote[i]) found++;
+      paintRow(i);
+    });
+    for(const k of Object.keys(PICKS)){
+      picked[k]=null;
+      PICKS[k].forEach((o,i)=>{
+        const row=byKey[o.t+'|'+k];
+        if(row && (row.votes[me]||'').toUpperCase()==='X') picked[k]=i;
+      });
+      document.querySelectorAll('#pick-'+k+' .opts button')
+        .forEach((x,j)=>x.classList.toggle('on', picked[k]===j));
+    }
+    note.className='loadnote ok';
+    note.textContent = found
+      ? 'Loaded your '+found+' existing votes — change whatever you like and save again.'
+      : 'No votes from you yet. Off you go.';
+  }catch(e){
+    note.className='loadnote err';
+    note.textContent='Could not reach the sheet ('+e.message+'). You can still vote — saving will copy to your clipboard instead.';
+  }
+  refresh();
+}
+
+// ---- save -------------------------------------------------------------
+document.getElementById('save').addEventListener('click', async ()=>{
+  const btn=document.getElementById('save'), msg=document.getElementById('savemsg');
+  if(!me) return;
+  if(!API){ fallbackCopy(); return; }
+  btn.disabled=true; msg.className='savemsg'; msg.textContent='Saving…';
+  try{
+    const r=await fetch(API,{method:'POST',
+      headers:{'Content-Type':'text/plain;charset=utf-8'},   // simple request — avoids a CORS preflight
+      body:JSON.stringify(payload())});
+    const j=await r.json();
+    if(!j.ok) throw new Error(j.error||'unknown error');
+    msg.className='savemsg ok';
+    msg.textContent='Saved to the sheet — '+j.written+' rows updated.';
+    btn.textContent='Saved!';
+    setTimeout(()=>{btn.textContent='Save my votes';},2600);
+  }catch(e){
+    msg.className='savemsg err';
+    msg.textContent='Save failed ('+e.message+') — copied to your clipboard instead, send it to Rich.';
+    fallbackCopy(true);
+  }finally{ btn.disabled=false; }
 });
+
+function fallbackCopy(quiet){
+  const txt=buildText(), out=document.getElementById('out');
+  navigator.clipboard.writeText(txt).catch(()=>{});
+  out.style.display='block'; out.value=txt;
+  if(!quiet){
+    const btn=document.getElementById('save');
+    btn.textContent='Copied!'; setTimeout(()=>{btn.textContent='Copy my votes';},2600);
+  }
+  out.scrollIntoView({behavior:'smooth',block:'center'});
+}
 
 refresh();
 </script>
