@@ -44,6 +44,7 @@
   .row:nth-child(odd){background:rgba(255,255,255,.018)}
   .row.must{border-color:var(--amber);background:rgba(232,163,61,.09)}
   .row.yes{border-color:rgba(79,180,119,.5);background:rgba(79,180,119,.07)}
+  .row.maybe{border-color:rgba(139,127,212,.45);background:rgba(139,127,212,.07)}
   .row.no{opacity:.42}
   .info{flex:1;min-width:0}
   .title{font-weight:600;font-size:15px;display:block}
@@ -55,10 +56,11 @@
   .duet{background:rgba(79,180,119,.16);color:#6fd096}
   .btns{display:flex;gap:5px;flex:0 0 auto}
   .btns button{font:600 12px/1 inherit;letter-spacing:.03em;color:var(--muted);cursor:pointer;
-    background:var(--panel2);border:1px solid var(--line);border-radius:7px;padding:9px 0;width:46px;text-align:center}
+    background:var(--panel2);border:1px solid var(--line);border-radius:7px;padding:9px 0;width:52px;text-align:center}
   .btns button:hover{color:var(--ink);border-color:#3a3f4e}
   .btns button.on-must{background:var(--amber);border-color:var(--amber);color:#231a09}
   .btns button.on-yes{background:var(--green);border-color:var(--green);color:#08210f}
+  .btns button.on-maybe{background:var(--violet);border-color:var(--violet);color:#150f2e}
   .btns button.on-no{background:var(--red);border-color:var(--red);color:#2a0c0c}
 
   .locked .row{background:rgba(232,163,61,.06);border-color:var(--amber-dim)}
@@ -90,7 +92,9 @@
   @media(max-width:560px){
     h1{font-size:21px}
     .row{gap:8px;padding:8px 7px}
-    .btns button{width:41px;padding:10px 0}
+    .btns button{width:100%;min-width:0;padding:10px 2px;font-size:10.5px;letter-spacing:0}
+    .btns{gap:4px;flex:0 0 auto;width:180px}
+    .title{font-size:14px}
     .fbar{gap:10px}
     #save{padding:13px 14px;font-size:13px}
   }
@@ -106,11 +110,12 @@
 
 <div class="card">
   <h2>How to vote</h2>
-  <p>Pick your name, then mark each song <strong>MUST</strong> (fight for it), <strong>YES</strong> (happy to play it) or <strong>NO</strong> (leave it out). Anything you skip counts as neutral.</p>
+  <p>Pick your name, then mark each song <strong>MUST</strong> (fight for it), <strong>YES</strong> (happy to play it), <strong>MAYBE</strong> (could live with it) or <strong>NO</strong> (leave it out). Anything you skip counts as neutral.</p>
+  <p>The set is built purely on total score &mdash; the highest-scoring songs go in until 90 minutes is full. <strong>MAYBE still helps a song get in</strong>, it just helps less than a YES.</p>
   <p>Use <strong>MUST</strong> sparingly &mdash; about 5 songs. It's a tie-breaker, not a second yes.</p>
   <p>Hit <strong>Save my votes</strong> at the bottom and they go straight into the shared sheet. Come back and change them whenever you like. See how it's going on the <a href="results.html">results page</a>.</p>
   <div class="key">
-    <span><b>Scoring:</b> MUST = 3 &middot; YES = 1 &middot; NO = &minus;2</span>
+    <span id="legend"><b>Scoring:</b> MUST = 6 &middot; YES = 2 &middot; MAYBE = 1 &middot; NO = &minus;4</span>
     <span><span class="badge v1">V1</span> male lead</span>
     <span><span class="badge v2">V2</span> female lead</span>
     <span><span class="badge duet">DUET</span> both</span>
@@ -200,6 +205,8 @@ const SONGS = [
 ];
 
 const TARGET = 90*60, GAP = 25;
+const VOTE_OPTS = ['must','yes','maybe','no'];
+let WEIGHTS = {MUST:6, YES:2, MAYBE:1, NO:-4};   // overwritten by the backend
 const API    = (window.SETLIST_API || '').trim();
 const VOTERS = window.SETLIST_VOTERS || ["Rich","Ashley","CJ","Justin","Isaac","Julie","Organiser"];
 
@@ -258,7 +265,7 @@ function renderAll(){
       '<span class="title">'+esc(s.t)+'</span>'+
       '<span class="meta">'+badge(s.v)+esc(s.a)+' &middot; '+mmss(s.s)+'</span></div>'+
       '<div class="btns">'+
-        ['must','yes','no'].map(v=>'<button type="button" data-key="'+esc(k)+
+        VOTE_OPTS.map(v=>'<button type="button" data-key="'+esc(k)+
           '" data-v="'+v+'">'+v.toUpperCase()+'</button>').join('')+
       '</div></div>';
   });
@@ -314,7 +321,7 @@ function refresh(){
   });
   MODEL.songs.forEach(s=>{
     const v=vote[keyOf(s)];
-    if(v==='must'||v==='yes'){ n++; secs+=s.s; }
+    if(v==='must'||v==='yes'){ n++; secs+=s.s; }   // MAYBE is a signal, not a commitment
   });
   const total=secs+n*GAP;
   document.getElementById('line1').innerHTML =
@@ -342,7 +349,7 @@ function payload(){
 
 function buildText(){
   const grab=v=>MODEL.songs.filter(s=>vote[keyOf(s)]===v);
-  const must=grab('must'), yes=grab('yes'), no=grab('no');
+  const must=grab('must'), yes=grab('yes'), maybe=grab('maybe'), no=grab('no');
   const list=a=>a.length?a.map(s=>'  - '+s.t+' — '+s.a).join('\n'):'  (none)';
   let secs=MODEL.locked.reduce((a,s)=>a+s.s,0), n=MODEL.locked.length;
   Object.entries(MODEL.picks).forEach(([artist,opts])=>{
@@ -353,7 +360,7 @@ function buildText(){
   return ['SETLIST VOTE — October anniversary show','Voter: '+(me||'UNNAMED'),'',
     ...pickLines,'',
     'MUST PLAY ('+must.length+')',list(must),'','YES ('+yes.length+')',list(yes),'',
-    'NO ('+no.length+')',list(no),'',
+    'MAYBE ('+maybe.length+')',list(maybe),'','NO ('+no.length+')',list(no),'',
     'Running total with locked songs: '+n+' songs, ~'+mmss(secs+n*GAP)+' of 90:00'].join('\n');
 }
 
@@ -370,6 +377,9 @@ async function pull(){
     const r=await fetch(API,{method:'GET'});
     const j=await r.json();
     if(!j.ok) throw new Error(j.error||'unknown error');
+    if(j.data.weights) WEIGHTS = j.data.weights;
+    document.getElementById('legend').innerHTML = '<b>Scoring:</b> ' +
+      Object.entries(WEIGHTS).map(([k,v])=>k+' = '+(v<0?'\u2212'+Math.abs(v):v)).join(' \u00b7 ');
     MODEL = modelFromSheet(j.data.rows);
 
     const byKey={};
@@ -381,7 +391,7 @@ async function pull(){
       MODEL.songs.forEach(s=>{
         const row=byKey[keyOf(s)]; if(!row) return;
         const v=(row.votes[me]||'').toLowerCase();
-        if(['must','yes','no'].includes(v)){ vote[keyOf(s)]=v; found++; }
+        if(VOTE_OPTS.includes(v)){ vote[keyOf(s)]=v; found++; }
       });
       Object.entries(MODEL.picks).forEach(([artist,opts])=>{
         opts.forEach(o=>{

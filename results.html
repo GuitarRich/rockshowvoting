@@ -56,6 +56,7 @@
     letter-spacing:.04em;padding:3px 5px;border-radius:5px}
   .v.MUST{background:var(--amber);color:#231a09}
   .v.YES{background:rgba(79,180,119,.22);color:#79d69c}
+  .v.MAYBE{background:rgba(139,127,212,.22);color:#a99ff0}
   .v.NO{background:rgba(209,91,91,.22);color:#eb8888}
   .v.X{background:var(--violet);color:#150f2e}
   .v.none{color:#3d424f}
@@ -151,8 +152,8 @@
     <h2>How this order was built</h2>
     <ol>
       <li>Locked organiser requests go in automatically. For Creed and Nickelback, whichever song has the most <strong>X</strong> marks wins.</li>
-      <li>Everything else is ranked by score and taken from the top until the set hits ~90 minutes (25s of changeover assumed per song).</li>
-      <li><strong>A floor of 8 female-led songs is enforced</strong>, regardless of score &mdash; with no interval, your male vocalist cannot carry the whole 90 minutes. If the vote comes back short, the highest-scoring V2 songs are promoted in.</li>
+      <li><strong>Everything else is pure total score</strong> &mdash; highest first, taken from the top until the set hits ~90 minutes (25s of changeover assumed per song). Nothing is promoted or demoted against the vote.</li>
+      <li>Where the result looks risky &mdash; no slow song, too little for the female vocalist, a long unbroken run for V1 &mdash; it says so in red, but it does not overrule you.</li>
       <li>The order is then built against an energy curve: strong open, a dip around a third in, the heavy cluster at ~60&ndash;70%, the dedication ballad straight after the peak, then a lift into the closer.</li>
       <li>No three songs in a row share a lead vocalist, and no two songs by the same artist sit next to each other.</li>
     </ol>
@@ -163,7 +164,8 @@
 <section id="tab-grid" class="hide">
   <div class="card">
     <h2>Every vote, by person</h2>
-    <p>Green rows are the songs that made the generated set. <strong>MUST</strong> = 3, <strong>YES</strong> = 1, <strong>NO</strong> = &minus;2. Click any column header to sort.</p>
+    <p>Green rows are the songs that made the generated set. Click any column header to sort.</p>
+    <p id="legend2"></p>
   </div>
   <div class="scroll"><table id="gridTable"></table></div>
 </section>
@@ -221,8 +223,22 @@ const META = {
   "Total Eclipse of the Heart":{e:2,tags:["ballad"]}
 };
 const TARGET = 90*60, GAP = 25;
+let WEIGHTS = {MUST:6, YES:2, MAYBE:1, NO:-4};   // overwritten by the backend
+// Selection is pure total score. These are WARNING thresholds only — nothing
+// is promoted or demoted against the vote.
 const V2_FLOOR = 6;        // songs led outright by the female vocalist
 const SHARED_FLOOR = 9;    // V2 + duets combined — recovery windows for V1
+
+function scoreOf(votes, voters){
+  let score=0, musts=0, xs=0;
+  voters.forEach(v=>{
+    const val=(votes[v]||'').toUpperCase();
+    if(val==='X'){ xs++; return; }
+    if(WEIGHTS[val]!==undefined) score += WEIGHTS[val];
+    if(val==='MUST') musts++;
+  });
+  return {score, musts, xs};
+}
 
 let DATA = null;   // {voters:[], rows:[]}
 let sortKey = 'score', sortDir = -1;
@@ -274,14 +290,7 @@ function parse(text){
     const isPick = /pick ONE/i.test(sec);
     const key = META[song+'|'+artist] ? song+'|'+artist : song;
     const m = META[key] || {e:3};
-    let score=0, musts=0, xs=0;
-    voters.forEach(v=>{
-      const val=votes[v];
-      if(val==='MUST'){score+=3;musts++;}
-      else if(val==='YES'){score+=1;}
-      else if(val==='NO'){score-=2;}
-      else if(val==='X'){xs++;}
-    });
+    const {score, musts, xs} = scoreOf(votes, voters);
     rowsOut.push({song,artist,lead:(R[iLead]||'').trim().toUpperCase(),lenTxt,secs,
       sec,isLocked,isPick,votes,score,musts,xs,e:m.e,tags:m.tags||[]});
   }
@@ -313,43 +322,9 @@ function buildSet(D){
     chosen.push({...s,why:'voted'});
   }
 
-  // swap `s` in, dropping the weakest voted song that `drop` allows
-  function promote(s, why, reason, dropOk){
-    const victims = chosen.filter(c=>c.why==='voted' && dropOk(c))
-      .sort((a,b)=>a.score-b.score || a.e-b.e);
-    if(!victims.length) return false;
-    const v = victims[0];
-    chosen.splice(chosen.indexOf(v),1);
-    chosen.push({...s,why:why});
-    notes.push(reason+' — '+s.song+' is in, '+v.song+' drops out.');
-    return true;
-  }
-
-  // 1. the anniversary moment must survive the vote
-  const hasDed = chosen.some(c=>c.tags.includes('dedication')||c.tags.includes('ballad'));
-  if(!hasDed){
-    const cand = pool.filter(s=>s.tags.includes('dedication'))
-      .concat(pool.filter(s=>s.tags.includes('ballad')))
-      .filter(s=>!has(s));
-    if(cand.length) promote(cand[0], 'protected',
-      'It is a 10-year anniversary and the vote left no slow song for the couple',
-      c=>!c.tags.includes('dedication'));
-  }
-
-  // 2. female-lead floors — with no interval, V1 cannot carry 90 minutes alone
-  const isV2 = s=>s.lead==='V2', isShared = s=>s.lead==='V2'||s.lead==='DUET';
-  let v2n = chosen.filter(isV2).length;
-  for(const s of pool.filter(s=>isV2(s) && !has(s))){
-    if(v2n >= V2_FLOOR) break;
-    if(promote(s,'balance','Female-lead floor of '+V2_FLOOR,
-      c=>!isShared(c) && !c.tags.includes('dedication'))) v2n++;
-  }
-  let shared = chosen.filter(isShared).length;
-  for(const s of pool.filter(s=>isShared(s) && !has(s))){
-    if(shared >= SHARED_FLOOR) break;
-    if(promote(s,'balance','Vocal-rest floor of '+SHARED_FLOOR+' non-V1-only songs',
-      c=>!isShared(c) && !c.tags.includes('dedication'))) shared++;
-  }
+  // Selection is PURE TOTAL SCORE — the highest-scoring songs go in until the
+  // 90 minutes is full. Nothing is promoted or demoted against the vote; the
+  // shortfalls below surface as warnings on the page instead.
   return {chosen, notes};
 }
 
@@ -452,13 +427,22 @@ function render(){
     warn += '<div class="warn">Still waiting on: <strong>'+missing.map(esc).join(', ')+
       '</strong>. This setlist will move as they vote.</div>';
   }
+  if(v2 < V2_FLOOR){
+    warn += '<div class="warn"><strong>Only '+v2+' songs led outright by the female vocalist.</strong> '+
+      'The vote decided that, not the algorithm — but with no interval it leaves your male vocalist '+
+      'carrying most of 90 minutes. Worth a nudge before you lock it.</div>';
+  }
+  if(v2 + du < SHARED_FLOOR){
+    warn += '<div class="warn">Only '+(v2+du)+' songs give V1 any rest (V2 leads plus duets).</div>';
+  }
   if(longest > 3){
     warn += '<div class="warn"><strong>'+longest+' V1-led songs back to back.</strong> '+
       'With no interval that is a lot of unbroken singing — worth hand-swapping one for a V2 song nearby.</div>';
   }
   if(!ordered.some(s=>s.tags.includes('dedication')||s.tags.includes('ballad'))){
-    warn += '<div class="warn">No slow song made the set. For a 10-year anniversary you almost '+
-      'certainly want one moment for the couple.</div>';
+    warn += '<div class="warn"><strong>No slow song made the set.</strong> For a 10-year anniversary '+
+      'you almost certainly want one moment for the couple — add one by hand, or tag it '+
+      '<code>dedication</code> in admin and nudge the vote.</div>';
   }
   notes.forEach(n => warn += '<div class="warn">'+esc(n)+'</div>');
   document.getElementById('setWarn').innerHTML = warn;
@@ -487,13 +471,16 @@ function render(){
     return '<tr class="'+cls+'"><td class="len">'+(i+1)+'</td>'+
       '<td class="song">'+esc(r.song)+(r.isLocked?' <span class="badge lock">LOCK</span>':'')+'</td>'+
       '<td class="artist">'+esc(r.artist)+'</td><td>'+leadBadge(r.lead)+'</td>'+
-      gv.map(v=>{const x=r.votes[v]; return '<td class="c">'+
-        (x&&x!=='—'?'<span class="v '+esc(x)+'">'+esc(x)+'</span>':'<span class="v none">·</span>')+'</td>';}).join('')+
+      gv.map(v=>{const x=(r.votes[v]||'').toUpperCase(); return '<td class="c">'+
+        (x&&x!=='—'&&x!=='LOCKED'?'<span class="v '+esc(x)+'">'+esc(x)+'</span>':'<span class="v none">·</span>')+'</td>';}).join('')+
       '<td class="c"><span class="score '+(r.score>0?'pos':r.score<0?'neg':'zero')+'">'+
         (r.isPick?r.xs+' X':(r.score>0?'+':'')+r.score)+'</span></td>'+
       '<td class="c len">'+(r.musts||'')+'</td></tr>';
   }).join('')+'</tbody>';
   document.getElementById('gridTable').innerHTML = gh;
+  document.getElementById('legend2').innerHTML = 'Scoring: ' +
+    Object.entries(WEIGHTS).map(([k,v])=>'<strong>'+k+'</strong> = '+(v<0?'\u2212'+Math.abs(v):v)).join(' \u00b7 ') +
+    ' \u00b7 blank = neutral.';
   document.querySelectorAll('#gridTable th[data-k]').forEach(th=>{
     th.onclick = ()=>{ const k=th.dataset.k;
       if(sortKey===k) sortDir*=-1; else {sortKey=k; sortDir=(k==='song'||k==='artist')?1:-1;}
@@ -513,7 +500,7 @@ function render(){
       rh += '<tr><td colspan="8" style="color:var(--red);font-size:11.5px;letter-spacing:.08em;'+
         'text-transform:uppercase;background:rgba(209,91,91,.07)">— 90-minute cut line —</td></tr>';
     }
-    const nos = Object.values(r.votes).filter(x=>x==='NO').length;
+    const nos = Object.values(r.votes).filter(x=>String(x).toUpperCase()==='NO').length;
     rh += '<tr class="'+(sel?'inset':'cut')+'"><td class="len">'+(i+1)+'</td>'+
       '<td class="song">'+esc(r.song)+'</td><td class="artist">'+esc(r.artist)+'</td>'+
       '<td>'+leadBadge(r.lead)+'</td><td class="len">'+esc(r.lenTxt)+'</td>'+
@@ -606,6 +593,7 @@ if(!API) document.getElementById('apiCard').classList.add('hide');
 
 function fromApi(payload){
   const voters = payload.voters;
+  if(payload.weights) WEIGHTS = payload.weights;
   const rows = payload.rows.map(r=>{
     // sheet columns win; the built-in map is only a fallback for older rows
     const key = META[r.song+'|'+r.artist] ? r.song+'|'+r.artist : r.song;
@@ -614,14 +602,7 @@ function fromApi(payload){
                 tags: (r.tags && r.tags.length ? r.tags : (fb.tags||[])) };
     const p = (r.len||'').split(':');
     const secs = p.length===2 ? (+p[0])*60 + (+p[1]) : 0;
-    let score=0, musts=0, xs=0;
-    voters.forEach(v=>{
-      const val=(r.votes[v]||'').toUpperCase();
-      if(val==='MUST'){score+=3;musts++;}
-      else if(val==='YES'){score+=1;}
-      else if(val==='NO'){score-=2;}
-      else if(val==='X'){xs++;}
-    });
+    const {score, musts, xs} = scoreOf(r.votes, voters);
     return {song:r.song, artist:r.artist, lead:(r.lead||'').toUpperCase(),
       lenTxt:r.len, secs, sec:r.section,
       isLocked:/^LOCKED/i.test(r.section), isPick:/pick ONE/i.test(r.section),

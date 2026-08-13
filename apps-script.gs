@@ -33,6 +33,13 @@ var COL_TAGS   = 17;   // Q
 var MAX_ROW    = 300;  // formula range ceiling — room to grow
 var VOTERS     = ['Rich', 'Ashley', 'CJ', 'Justin', 'Isaac', 'Julie', 'Organiser'];
 
+// Single source of truth for scoring. The sheet formula and both web pages
+// are built from this, so changing a number here changes everything.
+// Scale is deliberately doubled from the original MUST 3 / YES 1 / NO -2 so
+// that votes cast before MAYBE existed keep their exact relative weight.
+var WEIGHTS = { MUST: 6, YES: 2, MAYBE: 1, NO: -4 };
+var VOTE_VALUES = ['MUST', 'YES', 'MAYBE', 'NO', 'X', ''];
+
 function sheet_() { return SpreadsheetApp.getActiveSpreadsheet().getSheets()[0]; }
 
 /** Run once from the editor. Safe to re-run at any time. */
@@ -48,9 +55,11 @@ function setupSheet() {
   var first = HEADER_ROW + 1;
   var vRange = '$G' + first + ':$M' + MAX_ROW;
   var cRange = '$C' + first + ':$C' + MAX_ROW;
+  var terms = Object.keys(WEIGHTS).map(function (k) {
+    return '(' + vRange + '="' + k + '")*(' + WEIGHTS[k] + ')';
+  }).join('+');
   sh.getRange(first, COL_SCORE).setFormula(
-    '=ARRAYFORMULA(IF(' + cRange + '="","",MMULT((' + vRange + '="MUST")*3+(' +
-    vRange + '="YES")*1+(' + vRange + '="NO")*-2,SEQUENCE(7,1,1,0))))');
+    '=ARRAYFORMULA(IF(' + cRange + '="","",MMULT(' + terms + ',SEQUENCE(7,1,1,0))))');
   sh.getRange(first, COL_MUSTS).setFormula(
     '=ARRAYFORMULA(IF(' + cRange + '="","",MMULT(--(' + vRange +
     '="MUST"),SEQUENCE(7,1,1,0))))');
@@ -58,10 +67,11 @@ function setupSheet() {
   var last = Math.max(sh.getLastRow(), first);
   var body = sh.getRange(first, FIRST_COL, last - HEADER_ROW, VOTERS.length);
   sh.setConditionalFormatRules([
-    ['MUST', '#e8a33d', '#231a09'],
-    ['YES',  '#d6f0e0', '#14532d'],
-    ['NO',   '#f8d7d7', '#7f1d1d'],
-    ['X',    '#ddd6fe', '#2e1065']
+    ['MUST',  '#e8a33d', '#231a09'],
+    ['YES',   '#d6f0e0', '#14532d'],
+    ['MAYBE', '#e5e0fb', '#2e1065'],
+    ['NO',    '#f8d7d7', '#7f1d1d'],
+    ['X',     '#c4b5fd', '#2e1065']
   ].map(function (r) {
     return SpreadsheetApp.newConditionalFormatRule()
       .whenTextEqualTo(r[0]).setBackground(r[1]).setFontColor(r[2])
@@ -110,7 +120,7 @@ function readAll_() {
       });
     });
   }
-  return { voters: voters.map(function (v) { return v.name; }), rows: rows };
+  return { voters: voters.map(function (v) { return v.name; }), weights: WEIGHTS, rows: rows };
 }
 
 function json_(o) {
@@ -158,7 +168,7 @@ function vote_(body) {
     if (!r) return;
     if (/^LOCKED/i.test(r.section) && !/pick ONE/i.test(r.section)) return;
     var val = String(votes[k] || '').trim().toUpperCase();
-    if (['MUST', 'YES', 'NO', 'X', ''].indexOf(val) < 0) return;
+    if (VOTE_VALUES.indexOf(val) < 0) return;
     sh.getRange(r.row, col).setValue(val);
     written++;
   });

@@ -32,6 +32,34 @@ from it, so adding or removing a song never needs a code change or a push.
 With `SETLIST_API` empty, the ballot and results pages fall back to manual
 copy/paste and admin is disabled.
 
+## Scoring
+
+Votes are **MUST / YES / MAYBE / NO**, or blank for neutral. Weights live in
+one place — the `WEIGHTS` object in `apps-script.gs` — and are used to build
+the sheet formula *and* served to both web pages, so changing a number there
+changes everything.
+
+| Vote | Weight |
+|---|---|
+| MUST | 6 |
+| YES | 2 |
+| MAYBE | 1 |
+| NO | &minus;4 |
+| blank | 0 |
+
+The scale is deliberately double the original (MUST 3 / YES 1 / NO &minus;2) so that
+votes cast before MAYBE existed keep their exact relative weight — adding
+MAYBE re-ranked nothing.
+
+**Selection is pure total score.** Locked organiser requests go in
+automatically; everything else is taken highest-first until the 90 minutes is
+full. Nothing is promoted or demoted against the vote. Where the result looks
+risky — no slow song, too little for the female vocalist, a long unbroken run
+for one voice — the results page flags it in red but does not overrule you.
+
+MAYBE does not count towards the running total on the ballot: the footer gauge
+shows the set you'd actually play, so only MUST and YES add time.
+
 ## Adding or removing songs
 
 Open `admin.html`, enter the admin key, edit the table, hit **Save changes**.

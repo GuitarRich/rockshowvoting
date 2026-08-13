@@ -173,7 +173,7 @@ function draw(){
   const rowHtml = (r, i, isNew) => {
     const k = r.song+'|'+r.artist;
     const e = edits[k] || {};
-    const cast = r.votes ? Object.values(r.votes).filter(v=>['MUST','YES','NO','X'].includes(v)).length : 0;
+    const cast = r.votes ? Object.values(r.votes).filter(v=>['MUST','YES','MAYBE','NO','X'].includes(String(v).toUpperCase())).length : 0;
     const locked = /^LOCKED/i.test(r.section||'');
     const cls = [isNew?'dirty':'', removals.has(k)?'doomed':'', (!isNew && edits[k])?'dirty':'', locked?'locked':'']
       .filter(Boolean).join(' ');
