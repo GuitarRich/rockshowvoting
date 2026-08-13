@@ -53,12 +53,25 @@ MAYBE re-ranked nothing.
 
 **Selection is pure total score.** Locked organiser requests go in
 automatically; everything else is taken highest-first until the 90 minutes is
-full. Nothing is promoted or demoted against the vote. Where the result looks
+full. Nothing is promoted or demoted against the vote. Songs with a **negative**
+total are never included - the band voted them down - even if there is time spare. Where the result looks
 risky — no slow song, too little for the female vocalist, a long unbroken run
 for one voice — the results page flags it in red but does not overrule you.
 
 MAYBE does not count towards the running total on the ballot: the footer gauge
 shows the set you'd actually play, so only MUST and YES add time.
+
+## A gotcha: the Length column
+
+Google Sheets silently turns `3:23` into a **time value**, not text. The backend
+normalises it back (`lenText_`) and both pages parse defensively, but if the
+results page ever refuses to build a set, the fix is:
+
+> select the Length column -> Format -> Number -> Plain text, then retype a value
+
+This matters because an unreadable length parses as zero seconds, which switches
+the 90-minute cap off and lets every song into the set. The results page now
+refuses to build rather than showing a 45-song "setlist".
 
 ## Adding or removing songs
 
@@ -79,6 +92,14 @@ Add one at a time or paste a batch as
 | `dip` | placed around a third of the way in |
 
 **Energy** is 1-5 and drives the shape of the set. Leave it at 3 if unsure.
+
+Some well-known songs carry built-in tags even when the Tags cell is empty.
+Put `-` in Tags to clear them — e.g. to stop a song being pinned to the last
+slot.
+
+The **Generated setlist** is a running order, not a ranking: songs are *chosen*
+by score, then *ordered* for how the night should feel, so the top scorer is
+usually not first. The **Full ranking** tab is the score order.
 
 Locked rows (organiser requests) are protected server-side — a voter cannot
 overwrite them, though an admin can still edit or delete them here.

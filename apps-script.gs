@@ -80,6 +80,22 @@ function setupSheet() {
   return 'Sheet ready. Voters: ' + VOTERS.join(', ');
 }
 
+/**
+ * Sheets silently coerces "3:23" into a time value, so getValues() hands back a
+ * Date, not a string. Normalise everything back to "m:ss".
+ */
+function lenText_(v) {
+  if (v instanceof Date) {
+    // "3:23" is stored as 03:23 AM — hours are minutes, minutes are seconds
+    return v.getHours() + ':' + ('0' + v.getMinutes()).slice(-2);
+  }
+  if (typeof v === 'number' && v > 0 && v < 1) {   // duration as a fraction of a day
+    var t = Math.round(v * 86400);
+    return Math.floor(t / 60) + ':' + ('0' + (t % 60)).slice(-2);
+  }
+  return String(v || '').trim();
+}
+
 function idx_(head) {
   var m = {};
   head.forEach(function (h, i) { m[String(h).trim().toLowerCase()] = i; });
@@ -113,7 +129,7 @@ function readAll_() {
         song:    song,
         artist:  String(r[ix['artist']] || '').trim(),
         lead:    String(r[ix['lead']]   || '').trim().toUpperCase(),
-        len:     String(r[ix['length']] || '').trim(),
+        len:     lenText_(r[ix['length']]),
         energy:  Number(r[COL_ENERGY - 1]) || 0,
         tags:    tags ? tags.split(/[,;]\s*/).filter(String) : [],
         votes:   votes

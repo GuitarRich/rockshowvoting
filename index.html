@@ -219,7 +219,17 @@ let me = null;
 
 const esc   = s => String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
 const unesc = s => String(s).replace(/&amp;/g,'&');
-const secsOf = t => { const p=String(t||'').split(':'); return p.length===2 ? (+p[0])*60+(+p[1]) : 210; };
+// Length can arrive as "3:23", "0:03:23", or a Date string Sheets produced.
+// Returning 0 silently would switch off the 90-minute cap, so callers check it.
+function parseLen(v){
+  const t = String(v==null?'':v).trim();
+  let m = t.match(/^(\d+):([0-5]?\d)(?::([0-5]?\d))?$/);
+  if(m) return (+m[1])*60 + (+m[2]);
+  m = t.match(/\b(\d{1,2}):([0-5]\d):([0-5]\d)\b/);   // embedded in a date string
+  if(m) return (+m[1])*60 + (+m[2]);
+  return 0;
+}
+const secsOf = t => parseLen(t) || 210;
 const mmss  = t => Math.floor(t/60)+":"+String(Math.round(t%60)).padStart(2,'0');
 const badge = v => '<span class="badge '+(v==='V1'?'v1':v==='V2'?'v2':'duet')+'">'+(v||'?')+'</span>';
 const keyOf = s => s.t+'|'+s.a;

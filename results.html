@@ -80,6 +80,8 @@
   .tag{font-size:10px;font-weight:700;letter-spacing:.05em;padding:2px 6px;border-radius:4px;
     background:var(--panel2);color:var(--muted);flex:0 0 auto}
   .tag.hi{background:rgba(232,163,61,.16);color:var(--amber)}
+  .tag.role{background:rgba(139,127,212,.16);color:#a99ff0}
+  .chips{display:flex;gap:5px;flex:0 0 auto;align-items:center}
   .stats{display:flex;flex-wrap:wrap;gap:10px;margin-bottom:14px}
   .stat{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:11px 15px;min-width:118px}
   .stat b{display:block;font-size:21px;line-height:1.15;font-variant-numeric:tabular-nums}
@@ -142,6 +144,13 @@
 <section id="tab-set" class="hide">
   <div id="setStats"></div>
   <div id="setWarn"></div>
+  <div class="card" style="margin-bottom:12px">
+    <h2>This is a running order, not a ranking</h2>
+    <p>Songs are <em>chosen</em> by score, then <em>ordered</em> for how the night should feel &mdash;
+    strong open, dip a third in, heavy at the peak, slow moment after it, big finish. So the
+    highest-scoring song is usually <strong>not</strong> first: a natural closer is deliberately placed last.
+    For pure score order, use the <strong>Full ranking</strong> tab.</p>
+  </div>
   <div class="card" style="padding:0;overflow:hidden">
     <div id="setlist"></div>
   </div>
@@ -174,7 +183,9 @@
 <section id="tab-rank" class="hide">
   <div class="card">
     <h2>Full ranking</h2>
-    <p>Every candidate, highest score first. The cut line shows where the 90 minutes runs out.</p>
+    <p>Every candidate, highest score first &mdash; <strong>this is the score order</strong>.
+    The cut line shows where the 90 minutes runs out; everything above it is in the set,
+    everything below is out.</p>
   </div>
   <div class="scroll"><table id="rankTable"></table></div>
 </section>
@@ -222,6 +233,17 @@ const META = {
   "One Way or Another":{e:4,tags:["opener"]},
   "Total Eclipse of the Heart":{e:2,tags:["ballad"]}
 };
+// Length can arrive as "3:23", "0:03:23", or a Date string Sheets produced.
+// Returning 0 silently would switch off the 90-minute cap, so callers check it.
+function parseLen(v){
+  const t = String(v==null?'':v).trim();
+  let m = t.match(/^(\d+):([0-5]?\d)(?::([0-5]?\d))?$/);
+  if(m) return (+m[1])*60 + (+m[2]);
+  m = t.match(/\b(\d{1,2}):([0-5]\d):([0-5]\d)\b/);   // embedded in a date string
+  if(m) return (+m[1])*60 + (+m[2]);
+  return 0;
+}
+
 const TARGET = 90*60, GAP = 25;
 let WEIGHTS = {MUST:6, YES:2, MAYBE:1, NO:-4};   // overwritten by the backend
 // Selection is pure total score. These are WARNING thresholds only — nothing
@@ -285,13 +307,14 @@ function parse(text){
     const votes={};
     voters.forEach((v,k)=>{ votes[v] = (R[vStart+k]||'').trim().toUpperCase(); });
     const lenTxt=(R[iLen]||'').trim();
-    const p=lenTxt.split(':'); const secs = p.length===2 ? (+p[0])*60 + (+p[1]) : 0;
+    const secs = parseLen(lenTxt);
     const isLocked = /^LOCKED/i.test(sec);
     const isPick = /pick ONE/i.test(sec);
     const key = META[song+'|'+artist] ? song+'|'+artist : song;
     const m = META[key] || {e:3};
     const {score, musts, xs} = scoreOf(votes, voters);
-    rowsOut.push({song,artist,lead:(R[iLead]||'').trim().toUpperCase(),lenTxt,secs,
+    rowsOut.push({song,artist,lead:(R[iLead]||'').trim().toUpperCase(),
+      lenTxt: secs ? (Math.floor(secs/60)+':'+String(secs%60).padStart(2,'0')) : lenTxt, secs,
       sec,isLocked,isPick,votes,score,musts,xs,e:m.e,tags:m.tags||[]});
   }
   if(!rowsOut.length) throw new Error("Found the header but no song rows underneath it.");
@@ -316,11 +339,23 @@ function buildSet(D){
     b.score-a.score || b.musts-a.musts || b.e-a.e);
 
   const dur = () => chosen.reduce((a,s)=>a+s.secs+GAP,0);
-  const has = s => chosen.some(c=>c.song===s.song && c.artist===s.artist);
+
+  // A runtime of 0 would silently switch the 90-minute cap off and let every
+  // song in, so refuse to build a set from unparseable lengths.
+  const noLen = pool.filter(s=>!s.secs);
+  if(noLen.length){
+    notes.push('BAD_LENGTHS:'+noLen.length+':'+noLen.slice(0,4).map(s=>s.song).join(', '));
+    return {chosen, notes, blocked:true};
+  }
+
   for(const s of pool){
-    if(dur() + s.secs + GAP > TARGET) continue;
+    if(s.score < 0) continue;                       // the band voted it down
+    if(dur() + s.secs + GAP > TARGET) continue;     // no room left
     chosen.push({...s,why:'voted'});
   }
+  const rejected = pool.filter(s=>s.score < 0).length;
+  const leftOut  = pool.filter(s=>s.score >= 0 && !chosen.some(c=>c.song===s.song && c.artist===s.artist)).length;
+  notes.push('COUNTS:'+rejected+':'+leftOut);
 
   // Selection is PURE TOTAL SCORE — the highest-scoring songs go in until the
   // 90 minutes is full. Nothing is promoted or demoted against the vote; the
@@ -401,8 +436,19 @@ const leadBadge = l => '<span class="badge '+(l==='V1'?'v1':l==='V2'?'v2':'duet'
 
 function render(){
   if(!DATA) return;
-  const {chosen, notes} = buildSet(DATA);
-  const ordered = orderSet(chosen);
+  const {chosen, notes, blocked} = buildSet(DATA);
+  const ordered = blocked ? [] : orderSet(chosen);
+  if(blocked){
+    const bad = notes.find(n=>n.startsWith('BAD_LENGTHS:')).split(':');
+    document.getElementById('setStats').innerHTML = '';
+    document.getElementById('setWarn').innerHTML =
+      '<div class="warn"><strong>Can\u2019t build a set \u2014 '+bad[1]+' songs have no readable length.</strong><br>'+
+      'Google Sheets often turns <code>3:23</code> into a time value rather than text. '+
+      'Fix: select the Length column, Format \u2192 Number \u2192 Plain text, then retype a couple of values. '+
+      'First few affected: '+esc(bad[2])+'.</div>';
+    document.getElementById('setlist').innerHTML = '';
+    return;
+  }
   const inSet = new Set(ordered.map(s=>s.song+'|'+s.artist));
   const total = ordered.reduce((a,s)=>a+s.secs+GAP,0);
   const v1 = ordered.filter(s=>s.lead==='V1').length;
@@ -444,19 +490,35 @@ function render(){
       'you almost certainly want one moment for the couple — add one by hand, or tag it '+
       '<code>dedication</code> in admin and nudge the vote.</div>';
   }
-  notes.forEach(n => warn += '<div class="warn">'+esc(n)+'</div>');
+  const counts = notes.find(n=>n.startsWith('COUNTS:'));
+  if(counts){
+    const [,rej,left] = counts.split(':');
+    if(+rej || +left){
+      warn += '<div class="warn" style="background:rgba(146,152,168,.08);border-color:var(--line);color:var(--muted)">'+
+        (+rej ? '<strong>'+rej+'</strong> songs scored below zero and were left out. ' : '')+
+        (+left ? '<strong>'+left+'</strong> more would have made it on score but there was no time. ' : '')+
+        'Everything is visible on the <strong>Full ranking</strong> tab.</div>';
+    }
+  }
+  notes.filter(n=>!/^(COUNTS|BAD_LENGTHS):/.test(n))
+       .forEach(n => warn += '<div class="warn">'+esc(n)+'</div>');
   document.getElementById('setWarn').innerHTML = warn;
 
   // --- setlist
   document.getElementById('setlist').innerHTML = ordered.map((s,i)=>{
-    const tag = s.why==='locked' ? '<span class="tag hi">LOCKED</span>'
-              : s.why==='balance' ? '<span class="tag hi">BALANCE</span>'
-              : '<span class="tag">'+(s.score>0?'+':'')+s.score+'</span>';
-    const d = s.tags.includes('dedication') ? ' &middot; <span style="color:var(--amber)">dedication</span>' : '';
+    const role = i===0 ? 'OPENER'
+               : i===ordered.length-1 ? 'CLOSER'
+               : s.tags.includes('dedication') ? 'DEDICATION'
+               : s.tags.includes('ballad') ? 'BREATHER'
+               : s.tags.includes('heavy') ? 'PEAK' : '';
+    const chips =
+      (role ? '<span class="tag role">'+role+'</span>' : '') +
+      (s.why==='locked' ? '<span class="tag hi">LOCKED</span>' : '') +
+      '<span class="tag">'+(s.score>0?'+':'')+s.score+'</span>';
     return '<div class="setrow"><span class="num">'+(i+1)+'</span>'+
       '<span class="info"><span class="t">'+esc(s.song)+'</span>'+
-      '<span class="m">'+leadBadge(s.lead)+esc(s.artist)+' &middot; '+esc(s.lenTxt)+d+'</span></span>'+
-      tag+'</div>';
+      '<span class="m">'+leadBadge(s.lead)+esc(s.artist)+' &middot; '+esc(s.lenTxt)+'</span></span>'+
+      '<span class="chips">'+chips+'</span></div>';
   }).join('');
 
   // --- grid
@@ -501,6 +563,7 @@ function render(){
         'text-transform:uppercase;background:rgba(209,91,91,.07)">— 90-minute cut line —</td></tr>';
     }
     const nos = Object.values(r.votes).filter(x=>String(x).toUpperCase()==='NO').length;
+    if(r.score < 0 && !cutShown){ /* negatives sort below the cut anyway */ }
     rh += '<tr class="'+(sel?'inset':'cut')+'"><td class="len">'+(i+1)+'</td>'+
       '<td class="song">'+esc(r.song)+'</td><td class="artist">'+esc(r.artist)+'</td>'+
       '<td>'+leadBadge(r.lead)+'</td><td class="len">'+esc(r.lenTxt)+'</td>'+
@@ -598,13 +661,17 @@ function fromApi(payload){
     // sheet columns win; the built-in map is only a fallback for older rows
     const key = META[r.song+'|'+r.artist] ? r.song+'|'+r.artist : r.song;
     const fb = META[key] || {e:3};
+    // A Tags cell of "-" or "none" means explicitly no tags, so you can strip a
+    // built-in tag (e.g. stop a song being forced into the closer slot).
+    const sheetTags = (r.tags||[]).filter(t=>t && !/^(-|none)$/i.test(t));
+    const cleared = (r.tags||[]).some(t=>/^(-|none)$/i.test(t));
     const m = { e: (r.energy>0 ? r.energy : fb.e),
-                tags: (r.tags && r.tags.length ? r.tags : (fb.tags||[])) };
-    const p = (r.len||'').split(':');
-    const secs = p.length===2 ? (+p[0])*60 + (+p[1]) : 0;
+                tags: sheetTags.length ? sheetTags : (cleared ? [] : (fb.tags||[])) };
+    const secs = parseLen(r.len);
     const {score, musts, xs} = scoreOf(r.votes, voters);
     return {song:r.song, artist:r.artist, lead:(r.lead||'').toUpperCase(),
-      lenTxt:r.len, secs, sec:r.section,
+      lenTxt: secs ? (Math.floor(secs/60)+':'+String(secs%60).padStart(2,'0')) : String(r.len||''),
+      secs, sec:r.section,
       isLocked:/^LOCKED/i.test(r.section), isPick:/pick ONE/i.test(r.section),
       votes:r.votes, score, musts, xs, e:m.e, tags:m.tags};
   });
