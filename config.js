@@ -6,7 +6,7 @@
 //
 // Leave it empty and both pages fall back to manual copy/paste.
 // ---------------------------------------------------------------------------
-window.SETLIST_API = "https://script.google.com/macros/s/AKfycbyFYHvvxFnXw8TQxhw1TC3Nwnwh1p3aG_x59mDrYSloFqsBozaoSDGzH_r3Imp93ZxU/exec";
+window.SETLIST_API = "https://script.google.com/macros/s/AKfycbwxy7MBcA-lpdsNGRzuzAsUteFusJXS1vr-84iM_upc2z9v_Ph2iLbHBLbb624NSZKj1Q/exec";
 
 
 // The people voting. Must match the column headers in the sheet (row 3, G..M).
