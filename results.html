@@ -233,15 +233,20 @@ const META = {
   "One Way or Another":{e:4,tags:["opener"]},
   "Total Eclipse of the Heart":{e:2,tags:["ballad"]}
 };
-// Length can arrive as "3:23", "0:03:23", or a Date string Sheets produced.
-// Returning 0 silently would switch off the 90-minute cap, so callers check it.
+// Length must be "m:ss" (or "h:mm:ss"). Anything else returns 0 and the caller
+// refuses to build a set. An earlier version scraped the clock digits out of the
+// date string Sheets returns for a time-typed cell — those digits are shifted by
+// the sheet's timezone, so it produced wildly wrong runtimes. Guessing is worse
+// than failing here: a wrong length silently breaks the 90-minute cap.
+const MAX_SONG = 15*60;   // nothing in a covers set is longer; above this is a parse error
 function parseLen(v){
   const t = String(v==null?'':v).trim();
-  let m = t.match(/^(\d+):([0-5]?\d)(?::([0-5]?\d))?$/);
-  if(m) return (+m[1])*60 + (+m[2]);
-  m = t.match(/\b(\d{1,2}):([0-5]\d):([0-5]\d)\b/);   // embedded in a date string
-  if(m) return (+m[1])*60 + (+m[2]);
-  return 0;
+  const m = t.match(/^(\d{1,3}):([0-5]?\d)(?::([0-5]\d))?$/);
+  if(!m) return 0;
+  const secs = m[3] !== undefined
+    ? (+m[1])*3600 + (+m[2])*60 + (+m[3])   // h:mm:ss
+    : (+m[1])*60 + (+m[2]);                 // m:ss
+  return (secs > 0 && secs <= MAX_SONG) ? secs : 0;
 }
 
 const TARGET = 90*60, GAP = 25;

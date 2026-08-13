@@ -64,14 +64,17 @@ shows the set you'd actually play, so only MUST and YES add time.
 ## A gotcha: the Length column
 
 Google Sheets silently turns `3:23` into a **time value**, not text. The backend
-normalises it back (`lenText_`) and both pages parse defensively, but if the
-results page ever refuses to build a set, the fix is:
+therefore reads the sheet with **`getDisplayValues()`, never `getValues()`** -
+reading a time cell back as a Date and reformatting it is timezone-dependent and
+produces wildly wrong runtimes. If the results page refuses to build a set, the
+fix is:
 
 > select the Length column -> Format -> Number -> Plain text, then retype a value
 
-This matters because an unreadable length parses as zero seconds, which switches
-the 90-minute cap off and lets every song into the set. The results page now
-refuses to build rather than showing a 45-song "setlist".
+`parseLen()` on both pages accepts only `m:ss` / `h:mm:ss` and rejects anything
+over 15 minutes. It deliberately does **not** try to salvage a date string -
+guessing produced wrong runtimes, and a wrong length silently breaks the
+90-minute cap. Unreadable lengths block the build with a banner instead.
 
 ## Adding or removing songs
 

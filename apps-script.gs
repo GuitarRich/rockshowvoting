@@ -80,22 +80,6 @@ function setupSheet() {
   return 'Sheet ready. Voters: ' + VOTERS.join(', ');
 }
 
-/**
- * Sheets silently coerces "3:23" into a time value, so getValues() hands back a
- * Date, not a string. Normalise everything back to "m:ss".
- */
-function lenText_(v) {
-  if (v instanceof Date) {
-    // "3:23" is stored as 03:23 AM — hours are minutes, minutes are seconds
-    return v.getHours() + ':' + ('0' + v.getMinutes()).slice(-2);
-  }
-  if (typeof v === 'number' && v > 0 && v < 1) {   // duration as a fraction of a day
-    var t = Math.round(v * 86400);
-    return Math.floor(t / 60) + ':' + ('0' + (t % 60)).slice(-2);
-  }
-  return String(v || '').trim();
-}
-
 function idx_(head) {
   var m = {};
   head.forEach(function (h, i) { m[String(h).trim().toLowerCase()] = i; });
@@ -105,7 +89,7 @@ function idx_(head) {
 function readAll_() {
   var sh = sheet_();
   var last = sh.getLastRow(), lastCol = Math.max(sh.getLastColumn(), COL_TAGS);
-  var head = sh.getRange(HEADER_ROW, 1, 1, lastCol).getValues()[0];
+  var head = sh.getRange(HEADER_ROW, 1, 1, lastCol).getDisplayValues()[0];
   var ix = idx_(head);
 
   var voters = [];
@@ -116,7 +100,10 @@ function readAll_() {
 
   var rows = [];
   if (last > HEADER_ROW) {
-    var vals = sh.getRange(HEADER_ROW + 1, 1, last - HEADER_ROW, lastCol).getValues();
+    // getDisplayValues, NOT getValues: Sheets turns "3:23" into a time value, and
+    // reading it back as a Date then formatting it is timezone-dependent, which
+    // produced wildly wrong runtimes. The displayed string is what the user typed.
+    var vals = sh.getRange(HEADER_ROW + 1, 1, last - HEADER_ROW, lastCol).getDisplayValues();
     vals.forEach(function (r, i) {
       var song = String(r[ix['song']] || '').trim();
       if (!song) return;
@@ -129,8 +116,8 @@ function readAll_() {
         song:    song,
         artist:  String(r[ix['artist']] || '').trim(),
         lead:    String(r[ix['lead']]   || '').trim().toUpperCase(),
-        len:     lenText_(r[ix['length']]),
-        energy:  Number(r[COL_ENERGY - 1]) || 0,
+        len:     String(r[ix['length']] || '').trim(),
+        energy:  Number(String(r[COL_ENERGY - 1] || '').trim()) || 0,
         tags:    tags ? tags.split(/[,;]\s*/).filter(String) : [],
         votes:   votes
       });
