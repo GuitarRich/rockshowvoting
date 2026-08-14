@@ -766,11 +766,15 @@ function fromApi(payload){
     // sheet columns win; the built-in map is only a fallback for older rows
     const key = META[r.song+'|'+r.artist] ? r.song+'|'+r.artist : r.song;
     const fb = META[key] || {e:3};
-    // A Tags cell of "-" or "none" means explicitly no tags, so you can strip a
-    // built-in tag (e.g. stop a song being forced into the closer slot).
+    // If a row has an Energy value it has been curated in the sheet, so trust
+    // its Tags EXACTLY — including blank. Previously a blank Tags cell silently
+    // re-inherited the built-in tags, so clearing `opener` in the sheet did
+    // nothing. Rows nobody has touched (no Energy) still get the fallback.
+    // "-" or "none" also forces empty, for a row with no Energy set.
+    const curated   = r.energy > 0;
     const sheetTags = (r.tags||[]).filter(t=>t && !/^(-|none)$/i.test(t));
-    const cleared = (r.tags||[]).some(t=>/^(-|none)$/i.test(t));
-    const m = { e: (r.energy>0 ? r.energy : fb.e),
+    const cleared   = curated || (r.tags||[]).some(t=>/^(-|none)$/i.test(t));
+    const m = { e: curated ? r.energy : fb.e,
                 tags: sheetTags.length ? sheetTags : (cleared ? [] : (fb.tags||[])) };
     const secs = parseLen(r.len);
     const {score, musts, xs} = scoreOf(r.votes, voters);

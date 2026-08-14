@@ -109,9 +109,12 @@ Add one at a time or paste a batch as
 
 **Energy** is 1-5 and drives the shape of the set. Leave it at 3 if unsure.
 
-Some well-known songs carry built-in tags even when the Tags cell is empty.
-Put `-` in Tags to clear them — e.g. to stop a song being pinned to the last
-slot.
+**A row with an Energy value is treated as curated** — its Tags are used
+exactly as written, including blank. So to remove a tag, just delete it.
+
+Rows with **no** Energy value fall back to a built-in map of well-known songs,
+which carries sensible energy and tags. For those rows only, put `-` in Tags to
+force "no tags".
 
 ### Pacing rules in the running order
 
