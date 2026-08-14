@@ -166,6 +166,9 @@
       <li><strong>No more than two songs by any one band</strong> — counted across the locked
         requests too. Because the list is score-ordered, a band keeps its two best and the rest
         drop, marked <strong>CAP</strong> on the ranking tab.</li>
+      <li><strong>No two slow songs sit next to each other</strong>, and no four-song stretch
+        is allowed to sag &mdash; a trough is what empties a floor, and it is usually built from
+        mid-tempo songs that each look fine on their own.</li>
       <li>Where the result looks risky &mdash; no slow song, too little for the female vocalist, a long unbroken run for V1 &mdash; it says so in red, but it does not overrule you.</li>
       <li>The order is then built against an energy curve: strong open, a dip around a third in, the heavy cluster at ~60&ndash;70%, the dedication ballad straight after the peak, then a lift into the closer.</li>
       <li>No three songs in a row share a lead vocalist, and no two songs by the same artist sit next to each other.</li>
@@ -235,7 +238,18 @@ const META = {
   "What's Up?":{e:3},"You Oughta Know":{e:4},
   "Love Bites (So Do I)":{e:4,tags:["heavy"]},
   "One Way or Another":{e:4,tags:["opener"]},
-  "Total Eclipse of the Heart":{e:2,tags:["ballad"]}
+  "Total Eclipse of the Heart":{e:2,tags:["ballad"]},
+  // added after the first draft — energy/tags here are fallbacks only, the
+  // sheet's Energy and Tags columns win where they're filled in
+  "Cryin'":{e:2,tags:["ballad"]},
+  "Faithfully":{e:1,tags:["ballad","dedication"]},
+  "Dream On":{e:3},
+  "Sweet Emotion":{e:4},
+  "Teenage Dirtbag":{e:3},
+  "What If":{e:4,tags:["heavy"]},
+  "Mr. Brightside":{e:4,tags:["lift"]},
+  "Learn to Fly":{e:4},
+  "Two Princes":{e:3,tags:["dip"]}
 };
 // Length must be m:ss. Sheets renders a time-typed "3:23" as "3:23:00" (and
 // sometimes with AM/PM), so h:mm:ss that comes out longer than any real song is
@@ -432,6 +446,11 @@ function orderSet(list){
   }
 
   // --- pass 2: repair adjacency
+  // A song counts as SLOW if it's low energy or carries a slow-ish tag. Energy
+  // alone isn't enough: a power ballad often gets entered as energy 3.
+  const SLOW = s => s.e <= 2 || s.tags.includes('ballad')
+                 || s.tags.includes('dedication') || s.tags.includes('dip');
+
   const adj = arr => {
     let p = 0;
     for(let i=0;i<arr.length;i++){
@@ -439,6 +458,18 @@ function orderSet(list){
       if(b && b.artist===a.artist) p += 10;
       if(b && c && b.lead===a.lead && c.lead===a.lead) p += 6;
       if(b && b.lead===a.lead) p += 1.2;
+      // never two slow songs back to back, and preferably not one apart either
+      if(b && SLOW(a) && SLOW(b)) p += 18;
+      if(c && SLOW(a) && SLOW(c)) p += 7;
+    }
+    // no long flat stretch: penalise any 4-song window whose average energy
+    // sags. This is what catches a trough built from mid-tempo songs that are
+    // individually fine — the killer is four in a row, not any one of them.
+    for(let i=3;i<arr.length;i++){
+      let t = 0;
+      for(let k=i-3;k<=i;k++) t += arr[k].e;
+      const avg = t/4;
+      if(avg < 3.1) p += (3.1-avg)*14;
     }
     return p;
   };
@@ -508,6 +539,17 @@ function render(){
   }
   if(v2 + du < SHARED_FLOOR){
     warn += '<div class="warn">Only '+(v2+du)+' songs give V1 any rest (V2 leads plus duets).</div>';
+  }
+  // flag any 4-song stretch that still sags after ordering
+  const troughs = [];
+  for(let i=3;i<ordered.length;i++){
+    let t=0; for(let k=i-3;k<=i;k++) t += ordered[k].e;
+    if(t/4 < 3.0) troughs.push((i-2)+'\u2013'+(i+1));
+  }
+  if(troughs.length){
+    warn += '<div class="warn"><strong>Flat stretch at '+troughs[0]+'.</strong> '+
+      'Four songs in a row with little lift &mdash; that is where a dancefloor empties. '+
+      'You probably have one slow song too many for a 90-minute set; dropping one is the fix.</div>';
   }
   if(longest > 3){
     warn += '<div class="warn"><strong>'+longest+' V1-led songs back to back.</strong> '+

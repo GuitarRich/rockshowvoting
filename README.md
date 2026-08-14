@@ -113,6 +113,21 @@ Some well-known songs carry built-in tags even when the Tags cell is empty.
 Put `-` in Tags to clear them — e.g. to stop a song being pinned to the last
 slot.
 
+### Pacing rules in the running order
+
+- No two **slow** songs sit next to each other, and preferably not one apart.
+  "Slow" means energy <= 2 **or** a `ballad` / `dedication` / `dip` tag — energy
+  alone isn't enough, because a power ballad often gets entered as energy 3.
+- No four-song window is allowed to sag below an average energy of ~3.1. A
+  trough is what empties a dancefloor, and it is usually built from mid-tempo
+  songs that each look fine on their own.
+- No three songs in a row share a lead vocalist; no two by the same band are
+  adjacent.
+
+If a flat stretch survives anyway, the page says so — that means there are more
+slow songs than a 90-minute set can absorb, and the fix is dropping one, not
+reordering.
+
 The **Generated setlist** is a running order, not a ranking: songs are *chosen*
 by score, then *ordered* for how the night should feel, so the top scorer is
 usually not first. The **Full ranking** tab is the score order.
