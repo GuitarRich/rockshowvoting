@@ -68,6 +68,7 @@
   .v2{background:rgba(232,163,61,.16);color:var(--amber)}
   .duet{background:rgba(79,180,119,.16);color:#6fd096}
   .lock{background:rgba(232,163,61,.14);color:var(--amber)}
+  .cap{background:rgba(209,91,91,.16);color:#eb8888}
   tr.inset{background:rgba(79,180,119,.055)}
   tr.cut{opacity:.45}
 
@@ -162,6 +163,9 @@
     <ol>
       <li>Locked organiser requests go in automatically. For Creed and Nickelback, whichever song has the most <strong>X</strong> marks wins.</li>
       <li><strong>Everything else is pure total score</strong> &mdash; highest first, taken from the top until the set hits ~90 minutes (25s of changeover assumed per song). Nothing is promoted or demoted against the vote.</li>
+      <li><strong>No more than two songs by any one band</strong> — counted across the locked
+        requests too. Because the list is score-ordered, a band keeps its two best and the rest
+        drop, marked <strong>CAP</strong> on the ranking tab.</li>
       <li>Where the result looks risky &mdash; no slow song, too little for the female vocalist, a long unbroken run for V1 &mdash; it says so in red, but it does not overrule you.</li>
       <li>The order is then built against an energy curve: strong open, a dip around a third in, the heavy cluster at ~60&ndash;70%, the dedication ballad straight after the peak, then a lift into the closer.</li>
       <li>No three songs in a row share a lead vocalist, and no two songs by the same artist sit next to each other.</li>
@@ -254,6 +258,7 @@ function parseLen(v){
 
 const TARGET = 90*60, GAP = 25;
 let WEIGHTS = {MUST:6, YES:2, MAYBE:1, NO:-4};   // overwritten by the backend
+let MAX_PER_ARTIST = 2;                          // 0 = no limit
 // Selection is pure total score. These are WARNING thresholds only — nothing
 // is promoted or demoted against the vote.
 const V2_FLOOR = 6;        // songs led outright by the female vocalist
@@ -356,19 +361,34 @@ function buildSet(D){
     return {chosen, notes, blocked:true};
   }
 
+  // Max N songs per band. Locked songs count towards a band's allowance but are
+  // never dropped. Because the pool is score-ordered, the cap keeps a band's
+  // best-scoring songs and drops the rest.
+  const aKey = s => String(s.artist||'').trim().toLowerCase();
+  const perArtist = {};
+  chosen.forEach(s => { perArtist[aKey(s)] = (perArtist[aKey(s)]||0) + 1; });
+
+  const cappedKeys = new Set();
   for(const s of pool){
     if(s.score < 0) continue;                       // the band voted it down
+    const k = aKey(s);
+    if(MAX_PER_ARTIST && (perArtist[k]||0) >= MAX_PER_ARTIST){
+      cappedKeys.add(s.song+'|'+s.artist); continue;
+    }
     if(dur() + s.secs + GAP > TARGET) continue;     // no room left
     chosen.push({...s,why:'voted'});
+    perArtist[k] = (perArtist[k]||0) + 1;
   }
+
   const rejected = pool.filter(s=>s.score < 0).length;
-  const leftOut  = pool.filter(s=>s.score >= 0 && !chosen.some(c=>c.song===s.song && c.artist===s.artist)).length;
-  notes.push('COUNTS:'+rejected+':'+leftOut);
+  const leftOut  = pool.filter(s=>s.score >= 0 && !cappedKeys.has(s.song+'|'+s.artist)
+    && !chosen.some(c=>c.song===s.song && c.artist===s.artist)).length;
+  notes.push('COUNTS:'+rejected+':'+leftOut+':'+cappedKeys.size);
 
   // Selection is PURE TOTAL SCORE — the highest-scoring songs go in until the
   // 90 minutes is full. Nothing is promoted or demoted against the vote; the
   // shortfalls below surface as warnings on the page instead.
-  return {chosen, notes};
+  return {chosen, notes, cappedKeys};
 }
 
 // ===================== ordering =====================
@@ -444,7 +464,7 @@ const leadBadge = l => '<span class="badge '+(l==='V1'?'v1':l==='V2'?'v2':'duet'
 
 function render(){
   if(!DATA) return;
-  const {chosen, notes, blocked} = buildSet(DATA);
+  const {chosen, notes, blocked, cappedKeys} = buildSet(DATA);
   const ordered = blocked ? [] : orderSet(chosen);
   if(blocked){
     const bad = notes.find(n=>n.startsWith('BAD_LENGTHS:')).split(':');
@@ -500,10 +520,11 @@ function render(){
   }
   const counts = notes.find(n=>n.startsWith('COUNTS:'));
   if(counts){
-    const [,rej,left] = counts.split(':');
-    if(+rej || +left){
+    const [,rej,left,cap] = counts.split(':');
+    if(+rej || +left || +cap){
       warn += '<div class="warn" style="background:rgba(146,152,168,.08);border-color:var(--line);color:var(--muted)">'+
-        (+rej ? '<strong>'+rej+'</strong> songs scored below zero and were left out. ' : '')+
+        (+cap ? '<strong>'+cap+'</strong> songs were cut by the '+MAX_PER_ARTIST+'-per-band limit. ' : '')+
+        (+rej ? '<strong>'+rej+'</strong> scored below zero and were left out. ' : '')+
         (+left ? '<strong>'+left+'</strong> more would have made it on score but there was no time. ' : '')+
         'Everything is visible on the <strong>Full ranking</strong> tab.</div>';
     }
@@ -572,8 +593,11 @@ function render(){
     }
     const nos = Object.values(r.votes).filter(x=>String(x).toUpperCase()==='NO').length;
     if(r.score < 0 && !cutShown){ /* negatives sort below the cut anyway */ }
+    const wasCapped = cappedKeys && cappedKeys.has(r.song+'|'+r.artist);
     rh += '<tr class="'+(sel?'inset':'cut')+'"><td class="len">'+(i+1)+'</td>'+
-      '<td class="song">'+esc(r.song)+'</td><td class="artist">'+esc(r.artist)+'</td>'+
+      '<td class="song">'+esc(r.song)+
+        (wasCapped?' <span class="badge cap" title="Cut by the per-band limit">CAP</span>':'')+
+      '</td><td class="artist">'+esc(r.artist)+'</td>'+
       '<td>'+leadBadge(r.lead)+'</td><td class="len">'+esc(r.lenTxt)+'</td>'+
       '<td class="c"><span class="score '+(r.score>0?'pos':r.score<0?'neg':'zero')+'">'+
         (r.score>0?'+':'')+r.score+'</span></td>'+
@@ -665,6 +689,8 @@ if(!API) document.getElementById('apiCard').classList.add('hide');
 function fromApi(payload){
   const voters = payload.voters;
   if(payload.weights) WEIGHTS = payload.weights;
+  if(payload.limits && payload.limits.maxPerArtist !== undefined)
+    MAX_PER_ARTIST = payload.limits.maxPerArtist;
   const rows = payload.rows.map(r=>{
     // sheet columns win; the built-in map is only a fallback for older rows
     const key = META[r.song+'|'+r.artist] ? r.song+'|'+r.artist : r.song;

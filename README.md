@@ -53,10 +53,18 @@ MAYBE re-ranked nothing.
 
 **Selection is pure total score.** Locked organiser requests go in
 automatically; everything else is taken highest-first until the 90 minutes is
-full. Nothing is promoted or demoted against the vote. Songs with a **negative**
-total are never included - the band voted them down - even if there is time spare. Where the result looks
-risky — no slow song, too little for the female vocalist, a long unbroken run
-for one voice — the results page flags it in red but does not overrule you.
+full. Nothing is promoted or demoted against the vote. Two hard limits apply:
+
+- Songs with a **negative** total are never included - the band voted them down -
+  even if there is time spare.
+- **Max 2 songs per band** (`MAX_PER_ARTIST` in `apps-script.gs`, set 0 for no
+  limit). Locked requests count towards a band's allowance but are never
+  dropped. Since the list is score-ordered, a band keeps its two best scorers
+  and the rest are marked `CAP` on the ranking tab.
+
+Where the result looks risky — no slow song, too little for the female
+vocalist, a long unbroken run for one voice — the results page flags it in red
+but does **not** overrule the vote.
 
 MAYBE does not count towards the running total on the ballot: the footer gauge
 shows the set you'd actually play, so only MUST and YES add time.
@@ -95,7 +103,7 @@ Add one at a time or paste a batch as
 | `closer` | pulled towards the last slot |
 | `heavy` | clustered in the 50-80% peak |
 | `ballad` | placed after the peak |
-| `dedication` | placed ~75% in, and **protected from being voted out** |
+| `dedication` | placed ~75% in; a warning fires if no ballad makes the set |
 | `lift` | placed right after the ballad, to recover the energy |
 | `dip` | placed around a third of the way in |
 

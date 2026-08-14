@@ -10,7 +10,8 @@
  *  3. Change ADMIN_KEY below to something only you know.
  *  4. Run  setupSheet  once (Run menu). Approve the permission prompt.
  *     Then run  fixLengths  once — it rewrites the Length column as plain text
- *     so Sheets stops turning "3:23" into a time value.
+ *     so Sheets stops turning "3:23" into a time value. If that misbehaves, run
+ *     diagnoseLengths first: it changes nothing and prints what is in the cells.
  *     It fixes the voter column names, adds the Energy/Tags columns, widens the
  *     score formulas so new rows keep working, and colour-codes the votes.
  *  5. Deploy -> New deployment -> gear icon -> Web app.
@@ -41,6 +42,11 @@ var VOTERS     = ['Rich', 'Ashley', 'CJ', 'Justin', 'Isaac', 'Julie', 'Organiser
 // that votes cast before MAYBE existed keep their exact relative weight.
 var WEIGHTS = { MUST: 6, YES: 2, MAYBE: 1, NO: -4 };
 var VOTE_VALUES = ['MUST', 'YES', 'MAYBE', 'NO', 'X', ''];
+
+// No more than this many songs by any one band make the final set. Counted
+// across locked songs too, so a locked request uses up one of the slots.
+// Set to 0 for no limit.
+var MAX_PER_ARTIST = 2;
 
 function sheet_() { return SpreadsheetApp.getActiveSpreadsheet().getSheets()[0]; }
 
@@ -82,53 +88,104 @@ function setupSheet() {
   return 'Sheet ready. Voters: ' + VOTERS.join(', ');
 }
 
+/** Shared: turn whatever a Length cell shows into seconds. 0 = unreadable. */
+function lenSecs_(raw) {
+  var t = String(raw == null ? '' : raw).trim().toUpperCase().replace(/\s*[AP]\.?M\.?$/, '').trim();
+  var m = t.match(/^(\d{1,3}):([0-5]?\d)(?::([0-5]?\d))?$/);
+  if (!m) return 0;
+  var secs;
+  if (m[3] === undefined) secs = (+m[1]) * 60 + (+m[2]);
+  else {
+    secs = (+m[1]) * 3600 + (+m[2]) * 60 + (+m[3]);
+    if (secs > 900) secs = (+m[1]) * 60 + (+m[2]);   // "3:23:00" means 3m23s
+  }
+  return (secs > 0 && secs <= 900) ? secs : 0;
+}
+
+function mmss_(secs) {
+  return Math.floor(secs / 60) + ':' + ('0' + (secs % 60)).slice(-2);
+}
+
+/** Locate the Length column (0-based). Falls back to column F. */
+function lengthCol_(sh) {
+  var head = sh.getRange(HEADER_ROW, 1, 1, sh.getLastColumn()).getDisplayValues()[0];
+  for (var i = 0; i < head.length; i++) {
+    if (String(head[i]).trim().toLowerCase() === 'length') return i;
+  }
+  return 5;   // column F
+}
+
 /**
- * ONE-TIME REPAIR — run this from the editor if runtimes look wrong or the
- * results page says it can't read the lengths.
- *
- * Sheets coerces "3:23" into a time value, which then reads back as a Date and
- * renders as "3:23:00" or "3:23:00 AM" depending on locale. This rewrites the
- * whole Length column as PLAIN TEXT "m:ss" so nothing can reinterpret it again.
+ * READ-ONLY. Run this first if fixLengths misbehaves — it changes nothing and
+ * prints exactly what is in the sheet. Open View -> Logs to read the output.
+ */
+function diagnoseLengths() {
+  var sh = sheet_();
+  var out = [];
+  out.push('Sheet: "' + sh.getName() + '"  rows=' + sh.getLastRow() + '  cols=' + sh.getLastColumn());
+  var head = sh.getRange(HEADER_ROW, 1, 1, sh.getLastColumn()).getDisplayValues()[0];
+  out.push('Header row ' + HEADER_ROW + ': ' + head.join(' | '));
+  var col = lengthCol_(sh);
+  out.push('Length resolved to column index ' + col + ' (' + String.fromCharCode(65 + col) + ')');
+
+  var n = Math.min(10, Math.max(0, sh.getLastRow() - HEADER_ROW));
+  if (!n) { out.push('No data rows.'); Logger.log(out.join('\n')); return out.join('\n'); }
+
+  var rng = sh.getRange(HEADER_ROW + 1, col + 1, n, 1);
+  var disp = rng.getDisplayValues();
+  var vals = rng.getValues();
+  var fmts = rng.getNumberFormats();
+  for (var i = 0; i < n; i++) {
+    out.push('row ' + (HEADER_ROW + 1 + i) +
+      ' | display="' + disp[i][0] + '"' +
+      ' | type=' + (vals[i][0] instanceof Date ? 'Date' : typeof vals[i][0]) +
+      ' | value=' + vals[i][0] +
+      ' | format="' + fmts[i][0] + '"' +
+      ' | parsed=' + (lenSecs_(disp[i][0]) || 'UNREADABLE'));
+  }
+  var msg = out.join('\n');
+  Logger.log(msg);
+  return msg;
+}
+
+/**
+ * ONE-TIME REPAIR. Rewrites the Length column as PLAIN TEXT "m:ss" so Sheets
+ * stops coercing it into a time value. Safe to re-run. Writes cell by cell so
+ * one bad row cannot abort the whole job.
  */
 function fixLengths() {
   var sh = sheet_();
   var last = sh.getLastRow();
-  if (last <= HEADER_ROW) return 'Nothing to do.';
-  var head = sh.getRange(HEADER_ROW, 1, 1, sh.getLastColumn()).getDisplayValues()[0];
-  var col = idx_(head)['length'];
-  if (col === undefined) return 'No Length column found.';
+  if (last <= HEADER_ROW) return 'Nothing to do — no data rows.';
 
+  var col = lengthCol_(sh) + 1;          // 1-based for getRange
   var n = last - HEADER_ROW;
-  var rng = sh.getRange(HEADER_ROW + 1, col + 1, n, 1);
+  var rng = sh.getRange(HEADER_ROW + 1, col, n, 1);
   var disp = rng.getDisplayValues();
-  var out = [], fixed = 0, bad = [];
 
+  try { rng.setNumberFormat('@'); }      // plain text, so nothing re-coerces
+  catch (e) { return 'Could not set the column to plain text: ' + e.message; }
+
+  var fixed = 0, bad = [], failed = [];
   for (var i = 0; i < n; i++) {
     var raw = String(disp[i][0] || '').trim();
-    var t = raw.toUpperCase().replace(/\s*[AP]M$/, '');
-    var m = t.match(/^(\d{1,3}):([0-5]?\d)(?::([0-5]\d))?$/);
-    var secs = 0;
-    if (m) {
-      if (m[3] === undefined) secs = (+m[1]) * 60 + (+m[2]);
-      else {
-        secs = (+m[1]) * 3600 + (+m[2]) * 60 + (+m[3]);
-        if (secs > 900) secs = (+m[1]) * 60 + (+m[2]);   // "3:23:00" means 3m23s
-      }
-    }
-    if (secs > 0 && secs <= 900) {
-      out.push([Math.floor(secs / 60) + ':' + ('0' + (secs % 60)).slice(-2)]);
+    if (!raw) continue;
+    var secs = lenSecs_(raw);
+    if (!secs) { bad.push('row ' + (HEADER_ROW + 1 + i) + ' "' + raw + '"'); continue; }
+    try {
+      sh.getRange(HEADER_ROW + 1 + i, col).setValue(mmss_(secs));
       fixed++;
-    } else {
-      out.push([raw]);
-      if (raw) bad.push(raw);
+    } catch (e) {
+      failed.push('row ' + (HEADER_ROW + 1 + i) + ': ' + e.message);
     }
   }
-
-  rng.setNumberFormat('@');   // plain text — stops Sheets coercing it ever again
-  rng.setValues(out);
   SpreadsheetApp.flush();
-  return 'Normalised ' + fixed + ' of ' + n + ' lengths to plain text m:ss.' +
-         (bad.length ? ' Could not read: ' + bad.slice(0, 6).join(', ') : '');
+
+  var msg = 'Normalised ' + fixed + ' of ' + n + ' lengths to plain text m:ss.';
+  if (bad.length)    msg += '  Unreadable (' + bad.length + '): ' + bad.slice(0, 8).join(', ');
+  if (failed.length) msg += '  Write failed (' + failed.length + '): ' + failed.slice(0, 5).join(', ');
+  Logger.log(msg);
+  return msg;
 }
 
 function idx_(head) {
@@ -174,7 +231,12 @@ function readAll_() {
       });
     });
   }
-  return { voters: voters.map(function (v) { return v.name; }), weights: WEIGHTS, rows: rows };
+  return {
+    voters: voters.map(function (v) { return v.name; }),
+    weights: WEIGHTS,
+    limits: { maxPerArtist: MAX_PER_ARTIST },
+    rows: rows
+  };
 }
 
 function json_(o) {
