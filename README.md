@@ -14,6 +14,9 @@ from it, so adding or removing a song never needs a code change or a push.
 | `config.js` | The one file you edit — the Apps Script URL and voter names. |
 | `apps-script.gs` | The backend. Paste into the Sheet's Apps Script editor. |
 
+Sheet columns: **A–F** song details, **G–M** the seven voters, **N** SCORE,
+**O** MUSTs, **P** Energy, **Q** Tags, **R** Order (blank = automatic).
+
 ## Setup (once)
 
 1. Open the vote Google Sheet -> **Extensions -> Apps Script**.
@@ -134,6 +137,40 @@ reordering.
 The **Generated setlist** is a running order, not a ranking: songs are *chosen*
 by score, then *ordered* for how the night should feel, so the top scorer is
 usually not first. The **Full ranking** tab is the score order.
+
+## Taking manual control of the running order
+
+Above the generated setlist there is a banner with one of three states:
+
+- **Automatic** — the order is recomputed from the votes every time the page
+  loads, so it moves as people vote.
+- **Unsaved order** — you have dragged something. Only you can see it.
+- **Manual order, saved to the sheet** — everyone sees this exact list, and it
+  no longer changes when votes do.
+
+Drag a row by the grip on the left, or use the ▲ ▼ buttons. Then:
+
+| Button | What it does |
+|---|---|
+| **Save this order** | Writes the positions to column **R (Order)** in the sheet. Asks for the admin key. |
+| **Undo changes** | Throws away your unsaved drags. |
+| **Back to automatic** | Clears column R so the order is computed from votes again. |
+
+Selection is unaffected — the manual order re-arranges the songs the vote chose,
+it does not add or drop any. If a song later drops out of the set on score, its
+saved position is simply ignored and the rest close up; anything new that gets
+voted in lands at the end. Clear the order and re-save if you want a fresh pass.
+
+## Tabs and lyrics
+
+Every song in the generated setlist and the full ranking carries two links:
+
+- **tab** — Ultimate Guitar search for that title, sorted by their own rating,
+  so the top hit is the highest-rated version rather than the newest.
+- **lyrics** — Genius search for the same title.
+
+They are links rather than stored copies on purpose: lyrics and tabs are
+copyrighted, and a link always shows the current, correct version.
 
 Locked rows (organiser requests) are protected server-side — a voter cannot
 overwrite them, though an admin can still edit or delete them here.

@@ -33,6 +33,7 @@ var COL_SCORE  = 14;   // N
 var COL_MUSTS  = 15;   // O
 var COL_ENERGY = 16;   // P
 var COL_TAGS   = 17;   // Q
+var COL_ORDER  = 18;   // R — manual running order; blank = automatic
 var MAX_ROW    = 300;  // formula range ceiling — room to grow
 var VOTERS     = ['Rich', 'Ashley', 'CJ', 'Justin', 'Isaac', 'Julie', 'Organiser'];
 
@@ -54,9 +55,9 @@ function sheet_() { return SpreadsheetApp.getActiveSpreadsheet().getSheets()[0];
 function setupSheet() {
   var sh = sheet_();
   sh.getRange(HEADER_ROW, FIRST_COL, 1, VOTERS.length).setValues([VOTERS]);
-  sh.getRange(HEADER_ROW, COL_SCORE, 1, 4)
-    .setValues([['SCORE', 'MUSTs', 'Energy', 'Tags']]);
-  sh.getRange(HEADER_ROW, 1, 1, COL_TAGS)
+  sh.getRange(HEADER_ROW, COL_SCORE, 1, 5)
+    .setValues([['SCORE', 'MUSTs', 'Energy', 'Tags', 'Order']]);
+  sh.getRange(HEADER_ROW, 1, 1, COL_ORDER)
     .setFontWeight('bold').setBackground('#1d2029').setFontColor('#e9eaf0');
   sh.setFrozenRows(HEADER_ROW);
 
@@ -227,6 +228,7 @@ function readAll_() {
         len:     String(r[ix['length']] || '').trim(),
         energy:  Number(String(r[COL_ENERGY - 1] || '').trim()) || 0,
         tags:    tags ? tags.split(/[,;]\s*/).filter(String) : [],
+        order:   Number(String(r[COL_ORDER - 1] || '').trim()) || 0,
         votes:   votes
       });
     });
@@ -348,6 +350,27 @@ function admin_(body) {
       Number(a.energy) || 3, Array.isArray(a.tags) ? a.tags.join(',') : (a.tags || '')]]);
     result.added++;
   });
+
+  // --- manual running order
+  if (body.clearOrder) {
+    var lastR = sh.getLastRow();
+    if (lastR > HEADER_ROW) {
+      sh.getRange(HEADER_ROW + 1, COL_ORDER, lastR - HEADER_ROW, 1).clearContent();
+    }
+    result.orderCleared = true;
+  } else if (body.order && body.order.length) {
+    var pos = {};
+    body.order.forEach(function (o) { pos[o.key] = o.pos; });
+    var lastR2 = sh.getLastRow();
+    if (lastR2 > HEADER_ROW) {
+      sh.getRange(HEADER_ROW + 1, COL_ORDER, lastR2 - HEADER_ROW, 1).clearContent();
+    }
+    readAll_().rows.forEach(function (r) {
+      var k = r.song + '|' + r.artist;
+      if (pos[k]) sh.getRange(r.row, COL_ORDER).setValue(pos[k]);
+    });
+    result.ordered = body.order.length;
+  }
 
   renumber_();
   SpreadsheetApp.flush();

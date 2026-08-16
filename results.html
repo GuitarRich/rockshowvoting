@@ -83,6 +83,21 @@
   .tag.hi{background:rgba(232,163,61,.16);color:var(--amber)}
   .tag.role{background:rgba(139,127,212,.16);color:#a99ff0}
   .chips{display:flex;gap:5px;flex:0 0 auto;align-items:center}
+  .grip{color:#3d424f;cursor:grab;flex:0 0 auto;font-size:13px;letter-spacing:-3px;user-select:none}
+  .setrow.dragging{opacity:.4}
+  .setrow.over{border-top:2px solid var(--amber)}
+  .movers{display:flex;gap:3px;margin-left:4px}
+  .movers button{font:700 11px/1 inherit;cursor:pointer;background:var(--panel2);color:var(--muted);
+    border:1px solid var(--line);border-radius:5px;padding:6px 7px}
+  .movers button:hover:not(:disabled){color:var(--ink);border-color:#3a3f4e}
+  .movers button:disabled{opacity:.25;cursor:default}
+  .obar{display:flex;align-items:center;gap:12px;flex-wrap:wrap;background:var(--panel);
+    border:1px solid var(--line);border-radius:10px;padding:11px 14px;margin-bottom:12px;
+    font-size:13.5px;color:var(--muted)}
+  .obar strong{color:var(--ink)}
+  .obar .btn{margin-top:0;padding:9px 14px;font-size:13px}
+  .obar.dirty{border-color:var(--amber);background:rgba(232,163,61,.08)}
+  .obar.saved{border-color:rgba(79,180,119,.5);background:rgba(79,180,119,.07)}
   .stats{display:flex;flex-wrap:wrap;gap:10px;margin-bottom:14px}
   .stat{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:11px 15px;min-width:118px}
   .stat b{display:block;font-size:21px;line-height:1.15;font-variant-numeric:tabular-nums}
@@ -152,6 +167,7 @@
     highest-scoring song is usually <strong>not</strong> first: a natural closer is deliberately placed last.
     For pure score order, use the <strong>Full ranking</strong> tab.</p>
   </div>
+  <div id="orderBar"></div>
   <div class="card" style="padding:0;overflow:hidden">
     <div id="setlist"></div>
   </div>
@@ -169,6 +185,9 @@
       <li><strong>No two slow songs sit next to each other</strong>, and no four-song stretch
         is allowed to sag &mdash; a trough is what empties a floor, and it is usually built from
         mid-tempo songs that each look fine on their own.</li>
+      <li><strong>You can override all of this.</strong> Drag a song, or use the arrows, then
+        <strong>Save order to the sheet</strong> — that pins it for the whole band and it stops
+        moving when votes change. <strong>Back to automatic</strong> undoes it.</li>
       <li>Where the result looks risky &mdash; no slow song, too little for the female vocalist, a long unbroken run for V1 &mdash; it says so in red, but it does not overrule you.</li>
       <li>The order is then built against an energy curve: strong open, a dip around a third in, the heavy cluster at ~60&ndash;70%, the dedication ballad straight after the peak, then a lift into the closer.</li>
       <li>No three songs in a row share a lead vocalist, and no two songs by the same artist sit next to each other.</li>
@@ -292,6 +311,15 @@ function scoreOf(votes, voters){
 let DATA = null;   // {voters:[], rows:[]}
 let sortKey = 'score', sortDir = -1;
 
+// --- manual running order -------------------------------------------------
+// ORDERED is whatever is on screen. It comes from one of three places, in
+// priority order: an unsaved arrangement the user is dragging around, an Order
+// saved in the sheet (shared with the whole band), or the auto-generated one.
+let ORDERED = [];
+let manualDirty = false;
+let ADMIN_KEY = '';
+const skey = s => s.song + '|' + s.artist;
+
 // ===================== parsing =====================
 function splitRows(text){
   // auto-detect delimiter: tab (sheet copy) or comma (csv)
@@ -342,7 +370,7 @@ function parse(text){
     const {score, musts, xs} = scoreOf(votes, voters);
     rowsOut.push({song,artist,lead:(R[iLead]||'').trim().toUpperCase(),
       lenTxt: secs ? (Math.floor(secs/60)+':'+String(secs%60).padStart(2,'0')) : lenTxt, secs,
-      sec,isLocked,isPick,votes,score,musts,xs,e:m.e,tags:m.tags||[]});
+      sec,isLocked,isPick,votes,score,musts,xs,e:m.e,tags:m.tags||[],order:0});
   }
   if(!rowsOut.length) throw new Error("Found the header but no song rows underneath it.");
   return {voters, rows:rowsOut};
@@ -519,13 +547,40 @@ function orderSet(list){
 
 // ===================== rendering =====================
 const mmss = t => Math.floor(t/60)+":"+String(Math.round(t%60)).padStart(2,'0');
+
+// Deep links are built from song + artist, so nothing needs maintaining in the
+// sheet and anything added later gets links for free. Ultimate Guitar's search
+// ranks by rating, so the top hit is the highest-rated tab. Lyrics are LINKED,
+// never copied into this page — they're copyrighted.
+const tabUrl = s => 'https://www.ultimate-guitar.com/search.php?search_type=title&order=myweight&value='
+  + encodeURIComponent(s.artist + ' ' + s.song);
+const lyricUrl = s => 'https://genius.com/search?q=' + encodeURIComponent(s.artist + ' ' + s.song);
 const esc = s => String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
 const leadBadge = l => '<span class="badge '+(l==='V1'?'v1':l==='V2'?'v2':'duet')+'">'+(l||'?')+'</span>';
 
 function render(){
   if(!DATA) return;
   const {chosen, notes, blocked, cappedKeys} = buildSet(DATA);
-  const ordered = blocked ? [] : orderSet(chosen);
+
+  // Order precedence: an unsaved arrangement in progress, then an Order saved
+  // in the sheet (shared with the band), then the automatic one.
+  let ordered = [];
+  let orderMode = 'auto';
+  if(!blocked){
+    const savedInSheet = chosen.some(s=>s.order>0);
+    if(manualDirty && ORDERED.length){
+      const byKey = {}; chosen.forEach(s=>byKey[skey(s)] = s);
+      ordered = ORDERED.map(o=>byKey[skey(o)]).filter(Boolean);
+      chosen.forEach(s=>{ if(!ordered.some(o=>skey(o)===skey(s))) ordered.push(s); });
+      orderMode = 'dirty';
+    } else if(savedInSheet){
+      ordered = [...chosen].sort((a,b)=>(a.order||9999)-(b.order||9999));
+      orderMode = 'saved';
+    } else {
+      ordered = orderSet(chosen);
+    }
+  }
+  ORDERED = ordered;
   if(blocked){
     const bad = notes.find(n=>n.startsWith('BAD_LENGTHS:')).split(':');
     document.getElementById('setStats').innerHTML = '';
@@ -615,11 +670,38 @@ function render(){
       (role ? '<span class="tag role">'+role+'</span>' : '') +
       (s.why==='locked' ? '<span class="tag hi">LOCKED</span>' : '') +
       '<span class="tag">'+(s.score>0?'+':'')+s.score+'</span>';
-    return '<div class="setrow"><span class="num">'+(i+1)+'</span>'+
+    return '<div class="setrow" draggable="true" data-i="'+i+'" data-key="'+esc(skey(s))+'">'+
+      '<span class="grip" title="Drag to reorder">&#8942;&#8942;</span>'+
+      '<span class="num">'+(i+1)+'</span>'+
       '<span class="info"><span class="t">'+esc(s.song)+'</span>'+
-      '<span class="m">'+leadBadge(s.lead)+esc(s.artist)+' &middot; '+esc(s.lenTxt)+'</span></span>'+
-      '<span class="chips">'+chips+'</span></div>';
+      '<span class="m">'+leadBadge(s.lead)+esc(s.artist)+' &middot; '+esc(s.lenTxt)+
+        ' &middot; <a href="'+esc(tabUrl(s))+'" target="_blank" rel="noopener">tab</a>'+
+        ' &middot; <a href="'+esc(lyricUrl(s))+'" target="_blank" rel="noopener">lyrics</a>'+
+      '</span></span>'+
+      '<span class="chips">'+chips+
+        '<span class="movers">'+
+          '<button type="button" data-mv="-1" data-i="'+i+'"'+(i===0?' disabled':'')+' title="Move up">&#9650;</button>'+
+          '<button type="button" data-mv="1" data-i="'+i+'"'+(i===ordered.length-1?' disabled':'')+' title="Move down">&#9660;</button>'+
+        '</span>'+
+      '</span></div>';
   }).join('');
+
+  // --- order-mode banner + save/reset controls
+  const bar = document.getElementById('orderBar');
+  if(blocked){ bar.innerHTML = ''; }
+  else if(orderMode === 'dirty'){
+    bar.innerHTML = '<div class="obar dirty"><span><strong>Unsaved order.</strong> '+
+      'Save it and everyone sees the same list.</span>'+
+      '<button class="btn" id="saveOrder">Save order to the sheet</button>'+
+      '<button class="btn ghost" id="revertOrder">Discard changes</button></div>';
+  } else if(orderMode === 'saved'){
+    bar.innerHTML = '<div class="obar saved"><span><strong>Manual order, saved to the sheet.</strong> '+
+      'It will not change when votes do.</span>'+
+      '<button class="btn ghost" id="clearOrder">Back to automatic</button></div>';
+  } else {
+    bar.innerHTML = '<div class="obar"><span>Automatic order &mdash; it moves as votes come in. '+
+      'Drag a song or use the arrows to take control.</span></div>';
+  }
 
   // --- grid
   const gv = DATA.voters;
@@ -681,6 +763,92 @@ function render(){
     ordered.map((s,i)=>String(i+1).padStart(2)+'. '+s.song+' — '+s.artist+
       '  ['+s.lead+', '+s.lenTxt+']'+(s.tags.includes('dedication')?'  <- dedication':'')).join('\n');
 }
+
+
+// ===================== manual reordering =====================
+function moveTo(from, to){
+  if(to < 0 || to >= ORDERED.length || from === to) return;
+  const [x] = ORDERED.splice(from, 1);
+  ORDERED.splice(to, 0, x);
+  manualDirty = true;
+  render();
+}
+
+document.getElementById('setlist').addEventListener('click', e => {
+  const b = e.target.closest('button[data-mv]');
+  if(!b || b.disabled) return;
+  const i = +b.dataset.i;
+  moveTo(i, i + (+b.dataset.mv));
+});
+
+// drag and drop (desktop) — the arrows cover touch
+let dragFrom = null;
+const setlistEl = document.getElementById('setlist');
+setlistEl.addEventListener('dragstart', e => {
+  const row = e.target.closest('.setrow'); if(!row) return;
+  dragFrom = +row.dataset.i;
+  row.classList.add('dragging');
+  e.dataTransfer.effectAllowed = 'move';
+  try { e.dataTransfer.setData('text/plain', String(dragFrom)); } catch(_){}
+});
+setlistEl.addEventListener('dragover', e => {
+  e.preventDefault();
+  const row = e.target.closest('.setrow'); if(!row) return;
+  setlistEl.querySelectorAll('.over').forEach(x=>x.classList.remove('over'));
+  row.classList.add('over');
+});
+setlistEl.addEventListener('dragleave', e => {
+  const row = e.target.closest('.setrow'); if(row) row.classList.remove('over');
+});
+setlistEl.addEventListener('drop', e => {
+  e.preventDefault();
+  const row = e.target.closest('.setrow'); if(!row || dragFrom === null) return;
+  moveTo(dragFrom, +row.dataset.i);
+  dragFrom = null;
+});
+setlistEl.addEventListener('dragend', () => {
+  setlistEl.querySelectorAll('.dragging,.over').forEach(x=>x.classList.remove('dragging','over'));
+  dragFrom = null;
+});
+
+async function adminPost(body, verb){
+  if(!API) throw new Error('no backend configured');
+  if(!ADMIN_KEY) ADMIN_KEY = (prompt('Admin key (same one as the admin page)') || '').trim();
+  if(!ADMIN_KEY) throw new Error('cancelled');
+  const r = await fetch(API, {method:'POST',
+    headers:{'Content-Type':'text/plain;charset=utf-8'},
+    body: JSON.stringify({action:'admin', key:ADMIN_KEY, ...body})});
+  const j = await r.json();
+  if(!j.ok){ if(/admin key/i.test(j.error||'')) ADMIN_KEY = '';
+             throw new Error(j.error || 'unknown error'); }
+  DATA = fromApi(j.data);
+  manualDirty = false;
+  render();
+  return verb;
+}
+
+document.getElementById('orderBar').addEventListener('click', async e => {
+  const b = e.target.closest('button'); if(!b) return;
+  const bar = document.getElementById('orderBar');
+  const say = (t, cls) => bar.insertAdjacentHTML('beforeend',
+    '<div class="status '+(cls||'')+'" style="width:100%">'+esc(t)+'</div>');
+  try{
+    if(b.id === 'saveOrder'){
+      b.disabled = true;
+      const order = ORDERED.map((s,i)=>({key: skey(s), pos: i+1}));
+      await adminPost({order}, 'saved');
+      say('Order saved — everyone loading the page now sees this list.', 'ok');
+    } else if(b.id === 'clearOrder'){
+      b.disabled = true;
+      await adminPost({clearOrder:true}, 'cleared');
+      say('Back to the automatic order.', 'ok');
+    } else if(b.id === 'revertOrder'){
+      manualDirty = false; render();
+    }
+  }catch(err){
+    say('Could not save: ' + err.message, 'err');
+  }
+});
 
 function cmp(a,b){
   const k=sortKey; let x,y;
@@ -782,7 +950,7 @@ function fromApi(payload){
       lenTxt: secs ? (Math.floor(secs/60)+':'+String(secs%60).padStart(2,'0')) : String(r.len||''),
       secs, sec:r.section,
       isLocked:/^LOCKED/i.test(r.section), isPick:/pick ONE/i.test(r.section),
-      votes:r.votes, score, musts, xs, e:m.e, tags:m.tags};
+      votes:r.votes, score, musts, xs, e:m.e, tags:m.tags, order:Number(r.order)||0};
   });
   return {voters, rows};
 }
