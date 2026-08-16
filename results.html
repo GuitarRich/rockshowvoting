@@ -78,6 +78,12 @@
   .setrow .info{flex:1;min-width:0}
   .setrow .t{font-weight:600;display:block}
   .setrow .m{font-size:12.5px;color:var(--muted);display:block;margin-top:1px}
+  .links{display:flex;flex-wrap:wrap;gap:5px;margin-top:5px}
+  .links a{font:600 10.5px/1 inherit;letter-spacing:.04em;text-transform:uppercase;
+    text-decoration:none;padding:3px 7px;border-radius:4px;border:1px solid var(--line);
+    background:var(--panel2);color:var(--dim)}
+  .links a:hover{color:var(--ink);border-color:#3a3f4e;background:#2a2f3a}
+  td .links{margin-top:0}
   .tag{font-size:10px;font-weight:700;letter-spacing:.05em;padding:2px 6px;border-radius:4px;
     background:var(--panel2);color:var(--muted);flex:0 0 auto}
   .tag.hi{background:rgba(232,163,61,.16);color:var(--amber)}
@@ -548,14 +554,25 @@ function orderSet(list){
 // ===================== rendering =====================
 const mmss = t => Math.floor(t/60)+":"+String(Math.round(t%60)).padStart(2,'0');
 
-// Deep links are built from song + artist, so nothing needs maintaining in the
-// sheet and anything added later gets links for free. Ultimate Guitar's search
-// ranks by rating, so the top hit is the highest-rated tab. Lyrics are LINKED,
-// never copied into this page — they're copyrighted.
-const tabUrl = s => 'https://www.ultimate-guitar.com/search.php?search_type=title&order=myweight&value='
-  + encodeURIComponent(s.artist + ' ' + s.song);
-const lyricUrl = s => 'https://genius.com/search?q=' + encodeURIComponent(s.artist + ' ' + s.song);
 const esc = s => String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+
+// Deep links are built from song + artist, so nothing needs maintaining in the
+// sheet and anything added later gets links for free. Lyrics and tabs are
+// LINKED, never copied into this page — they're copyrighted, and a link always
+// shows the current version.
+const q = s => encodeURIComponent(String(s.artist||'') + ' ' + String(s.song||''));
+// guitar — Ultimate Guitar, ordered by their own rating so the top hit is the
+// highest-rated tab rather than the newest
+const tabUrl   = s => 'https://www.ultimate-guitar.com/search.php?search_type=title&order=myweight&value=' + q(s);
+// bass — Songsterr, because its tabs are multi-track: solo the bass line, slow
+// it down, loop a section. Plain text bass tabs can't do any of that.
+const bassUrl  = s => 'https://www.songsterr.com/?pattern=' + q(s);
+// keys — MuseScore, where the actual piano transcriptions are
+const keysUrl  = s => 'https://musescore.com/sheetmusic?text=' + q(s);
+const lyricUrl = s => 'https://genius.com/search?q=' + q(s);
+const PARTS = [['tab',tabUrl],['bass',bassUrl],['keys',keysUrl],['lyrics',lyricUrl]];
+const partLinks = s => '<span class="links">' + PARTS.map(function(p){
+  return '<a href="'+esc(p[1](s))+'" target="_blank" rel="noopener">'+p[0]+'</a>'; }).join('') + '</span>';
 const leadBadge = l => '<span class="badge '+(l==='V1'?'v1':l==='V2'?'v2':'duet')+'">'+(l||'?')+'</span>';
 
 function render(){
@@ -674,10 +691,9 @@ function render(){
       '<span class="grip" title="Drag to reorder">&#8942;&#8942;</span>'+
       '<span class="num">'+(i+1)+'</span>'+
       '<span class="info"><span class="t">'+esc(s.song)+'</span>'+
-      '<span class="m">'+leadBadge(s.lead)+esc(s.artist)+' &middot; '+esc(s.lenTxt)+
-        ' &middot; <a href="'+esc(tabUrl(s))+'" target="_blank" rel="noopener">tab</a>'+
-        ' &middot; <a href="'+esc(lyricUrl(s))+'" target="_blank" rel="noopener">lyrics</a>'+
-      '</span></span>'+
+      '<span class="m">'+leadBadge(s.lead)+esc(s.artist)+' &middot; '+esc(s.lenTxt)+'</span>'+
+      partLinks(s)+
+      '</span>'+
       '<span class="chips">'+chips+
         '<span class="movers">'+
           '<button type="button" data-mv="-1" data-i="'+i+'"'+(i===0?' disabled':'')+' title="Move up">&#9650;</button>'+
@@ -736,12 +752,13 @@ function render(){
   let run=ordered.filter(s=>s.why==='locked').reduce((a,s)=>a+s.secs+GAP,0), cutShown=false;
   let rh='<thead><tr><th class="nosort">#</th><th class="nosort">Song</th><th class="nosort">Artist</th>'+
     '<th class="nosort">Lead</th><th class="nosort">Len</th><th class="nosort">Score</th>'+
-    '<th class="nosort">MUSTs</th><th class="nosort">NOs</th></tr></thead><tbody>';
+    '<th class="nosort">MUSTs</th><th class="nosort">NOs</th>'+
+    '<th class="nosort">Parts</th></tr></thead><tbody>';
   ranked.forEach((r,i)=>{
     const sel = inSet.has(r.song+'|'+r.artist);
     if(!sel && !cutShown){
       cutShown = true;
-      rh += '<tr><td colspan="8" style="color:var(--red);font-size:11.5px;letter-spacing:.08em;'+
+      rh += '<tr><td colspan="9" style="color:var(--red);font-size:11.5px;letter-spacing:.08em;'+
         'text-transform:uppercase;background:rgba(209,91,91,.07)">— 90-minute cut line —</td></tr>';
     }
     const nos = Object.values(r.votes).filter(x=>String(x).toUpperCase()==='NO').length;
@@ -754,7 +771,8 @@ function render(){
       '<td>'+leadBadge(r.lead)+'</td><td class="len">'+esc(r.lenTxt)+'</td>'+
       '<td class="c"><span class="score '+(r.score>0?'pos':r.score<0?'neg':'zero')+'">'+
         (r.score>0?'+':'')+r.score+'</span></td>'+
-      '<td class="c len">'+(r.musts||'')+'</td><td class="c len">'+(nos||'')+'</td></tr>';
+      '<td class="c len">'+(r.musts||'')+'</td><td class="c len">'+(nos||'')+'</td>'+
+      '<td>'+partLinks(r)+'</td></tr>';
   });
   document.getElementById('rankTable').innerHTML = rh+'</tbody>';
 

@@ -161,15 +161,27 @@ it does not add or drop any. If a song later drops out of the set on score, its
 saved position is simply ignored and the rest close up; anything new that gets
 voted in lands at the end. Clear the order and re-save if you want a fresh pass.
 
-## Tabs and lyrics
+## Parts: tabs, bass, keys, lyrics
 
-Every song in the generated setlist and the full ranking carries two links:
+Every song on the generated setlist **and** in the full ranking carries four
+links, built from the song and artist — nothing to maintain in the sheet, and
+anything added later gets them for free.
 
-- **tab** — Ultimate Guitar search for that title, sorted by their own rating,
-  so the top hit is the highest-rated version rather than the newest.
-- **lyrics** — Genius search for the same title.
+| Link | Goes to | Why that one |
+|---|---|---|
+| **tab** | Ultimate Guitar, sorted by their own rating | top hit is the highest-rated tab, not the newest |
+| **bass** | Songsterr | multi-track: solo the bass line, slow it down, loop a section — a plain text bass tab can't do any of that |
+| **keys** | MuseScore | where the actual piano transcriptions are |
+| **lyrics** | Genius | |
 
-They are links rather than stored copies on purpose: lyrics and tabs are
+Each opens a search rather than one fixed page, so a bad title match is one
+click from the right result instead of a dead link.
+
+**keys will come up thin or empty for songs that have no keyboard part** —
+that is the honest answer, not a bug. Nothing on Nirvana or Breaking Benjamin
+needs a keys player.
+
+They are links rather than stored copies on purpose: tabs and lyrics are
 copyrighted, and a link always shows the current, correct version.
 
 Locked rows (organiser requests) are protected server-side — a voter cannot
