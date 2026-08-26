@@ -97,10 +97,20 @@
         <datalist id="sections"></datalist></div>
     </div>
     <div class="grid3" style="margin-top:10px">
-      <div style="grid-column:1/-1"><label>Tags (optional, comma separated)</label>
+      <div style="grid-column:1/2"><label>Tuning</label>
+        <input id="aTuning" placeholder="E standard" list="tunings"></div>
+      <div style="grid-column:2/-1"><label>Tags (optional, comma separated)</label>
         <input id="aTags" placeholder="opener, heavy, ballad, dedication, closer, lift, dip"></div>
     </div>
+    <datalist id="tunings">
+      <option value="E standard"><option value="Eb standard"><option value="Drop D">
+      <option value="Drop C#"><option value="Drop C"><option value="D standard">
+    </datalist>
     <div class="btnrow"><button class="btn" id="addBtn">Add to the list</button></div>
+    <p style="margin-top:10px"><strong>Tuning</strong> is free text &mdash; type whatever you
+      actually use. Leave it blank and the setlist treats the song as E standard. The generated
+      running order flags every point where the tuning changes from the song before it, so you
+      can see how many guitar swaps the order forces on you.</p>
     <p style="margin-top:10px">Tags steer the running order: <strong>opener</strong> / <strong>closer</strong> pin it to the ends,
       <strong>heavy</strong> clusters it at the peak, <strong>ballad</strong> or <strong>dedication</strong> places it after the peak
       <strong>lift</strong> follows the ballad, <strong>dip</strong> sits a third in.
@@ -110,7 +120,7 @@
 
   <div class="card">
     <h2>Bulk add</h2>
-    <p>One per line: <code>Song | Artist | Lead | Length | Energy | Section | tags</code>. Only song and artist are required.</p>
+    <p>One per line: <code>Song | Artist | Lead | Length | Energy | Section | tags | tuning</code>. Only song and artist are required.</p>
     <textarea id="bulk" spellcheck="false" placeholder="Dream On | Aerosmith | V1 | 4:28 | 3 | Arena &amp; classic rock&#10;Cryin' | Aerosmith | V2 | 5:08 | 4 | Female-fronted"></textarea>
     <div class="btnrow"><button class="btn ghost" id="bulkBtn">Queue these</button></div>
   </div>
@@ -170,7 +180,7 @@ async function load(){
 function draw(){
   const vs = STATE.voters;
   let h = '<thead><tr><th>#</th><th>Song</th><th>Artist</th><th>Lead</th><th>Len</th>'+
-    '<th>Energy</th><th>Tags</th><th>Section</th><th>Votes in</th><th></th></tr></thead><tbody>';
+    '<th>Energy</th><th>Tuning</th><th>Tags</th><th>Section</th><th>Votes in</th><th></th></tr></thead><tbody>';
 
   const rowHtml = (r, i, isNew) => {
     const k = r.song+'|'+r.artist;
@@ -188,6 +198,7 @@ function draw(){
       '<td class="narrow"><select data-k="'+esc(k)+'" data-f="lead"'+(isNew?' data-new="1"':'')+'>'+lead+'</select></td>'+
       '<td class="narrow">'+f('length', r.len||r.length||'')+'</td>'+
       '<td class="narrow">'+f('energy', r.energy||3,' type="number" min="1" max="5"')+'</td>'+
+      '<td class="mid">'+f('tuning', r.tuning||'',' list="tunings" placeholder="E standard"')+'</td>'+
       '<td class="mid">'+f('tags', (r.tags||[]).join?.(', ') ?? r.tags ?? '')+'</td>'+
       '<td class="mid">'+f('section', r.section||'')+'</td>'+
       '<td class="votes">'+(isNew?'—':cast+'/'+vs.length)+'</td>'+
@@ -243,8 +254,9 @@ function queue(row){
 document.getElementById('addBtn').onclick = ()=>{
   const g = id => document.getElementById(id).value.trim();
   const ok = queue({section:g('aSection')||'Added', song:g('aSong'), artist:g('aArtist'),
-    lead:g('aLead'), length:g('aLen')||'3:30', energy:+g('aEnergy')||3, tags:g('aTags')});
-  if(ok){ ['aSong','aArtist','aLen','aTags'].forEach(i=>document.getElementById(i).value=''); draw(); syncFooter(); }
+    lead:g('aLead'), length:g('aLen')||'3:30', energy:+g('aEnergy')||3,
+    tags:g('aTags'), tuning:g('aTuning')});
+  if(ok){ ['aSong','aArtist','aLen','aTags','aTuning'].forEach(i=>document.getElementById(i).value=''); draw(); syncFooter(); }
 };
 
 document.getElementById('bulkBtn').onclick = ()=>{
@@ -253,7 +265,7 @@ document.getElementById('bulkBtn').onclick = ()=>{
   lines.forEach(l=>{
     const p = l.split('|').map(s=>s.trim());
     if(queue({song:p[0], artist:p[1], lead:(p[2]||'V1').toUpperCase(), length:p[3]||'3:30',
-      energy:+p[4]||3, section:p[5]||'Added', tags:p[6]||''})) added++;
+      energy:+p[4]||3, section:p[5]||'Added', tags:p[6]||'', tuning:p[7]||''})) added++;
   });
   if(added){ document.getElementById('bulk').value=''; msg('Queued '+added+' song'+(added===1?'':'s')+'.','ok'); }
   draw(); syncFooter();

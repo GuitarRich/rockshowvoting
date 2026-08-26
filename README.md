@@ -15,7 +15,8 @@ from it, so adding or removing a song never needs a code change or a push.
 | `apps-script.gs` | The backend. Paste into the Sheet's Apps Script editor. |
 
 Sheet columns: **A–F** song details, **G–M** the seven voters, **N** SCORE,
-**O** MUSTs, **P** Energy, **Q** Tags, **R** Order (blank = automatic).
+**O** MUSTs, **P** Energy, **Q** Tags, **R** Order (blank = automatic),
+**S** Tuning (free text; blank = E standard).
 
 ## Setup (once)
 

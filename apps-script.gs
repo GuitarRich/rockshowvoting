@@ -34,6 +34,7 @@ var COL_MUSTS  = 15;   // O
 var COL_ENERGY = 16;   // P
 var COL_TAGS   = 17;   // Q
 var COL_ORDER  = 18;   // R — manual running order; blank = automatic
+var COL_TUNING = 19;   // S — guitar tuning, free text; blank = E standard
 var MAX_ROW    = 300;  // formula range ceiling — room to grow
 var VOTERS     = ['Rich', 'Ashley', 'CJ', 'Justin', 'Isaac', 'Julie', 'Organiser'];
 
@@ -55,9 +56,9 @@ function sheet_() { return SpreadsheetApp.getActiveSpreadsheet().getSheets()[0];
 function setupSheet() {
   var sh = sheet_();
   sh.getRange(HEADER_ROW, FIRST_COL, 1, VOTERS.length).setValues([VOTERS]);
-  sh.getRange(HEADER_ROW, COL_SCORE, 1, 5)
-    .setValues([['SCORE', 'MUSTs', 'Energy', 'Tags', 'Order']]);
-  sh.getRange(HEADER_ROW, 1, 1, COL_ORDER)
+  sh.getRange(HEADER_ROW, COL_SCORE, 1, 6)
+    .setValues([['SCORE', 'MUSTs', 'Energy', 'Tags', 'Order', 'Tuning']]);
+  sh.getRange(HEADER_ROW, 1, 1, COL_TUNING)
     .setFontWeight('bold').setBackground('#1d2029').setFontColor('#e9eaf0');
   sh.setFrozenRows(HEADER_ROW);
 
@@ -189,6 +190,61 @@ function fixLengths() {
   return msg;
 }
 
+/**
+ * ONE-TIME SEED. Writes the agreed tunings into column S for the songs in the
+ * October running order. Only fills blanks — anything you have already typed
+ * in the sheet wins, so this is safe to re-run after you start editing.
+ * Songs not listed here are left blank, which the pages read as E standard.
+ */
+var TUNINGS = {
+  'Jump|Van Halen':                          'Eb standard',
+  'Misery Business|Paramore':                'E standard',
+  'Teenage Dirtbag|Wheatus':                 'E standard',
+  'Zombie|The Cranberries':                  'E standard',
+  'Bring Me to Life|Evanescence':            'Drop D',
+  'How You Remind Me|Nickelback':            'Drop D',
+  "What I've Done|Linkin Park":              'Drop D',
+  'What If|Creed':                           'Drop D',
+  "Cryin'|Aerosmith":                        'E standard',
+  'Still Into You|Paramore':                 'E standard',
+  'The Diary of Jane|Breaking Benjamin':     'Drop D',
+  'Going Under|Evanescence':                 'Drop D',
+  'Dance, Dance|Fall Out Boy':               'Drop D',
+  'The Sound of Silence|Disturbed':          'E standard',
+  'Hit Me With Your Best Shot|Pat Benatar':  'E standard',
+  'Creep|Radiohead':                         'E standard',
+  'You Give Love a Bad Name|Bon Jovi':       'E standard',
+  'Faithfully|Journey':                      'E standard',
+  'Smells Like Teen Spirit|Nirvana':         'E standard',
+  "Don't Stop Believin'|Journey":            'E standard'
+};
+
+function backfillTunings() {
+  var sh = sheet_();
+  var rows = readAll_().rows;
+  var wrote = 0, kept = 0, missing = [];
+  var seen = {};
+
+  rows.forEach(function (r) {
+    var t = TUNINGS[r.song + '|' + r.artist];
+    if (!t) return;
+    seen[r.song + '|' + r.artist] = true;
+    if (r.tuning) { kept++; return; }        // never clobber a hand-typed value
+    sh.getRange(r.row, COL_TUNING).setValue(t);
+    wrote++;
+  });
+
+  Object.keys(TUNINGS).forEach(function (k) {
+    if (!seen[k]) missing.push(k.replace('|', ' — '));
+  });
+  SpreadsheetApp.flush();
+
+  var msg = 'Tunings written: ' + wrote + '. Left alone (already set): ' + kept + '.';
+  if (missing.length) msg += '  Not found in the sheet: ' + missing.join('; ');
+  Logger.log(msg);
+  return msg;
+}
+
 function idx_(head) {
   var m = {};
   head.forEach(function (h, i) { m[String(h).trim().toLowerCase()] = i; });
@@ -197,7 +253,7 @@ function idx_(head) {
 
 function readAll_() {
   var sh = sheet_();
-  var last = sh.getLastRow(), lastCol = Math.max(sh.getLastColumn(), COL_TAGS);
+  var last = sh.getLastRow(), lastCol = Math.max(sh.getLastColumn(), COL_TUNING);
   var head = sh.getRange(HEADER_ROW, 1, 1, lastCol).getDisplayValues()[0];
   var ix = idx_(head);
 
@@ -229,6 +285,7 @@ function readAll_() {
         energy:  Number(String(r[COL_ENERGY - 1] || '').trim()) || 0,
         tags:    tags ? tags.split(/[,;]\s*/).filter(String) : [],
         order:   Number(String(r[COL_ORDER - 1] || '').trim()) || 0,
+        tuning:  String(r[COL_TUNING - 1] || '').trim(),
         votes:   votes
       });
     });
@@ -297,8 +354,8 @@ function vote_(body) {
 /**
  * Admin: add / update / remove songs.
  * Body: {action:'admin', key:'...',
- *        add:    [{section,song,artist,lead,length,energy,tags}],
- *        update: [{key:'Song|Artist', section,song,artist,lead,length,energy,tags}],
+ *        add:    [{section,song,artist,lead,length,energy,tags,tuning}],
+ *        update: [{key:'Song|Artist', section,song,artist,lead,length,energy,tags,tuning}],
  *        remove: ['Song|Artist', ...]}
  */
 function admin_(body) {
@@ -318,6 +375,7 @@ function admin_(body) {
     sh.getRange(r.row, COL_ENERGY, 1, 2).setValues([[
       Number(u.energy) || r.energy || 3,
       Array.isArray(u.tags) ? u.tags.join(',') : (u.tags || r.tags.join(','))]]);
+    if (u.tuning !== undefined) sh.getRange(r.row, COL_TUNING).setValue(u.tuning);
     result.updated++;
   });
 
@@ -348,6 +406,7 @@ function admin_(body) {
       a.song, a.artist, String(a.lead || 'V1').toUpperCase(), a.length || '3:30']]);
     sh.getRange(row, COL_ENERGY, 1, 2).setValues([[
       Number(a.energy) || 3, Array.isArray(a.tags) ? a.tags.join(',') : (a.tags || '')]]);
+    sh.getRange(row, COL_TUNING).setValue(a.tuning || '');
     result.added++;
   });
 

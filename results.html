@@ -88,6 +88,8 @@
     background:var(--panel2);color:var(--muted);flex:0 0 auto}
   .tag.hi{background:rgba(232,163,61,.16);color:var(--amber)}
   .tag.role{background:rgba(139,127,212,.16);color:#a99ff0}
+  .tag.tune{background:rgba(120,130,150,.16);color:#9aa4b8;letter-spacing:.02em}
+  .tag.tune.swap{background:rgba(232,163,61,.20);color:var(--amber)}
   .chips{display:flex;gap:5px;flex:0 0 auto;align-items:center}
   .grip{color:#3d424f;cursor:grab;flex:0 0 auto;font-size:13px;letter-spacing:-3px;user-select:none}
   .setrow.dragging{opacity:.4}
@@ -109,6 +111,9 @@
   .stat b{display:block;font-size:21px;line-height:1.15;font-variant-numeric:tabular-nums}
   .stat span{font-size:11px;text-transform:uppercase;letter-spacing:.07em;color:var(--dim)}
   .stat.warn b{color:var(--red)}
+  .guitar{font-size:13px;color:var(--muted);background:rgba(120,130,150,.07);
+    border:1px solid var(--line);border-radius:10px;padding:9px 12px;margin-bottom:12px}
+  .guitar:empty{display:none}
   .warn{background:rgba(209,91,91,.09);border:1px solid rgba(209,91,91,.4);border-radius:10px;
     padding:11px 14px;font-size:13.5px;color:#eb8888;margin-bottom:14px}
   .hide{display:none}
@@ -174,6 +179,7 @@
     For pure score order, use the <strong>Full ranking</strong> tab.</p>
   </div>
   <div id="orderBar"></div>
+  <div id="setGuitar" class="guitar"></div>
   <div class="card" style="padding:0;overflow:hidden">
     <div id="setlist"></div>
   </div>
@@ -354,7 +360,7 @@ function parse(text){
   const head = rows[hi].map(c=>c.trim());
   const col = n => head.findIndex(c=>c.toLowerCase()===n);
   const iSec=col('section'), iSong=col('song'), iArt=col('artist'),
-        iLead=col('lead'), iLen=col('length'), iScore=col('score');
+        iLead=col('lead'), iLen=col('length'), iScore=col('score'), iTune=col('tuning');
   if(iSong<0||iArt<0) throw new Error("Header row is missing a Song or Artist column.");
   const vStart = iLen+1, vEnd = (iScore>0?iScore:head.length);
   const voters = head.slice(vStart, vEnd).map(s=>s.trim()).filter(Boolean);
@@ -376,7 +382,8 @@ function parse(text){
     const {score, musts, xs} = scoreOf(votes, voters);
     rowsOut.push({song,artist,lead:(R[iLead]||'').trim().toUpperCase(),
       lenTxt: secs ? (Math.floor(secs/60)+':'+String(secs%60).padStart(2,'0')) : lenTxt, secs,
-      sec,isLocked,isPick,votes,score,musts,xs,e:m.e,tags:m.tags||[],order:0});
+      sec,isLocked,isPick,votes,score,musts,xs,e:m.e,tags:m.tags||[],order:0,
+      tuning: iTune>=0 ? (R[iTune]||'').trim() : ''});
   }
   if(!rowsOut.length) throw new Error("Found the header but no song rows underneath it.");
   return {voters, rows:rowsOut};
@@ -607,6 +614,7 @@ function render(){
       'Fix: select the Length column, Format \u2192 Number \u2192 Plain text, then retype a couple of values. '+
       'First few affected: '+esc(bad[2])+'.</div>';
     document.getElementById('setlist').innerHTML = '';
+    document.getElementById('setGuitar').innerHTML = '';
     return;
   }
   const inSet = new Set(ordered.map(s=>s.song+'|'+s.artist));
@@ -676,6 +684,18 @@ function render(){
        .forEach(n => warn += '<div class="warn">'+esc(n)+'</div>');
   document.getElementById('setWarn').innerHTML = warn;
 
+  // --- guitar tunings. Blank means E standard, so a sheet nobody has filled in
+  // reads as one guitar all night rather than as 20 unknown changes.
+  const tuneOf = s => (s.tuning||'').trim() || 'E standard';
+  const swaps = ordered.map((s,i)=> i>0 && tuneOf(s)!==tuneOf(ordered[i-1]));
+  const nSwaps = swaps.filter(Boolean).length;
+  const swapList = ordered.map((s,i)=> swaps[i]
+    ? 'after ' + i + ' (' + s.song + ' \u2192 ' + tuneOf(s) + ')' : null).filter(Boolean);
+  document.getElementById('setGuitar').innerHTML = nSwaps
+    ? '<strong>Guitar:</strong> ' + nSwaps + ' change' + (nSwaps===1?'':'s') +
+      ' \u2014 ' + swapList.map(esc).join(', ') + '.'
+    : '<strong>Guitar:</strong> no tuning changes \u2014 one guitar the whole way.';
+
   // --- setlist
   document.getElementById('setlist').innerHTML = ordered.map((s,i)=>{
     const role = i===0 ? 'OPENER'
@@ -684,6 +704,7 @@ function render(){
                : s.tags.includes('ballad') ? 'BREATHER'
                : s.tags.includes('heavy') ? 'PEAK' : '';
     const chips =
+      (swaps[i] ? '<span class="tag tune swap" title="Guitar change">&#8635; '+esc(tuneOf(s))+'</span>' : '') +
       (role ? '<span class="tag role">'+role+'</span>' : '') +
       (s.why==='locked' ? '<span class="tag hi">LOCKED</span>' : '') +
       '<span class="tag">'+(s.score>0?'+':'')+s.score+'</span>';
@@ -691,7 +712,8 @@ function render(){
       '<span class="grip" title="Drag to reorder">&#8942;&#8942;</span>'+
       '<span class="num">'+(i+1)+'</span>'+
       '<span class="info"><span class="t">'+esc(s.song)+'</span>'+
-      '<span class="m">'+leadBadge(s.lead)+esc(s.artist)+' &middot; '+esc(s.lenTxt)+'</span>'+
+      '<span class="m">'+leadBadge(s.lead)+esc(s.artist)+' &middot; '+esc(s.lenTxt)+
+        ' &middot; '+esc(tuneOf(s))+'</span>'+
       partLinks(s)+
       '</span>'+
       '<span class="chips">'+chips+
@@ -779,7 +801,12 @@ function render(){
   window.__setText = 'SETLIST — October anniversary show (auto-generated from votes)\n'+
     ordered.length+' songs, ~'+mmss(total)+'\n\n'+
     ordered.map((s,i)=>String(i+1).padStart(2)+'. '+s.song+' — '+s.artist+
-      '  ['+s.lead+', '+s.lenTxt+']'+(s.tags.includes('dedication')?'  <- dedication':'')).join('\n');
+      '  ['+s.lead+', '+s.lenTxt+', '+tuneOf(s)+']'+
+      (swaps[i]?'  <- guitar change':'')+
+      (s.tags.includes('dedication')?'  <- dedication':'')).join('\n')+
+    '\n\nGuitar: '+(nSwaps
+      ? nSwaps+' change'+(nSwaps===1?'':'s')+' — '+swapList.join(', ')+'.'
+      : 'no tuning changes.');
 }
 
 
@@ -968,7 +995,8 @@ function fromApi(payload){
       lenTxt: secs ? (Math.floor(secs/60)+':'+String(secs%60).padStart(2,'0')) : String(r.len||''),
       secs, sec:r.section,
       isLocked:/^LOCKED/i.test(r.section), isPick:/pick ONE/i.test(r.section),
-      votes:r.votes, score, musts, xs, e:m.e, tags:m.tags, order:Number(r.order)||0};
+      votes:r.votes, score, musts, xs, e:m.e, tags:m.tags, order:Number(r.order)||0,
+      tuning: String(r.tuning||'').trim()};
   });
   return {voters, rows};
 }
