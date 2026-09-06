@@ -163,9 +163,9 @@ function syncFooter(keepMsg){
 
 // ---------------- load ----------------
 async function load(){
-  if(!API){ msg('config.js has no SETLIST_API URL — nothing to talk to.','err'); return; }
+  if(!API){ msg('config.js has no SETLIST_API path — nothing to talk to.','err'); return; }
   msg('Loading…');
-  const r = await fetch(API,{method:'GET'});
+  const r = await fetch(API+'/data',{method:'GET'});
   const j = await r.json();
   if(!j.ok) throw new Error(j.error||'unknown error');
   STATE = j.data;
@@ -279,9 +279,9 @@ document.getElementById('apply').onclick = async ()=>{
     energy: v.energy!==undefined ? +v.energy : undefined,
     tags:   v.tags!==undefined ? v.tags.split(/[,;]\s*/).filter(Boolean) : undefined}));
   try{
-    const r = await fetch(API,{method:'POST',
-      headers:{'Content-Type':'text/plain;charset=utf-8'},
-      body:JSON.stringify({action:'admin', key:KEY,
+    const r = await fetch(API+'/admin',{method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({key:KEY,
         add: pendingAdd.map(a=>({...a, tags:String(a.tags||'').split(/[,;]\s*/).filter(Boolean)})),
         update, remove:[...removals]})});
     const j = await r.json();
@@ -307,8 +307,8 @@ document.getElementById('unlock').onclick = async ()=>{
   st.className='status'; st.textContent='Checking…';
   try{
     // a no-op admin call — succeeds only if the key is right
-    const r = await fetch(API,{method:'POST',headers:{'Content-Type':'text/plain;charset=utf-8'},
-      body:JSON.stringify({action:'admin', key:KEY, add:[], update:[], remove:[]})});
+    const r = await fetch(API+'/admin',{method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({key:KEY, add:[], update:[], remove:[]})});
     const j = await r.json();
     if(!j.ok) throw new Error(j.error||'unknown error');
     document.getElementById('gate').classList.add('hide');
@@ -326,7 +326,7 @@ document.getElementById('key').addEventListener('keydown', e=>{
   if(e.key==='Enter') document.getElementById('unlock').click();
 });
 
-if(!API){ msg('config.js has no SETLIST_API URL — set that up first.','err'); }
+if(!API){ msg('config.js has no SETLIST_API path — set that up first.','err'); }
 </script>
 </body>
 </html>

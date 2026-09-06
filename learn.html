@@ -1,0 +1,393 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>October Anniversary Show — Who Knows What</title>
+<style>
+  :root{
+    --bg:#0d0e12; --panel:#16181f; --panel2:#1d2029; --line:#2a2e3a;
+    --ink:#e9eaf0; --muted:#9298a8; --dim:#6b7182;
+    --amber:#e8a33d; --amber-dim:#7a5a22;
+    --green:#4fb477; --red:#d15b5b; --violet:#8b7fd4;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--ink);
+    font:16px/1.5 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    padding-bottom:132px;-webkit-text-size-adjust:100%}
+  .wrap{max-width:860px;margin:0 auto;padding:0 16px}
+  header{padding:28px 0 18px;border-bottom:1px solid var(--line);margin-bottom:22px}
+  h1{font-size:26px;line-height:1.15;margin:0 0 6px;letter-spacing:-.01em}
+  h1 span{color:var(--amber)}
+  .sub{color:var(--muted);font-size:14px;margin:0}
+  a{color:var(--amber)}
+  .card{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:16px 18px;margin:0 0 22px}
+  .card h2{font-size:13px;text-transform:uppercase;letter-spacing:.09em;color:var(--amber);margin:0 0 10px}
+  .card p{margin:0 0 8px;font-size:14px;color:var(--muted)}
+  .card p:last-child{margin-bottom:0}
+  .card strong{color:var(--ink)}
+
+  .whoami{font-size:13px;color:var(--muted);margin-bottom:8px}
+  .who{display:flex;flex-wrap:wrap;gap:6px}
+  .who button{font:600 14px/1 inherit;color:var(--muted);cursor:pointer;background:var(--panel2);
+    border:1px solid var(--line);border-radius:8px;padding:11px 15px}
+  .who button.on{background:var(--amber);border-color:var(--amber);color:#231a09}
+  .loadnote{font-size:13px;margin-top:10px;color:var(--muted)}
+  .loadnote.ok{color:var(--green)} .loadnote.err{color:var(--red)}
+
+  .filters{display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin:0 0 6px}
+  .filters button{font:600 12.5px/1 inherit;color:var(--muted);cursor:pointer;background:var(--panel2);
+    border:1px solid var(--line);border-radius:7px;padding:9px 12px}
+  .filters button.on{background:var(--panel2);border-color:var(--amber);color:var(--amber)}
+  .filters button:disabled{opacity:.4;cursor:not-allowed}
+  .filternote{font-size:12.5px;color:var(--dim);margin:0 0 16px}
+
+  h3.sec{font-size:12px;text-transform:uppercase;letter-spacing:.11em;color:var(--dim);
+    margin:26px 0 8px;padding-bottom:7px;border-bottom:1px solid var(--line)}
+  .row{display:flex;align-items:center;gap:12px;padding:9px 10px;border-radius:9px;border:1px solid transparent}
+  .row + .row{margin-top:2px}
+  .row:nth-child(odd){background:rgba(255,255,255,.018)}
+  .row.know{border-color:rgba(79,180,119,.5);background:rgba(79,180,119,.07)}
+  .row.wip{border-color:rgba(232,163,61,.45);background:rgba(232,163,61,.07)}
+  .row.none{opacity:.62}
+  .info{flex:1;min-width:0}
+  .title{font-weight:600;font-size:15px;display:block}
+  .meta{font-size:12.5px;color:var(--muted);display:block;margin-top:1px}
+  .badge{display:inline-block;font-size:10.5px;font-weight:700;letter-spacing:.05em;
+    padding:1px 6px;border-radius:4px;margin-right:6px;vertical-align:1px}
+  .v1{background:rgba(139,127,212,.18);color:#a99ff0}
+  .v2{background:rgba(232,163,61,.16);color:var(--amber)}
+  .duet{background:rgba(79,180,119,.16);color:#6fd096}
+  .lockbadge{background:rgba(232,163,61,.16);color:var(--amber)}
+  .tune{color:var(--dim)}
+
+  /* one dot per band member: filled green = knows it, amber ring = learning it */
+  .band{display:flex;gap:3px;flex:0 0 auto;align-items:center;margin-top:4px}
+  .band i{width:9px;height:9px;border-radius:50%;border:1px solid var(--line);background:transparent;display:inline-block}
+  .band i.know{background:var(--green);border-color:var(--green)}
+  .band i.wip{border-color:var(--amber);background:rgba(232,163,61,.28)}
+  .band i.none{border-color:#3a3f4e;background:transparent}
+  .bandnum{font-size:11.5px;color:var(--dim);margin-left:5px}
+
+  .btns{display:flex;gap:5px;flex:0 0 auto}
+  .btns button{font:600 11px/1.25 inherit;letter-spacing:.02em;color:var(--muted);cursor:pointer;
+    background:var(--panel2);border:1px solid var(--line);border-radius:7px;padding:9px 0;width:62px;text-align:center}
+  .btns button:hover{color:var(--ink);border-color:#3a3f4e}
+  .btns button.on-none{background:#3a3f4e;border-color:#3a3f4e;color:var(--ink)}
+  .btns button.on-wip{background:var(--amber);border-color:var(--amber);color:#231a09}
+  .btns button.on-know{background:var(--green);border-color:var(--green);color:#08210f}
+
+  footer{position:fixed;left:0;right:0;bottom:0;background:rgba(13,14,18,.96);
+    border-top:1px solid var(--line);backdrop-filter:blur(8px);padding:11px 0}
+  .fbar{display:flex;align-items:center;gap:14px;max-width:860px;margin:0 auto;padding:0 16px}
+  .stats{flex:1;min-width:0;font-size:13px;color:var(--muted);line-height:1.35}
+  .stats b{color:var(--ink);font-size:15px}
+  .gauge{height:5px;border-radius:3px;background:var(--panel2);margin-top:7px;overflow:hidden;display:flex}
+  .gauge i{display:block;height:100%;width:0;transition:width .18s}
+  .gauge i.g{background:var(--green)}
+  .gauge i.a{background:var(--amber)}
+  #save{font:700 14px/1 inherit;cursor:pointer;background:var(--amber);color:#231a09;border:none;
+    border-radius:9px;padding:14px 18px;flex:0 0 auto}
+  #save:disabled{background:var(--panel2);color:var(--dim);cursor:not-allowed}
+  .savemsg{font-size:12.5px;margin-top:5px}
+  .savemsg.ok{color:var(--green)} .savemsg.err{color:var(--red)}
+  @media(max-width:560px){
+    h1{font-size:21px}
+    .row{gap:8px;padding:8px 7px}
+    .btns{gap:4px;width:172px}
+    .btns button{width:100%;min-width:0;padding:9px 2px;font-size:10px;letter-spacing:0}
+    .title{font-size:14px}
+    .fbar{gap:10px}
+    #save{padding:13px 14px;font-size:13px}
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<header>
+  <h1>October Anniversary Show — <span>Who Knows What</span></h1>
+  <p class="sub">Where everyone is up to on each song &middot;
+    <a href="index.html">the ballot</a> &middot; <a href="results.html">results</a></p>
+</header>
+
+<div class="card">
+  <h2>How this works</h2>
+  <p>Pick your name, then mark each song <strong>Not started</strong>, <strong>In progress</strong>
+     or <strong>Know it</strong>. Anything you leave alone stays blank &mdash; blank means
+     &ldquo;haven&rsquo;t said&rdquo;, which is not the same as not started.</p>
+  <p>This is <strong>separate from the vote</strong>. Marking a song as known does not put it in the
+     set, and voting MUST on a song you have never played is fine &mdash; that is the point of
+     having both.</p>
+  <p>The dots on each row are the whole band: <strong>filled</strong> = knows it,
+     <strong>ringed</strong> = learning it, <strong>empty</strong> = not started or hasn&rsquo;t said.</p>
+</div>
+
+<div class="card">
+  <p class="whoami">Who are you?</p>
+  <div class="who" id="who"></div>
+  <div class="loadnote" id="loadnote"></div>
+</div>
+
+<div class="filters" id="filters">
+  <button type="button" data-f="set">In the running order</button>
+  <button type="button" data-f="all" class="on">Every song</button>
+  <button type="button" data-f="todo">Mine not done</button>
+</div>
+<p class="filternote" id="filternote"></p>
+
+<div id="list"></div>
+
+</div>
+
+<footer>
+  <div class="fbar">
+    <div class="stats">
+      <span id="line1"><b>0</b> known &middot; <b>0</b> in progress</span>
+      <div class="gauge"><i id="barKnow" class="g"></i><i id="barWip" class="a"></i></div>
+      <div class="savemsg" id="savemsg"></div>
+    </div>
+    <button id="save" disabled>Save my progress</button>
+  </div>
+</footer>
+
+<script src="config.js"></script>
+<script>
+const API    = (window.SETLIST_API || '').trim();
+const VOTERS = window.SETLIST_VOTERS || ["Rich","Ashley","CJ","Justin","Isaac","Julie","Organiser"];
+
+// Sheet values, and the button labels that map onto them. The sheet stores the
+// long form so the Grid tab reads as English; the page never invents a fourth.
+const STATES = [
+  {v:'NOT STARTED', cls:'none', label:'Not<br>started'},
+  {v:'IN PROGRESS', cls:'wip',  label:'In<br>progress'},
+  {v:'KNOW',        cls:'know', label:'Know<br>it'}
+];
+const CLS = {'NOT STARTED':'none','IN PROGRESS':'wip','KNOW':'know'};
+
+let ROWS = [];              // every row from the sheet, in sheet order
+let LEARNERS = [];          // names that have a "<name> knows" column
+let me = null;
+let filter = 'all';
+const mine = {};            // 'Song|Artist' -> sheet value ('' = not answered)
+
+const esc   = s => String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+const keyOf = r => r.song+'|'+r.artist;
+const badge = v => '<span class="badge '+(v==='V1'?'v1':v==='V2'?'v2':'duet')+'">'+esc(v||'?')+'</span>';
+
+// Same parser as the ballot: Sheets renders a time-typed "3:23" as "3:23:00",
+// sometimes with AM/PM. Anything unreadable shows as a dash rather than a guess.
+const MAX_SONG = 15*60;
+function parseLen(v){
+  const t = String(v==null?'':v).trim().toUpperCase().replace(/\s*[AP]M$/,'');
+  const m = t.match(/^(\d{1,3}):([0-5]?\d)(?::([0-5]\d))?$/);
+  if(!m) return 0;
+  let secs;
+  if(m[3] === undefined){ secs = (+m[1])*60 + (+m[2]); }
+  else {
+    secs = (+m[1])*3600 + (+m[2])*60 + (+m[3]);
+    if(secs > MAX_SONG) secs = (+m[1])*60 + (+m[2]);
+  }
+  return (secs > 0 && secs <= MAX_SONG) ? secs : 0;
+}
+const mmss = t => t ? Math.floor(t/60)+":"+String(Math.round(t%60)).padStart(2,'0') : '—';
+
+// ---- filtering --------------------------------------------------------
+const hasOrder = () => ROWS.some(r => r.order > 0);
+function visible(){
+  let rows = ROWS;
+  if(filter === 'set')  rows = ROWS.filter(r => r.order > 0).sort((a,b)=>a.order-b.order);
+  if(filter === 'todo') rows = ROWS.filter(r => (mine[keyOf(r)]||'') !== 'KNOW');
+  return rows;
+}
+
+// ---- render -----------------------------------------------------------
+function renderAll(){
+  const rows = visible();
+  const grouped = filter !== 'set';       // the running order is one flat list
+  let html = '', lastG = null;
+
+  rows.forEach(r=>{
+    const g = r.section || 'Songs';
+    if(grouped && g !== lastG){ html += '<h3 class="sec">'+esc(g)+'</h3>'; lastG = g; }
+    const k = keyOf(r), secs = parseLen(r.len);
+    const locked = /^LOCKED/i.test(r.section);
+    html += '<div class="row" data-key="'+esc(k)+'"><div class="info">'+
+      '<span class="title">'+(filter==='set'?'<span style="color:var(--dim)">'+r.order+'.</span> ':'')+
+        esc(r.song)+'</span>'+
+      '<span class="meta">'+badge(r.lead)+
+        (locked?'<span class="badge lockbadge">LOCKED</span>':'')+
+        esc(r.artist)+' &middot; '+mmss(secs)+
+        (r.tuning?' &middot; <span class="tune">'+esc(r.tuning)+'</span>':'')+'</span>'+
+      bandDots(r)+
+      '</div><div class="btns">'+
+        STATES.map(s=>'<button type="button" data-key="'+esc(k)+'" data-v="'+s.v+'">'+
+          s.label+'</button>').join('')+
+      '</div></div>';
+  });
+
+  document.getElementById('list').innerHTML = html ||
+    '<p style="color:var(--muted);font-size:14px">Nothing to show here.</p>';
+  rows.forEach(r=>paintRow(keyOf(r)));
+  refresh();
+}
+
+/** One dot per band member, so you can see at a glance who is holding a song up. */
+function bandDots(r){
+  if(!LEARNERS.length) return '';
+  const dots = LEARNERS.map(n=>{
+    const v = (r.learn && r.learn[n]) || '';
+    const cls = CLS[v] || 'none';
+    const said = v ? v.toLowerCase() : 'not said';
+    return '<i class="'+cls+'" title="'+esc(n)+': '+esc(said)+'"></i>';
+  }).join('');
+  const know = LEARNERS.filter(n=>((r.learn&&r.learn[n])||'')==='KNOW').length;
+  return '<span class="band">'+dots+'<span class="bandnum">'+know+'/'+LEARNERS.length+' know it</span></span>';
+}
+
+function paintRow(k){
+  const row = document.querySelector('.row[data-key="'+CSS.escape(k)+'"]');
+  if(!row) return;
+  const v = mine[k] || '';
+  row.className = 'row'+(v?' '+CLS[v]:'');
+  row.querySelectorAll('.btns button').forEach(b=>{
+    b.className = (v===b.dataset.v) ? 'on-'+CLS[b.dataset.v] : '';
+  });
+}
+
+// ---- who am i ---------------------------------------------------------
+document.getElementById('who').innerHTML =
+  VOTERS.map(v=>'<button type="button" data-v="'+esc(v)+'">'+esc(v)+'</button>').join('');
+document.getElementById('who').addEventListener('click', e=>{
+  const b = e.target.closest('button'); if(!b) return;
+  setMe(b.dataset.v);
+  pull();
+});
+function setMe(name){
+  me = name;
+  try{ localStorage.setItem('setlist.me', name); }catch(ignore){}
+  document.querySelectorAll('#who button').forEach(x=>x.classList.toggle('on', x.dataset.v===me));
+}
+
+// ---- interaction ------------------------------------------------------
+document.getElementById('list').addEventListener('click', e=>{
+  const b = e.target.closest('button'); if(!b) return;
+  if(!me){ note('Pick your name first.','err'); return; }
+  const k = b.dataset.key;
+  mine[k] = (mine[k] === b.dataset.v) ? '' : b.dataset.v;   // tap again to clear
+  paintRow(k);
+  if(filter === 'todo') renderAll(); else refresh();
+});
+
+document.getElementById('filters').addEventListener('click', e=>{
+  const b = e.target.closest('button'); if(!b || b.disabled) return;
+  filter = b.dataset.f;
+  document.querySelectorAll('#filters button').forEach(x=>x.classList.toggle('on', x.dataset.f===filter));
+  renderAll();
+});
+
+function refresh(){
+  const total = ROWS.length;
+  const n = v => ROWS.filter(r=>(mine[keyOf(r)]||'')===v).length;
+  const know = n('KNOW'), wip = n('IN PROGRESS'), started = n('NOT STARTED');
+  const unsaid = total - know - wip - started;
+  document.getElementById('line1').innerHTML =
+    '<b>'+know+'</b> known &middot; <b>'+wip+'</b> in progress &middot; '+
+    '<b>'+started+'</b> not started' + (unsaid ? ' &middot; '+unsaid+' unanswered' : '');
+  document.getElementById('barKnow').style.width = total ? (know/total*100)+'%' : 0;
+  document.getElementById('barWip').style.width  = total ? (wip/total*100)+'%'  : 0;
+  document.getElementById('save').disabled = !me || !ROWS.length;
+}
+
+function note(text, cls){
+  const el = document.getElementById('loadnote');
+  el.className = 'loadnote'+(cls?' '+cls:'');
+  el.textContent = text;
+}
+
+// ---- load -------------------------------------------------------------
+async function pull(){
+  if(!API){
+    note('config.js has no SETLIST_API path, so there is no backend to read or write.','err');
+    return;
+  }
+  note('Loading the song list…');
+  try{
+    const r = await fetch(API+'/data',{method:'GET'});
+    const j = await r.json();
+    if(!j.ok) throw new Error(j.error||'unknown error');
+
+    ROWS = j.data.rows || [];
+    LEARNERS = j.data.learners || [];
+
+    Object.keys(mine).forEach(k=>delete mine[k]);
+    let found = 0;
+    if(me){
+      ROWS.forEach(r=>{
+        const v = (r.learn && r.learn[me]) || '';
+        if(CLS[v]){ mine[keyOf(r)] = v; found++; }
+      });
+    }
+
+    const setBtn = document.querySelector('#filters button[data-f="set"]');
+    setBtn.disabled = !hasOrder();
+    document.getElementById('filternote').textContent = hasOrder()
+      ? '' : 'No running order saved in the sheet yet, so “In the running order” is empty.';
+    if(filter === 'set' && !hasOrder()){
+      filter = 'all';
+      document.querySelectorAll('#filters button')
+        .forEach(x=>x.classList.toggle('on', x.dataset.f==='all'));
+    }
+
+    renderAll();
+
+    if(!LEARNERS.length){
+      note('The backend returned nobody who can mark songs. Tell Rich — VOTERS in '+
+           'setlist.js is empty.','err');
+      document.getElementById('save').disabled = true;
+      return;
+    }
+    note(!me ? 'Song list loaded. Pick your name to start.'
+             : (found ? 'Loaded your '+found+' existing marks — change whatever you like and save again.'
+                      : 'Nothing marked by you yet. Off you go.'), 'ok');
+  }catch(e){
+    note('Could not reach the sheet ('+e.message+'). Reload to try again.','err');
+  }
+}
+
+// ---- save -------------------------------------------------------------
+document.getElementById('save').addEventListener('click', async ()=>{
+  const btn = document.getElementById('save'), msg = document.getElementById('savemsg');
+  if(!me || !API) return;
+  // Every row, not just the filtered ones — a cleared mark has to travel as an
+  // empty string or the sheet keeps the old value.
+  const learn = {};
+  ROWS.forEach(r=>{ learn[keyOf(r)] = mine[keyOf(r)] || ''; });
+
+  btn.disabled = true; msg.className='savemsg'; msg.textContent='Saving…';
+  try{
+    const r = await fetch(API+'/learn',{method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({person:me, learn})});
+    const j = await r.json();
+    if(!j.ok) throw new Error(j.error||'unknown error');
+    if(j.data){ ROWS = j.data.rows || ROWS; LEARNERS = j.data.learners || LEARNERS; renderAll(); }
+    msg.className='savemsg ok';
+    msg.textContent='Saved to the sheet — '+j.written+' songs updated.';
+    btn.textContent='Saved!';
+    setTimeout(()=>{btn.textContent='Save my progress';},2600);
+  }catch(e){
+    msg.className='savemsg err';
+    msg.textContent='Save failed ('+e.message+'). Nothing was lost — try again.';
+  }finally{ btn.disabled=false; }
+});
+
+// ---- go ---------------------------------------------------------------
+let remembered = null;
+try{ remembered = localStorage.getItem('setlist.me'); }catch(ignore){}
+if(remembered && VOTERS.includes(remembered)) setMe(remembered);
+refresh();
+pull();
+</script>
+</body>
+</html>

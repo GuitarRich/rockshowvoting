@@ -1,47 +1,84 @@
 # Setlist Vote — October Anniversary Show
 
 Static site for the band and organiser to vote on the setlist, backed by a
-Google Sheet. No accounts, no logins, no server to run.
+Google Sheet. No accounts, no logins for the band, nothing to run locally.
 
-**The Google Sheet is the source of truth.** Both pages read their song list
+**The Google Sheet is the source of truth.** Every page reads its song list
 from it, so adding or removing a song never needs a code change or a push.
+
+Hosted on Vercel: the pages are static, and the serverless functions in `api/`
+talk to the sheet with a Google service account. The band never sees Google —
+they open a page and tap.
 
 | File | What it is |
 |---|---|
 | `index.html` | The ballot. Pick your name, vote, save straight to the sheet. |
 | `results.html`| Live tally, every person's votes, auto-generated running order. |
 | `admin.html` | Add / edit / remove songs. Key-protected. |
-| `config.js` | The one file you edit — the Apps Script URL and voter names. |
-| `apps-script.gs` | The backend. Paste into the Sheet's Apps Script editor. |
+| `learn.html` | Who knows what. Each player marks every song Not started / In progress / Know it. |
+| `config.js` | The API path (`/api`) and the voter names for the browser. |
+| `setlist.js` | Shared constants: weights, the band, vote and learn values, key/length helpers. |
+| `api/` | The backend. One function per action, plus `_sheets.js` for all sheet access. |
+| `apps-script.gs` | **Retired.** The previous backend, kept for reference only. |
 
-Sheet columns: **A–F** song details, **G–M** the seven voters, **N** SCORE,
-**O** MUSTs, **P** Energy, **Q** Tags, **R** Order (blank = automatic),
-**S** Tuning (free text; blank = E standard).
+### API
+
+| Endpoint | Method | Body | Does |
+|---|---|---|---|
+| `/api/data` | GET | — | Everything: songs, votes, learn statuses, tunings, weights, limits. |
+| `/api/vote` | POST | `{voter, votes}` | Saves one person's votes. |
+| `/api/learn` | POST | `{person, learn}` | Saves one person's practice statuses. |
+| `/api/admin` | POST | `{key, add, update, remove, order}` | Song edits and the manual order. |
+| `/api/health` | GET | — | Which env vars are set, whether the sheet opens. Check this first. |
+
+Songs are addressed on the wire as `Song|Artist`, and resolved server-side to
+the stable key in the sheet's `Key` column — so renaming a song in admin keeps
+every vote and practice mark already recorded against it.
+
+### Sheet tabs
+
+| Tab | Holds |
+|---|---|
+| `Songs` | Key, Section, Song, Artist, Lead, Length, Energy, Tags, Order. |
+| `Votes` | One row per person: their whole ballot as JSON. |
+| `Learning` | One row per person: their practice statuses as JSON. |
+| `Tunings` | One row per song. Blank means E standard; a blank you typed is respected. |
+| `Grid` | Derived, human-readable matrix. Rewritten on every save — never edit it. |
+
+Missing tabs and headers are created on the first request, so there is no setup
+script to run.
+
+Practice status is deliberately kept apart from the vote — its own tab, its own
+endpoint. Wanting a song in the set and being able to play it are different
+questions. A song missing from someone's blob means "hasn't said", which is not
+the same as `NOT STARTED`.
 
 ## Setup (once)
 
-1. Open the vote Google Sheet -> **Extensions -> Apps Script**.
-2. Delete the contents of `Code.gs`, paste in `apps-script.gs`.
-3. **Change `ADMIN_KEY`** at the top to something only you know. Save.
-4. Run the `setupSheet` function once and approve the permission prompt.
-   It fixes the voter columns, adds Energy/Tags columns, widens the score
-   formulas so new rows keep working, and colour-codes the vote cells.
-5. **Deploy -> New deployment -> Web app**
-   - Execute as: **Me**
-   - Who has access: **Anyone**  <- voters have no Google login
-   Deploy, approve, copy the `/exec` URL.
-6. Paste that URL into `window.SETLIST_API` in `config.js`.
-7. Commit and push. GitHub Pages redeploys in about a minute.
+1. Create a Google Cloud service account, enable the **Google Sheets API**, and
+   download its JSON key.
+2. **Share the sheet with the service account's email address as an Editor.**
+   Nothing works until you do; `/api/health` says so in as many words.
+3. Set these environment variables in Vercel, for every environment:
+   - `GOOGLE_SERVICE_ACCOUNT_EMAIL` — the `...iam.gserviceaccount.com` address
+   - `GOOGLE_PRIVATE_KEY` — the whole key including the BEGIN/END lines
+   - `SHEET_ID` — the id out of the sheet's URL
+   - `APP_SECRET` — the admin key for `admin.html`. Weak on purpose: it stops a
+     bandmate deleting a row by accident. It is not authentication.
+4. Push. Vercel builds on every commit to `main`.
+5. Open `/api/health` and check `ok: true` before telling anyone the URL.
 
-With `SETLIST_API` empty, the ballot and results pages fall back to manual
-copy/paste and admin is disabled.
+Env var changes do **not** apply to an existing build — redeploy after setting
+them.
+
+With `SETLIST_API` empty in `config.js`, the ballot falls back to manual
+copy/paste and admin disables itself.
 
 ## Scoring
 
 Votes are **MUST / YES / MAYBE / NO**, or blank for neutral. Weights live in
-one place — the `WEIGHTS` object in `apps-script.gs` — and are used to build
-the sheet formula *and* served to both web pages, so changing a number there
-changes everything.
+one place — the `WEIGHTS` object in `setlist.js` — and are served to every page
+by `/api/data`, so changing a number there changes everything.
 
 | Vote | Weight |
 |---|---|
@@ -61,7 +98,7 @@ full. Nothing is promoted or demoted against the vote. Two hard limits apply:
 
 - Songs with a **negative** total are never included - the band voted them down -
   even if there is time spare.
-- **Max 2 songs per band** (`MAX_PER_ARTIST` in `apps-script.gs`, set 0 for no
+- **Max 2 songs per band** (`MAX_PER_ARTIST` in `setlist.js`, set 0 for no
   limit). Locked requests count towards a band's allowance but are never
   dropped. Since the list is score-ordered, a band keeps its two best scorers
   and the rest are marked `CAP` on the ranking tab.
@@ -76,16 +113,11 @@ shows the set you'd actually play, so only MUST and YES add time.
 ## A gotcha: the Length column
 
 Google Sheets silently turns `3:23` into a **time value**, not text. The backend
-therefore reads the sheet with **`getDisplayValues()`, never `getValues()`** -
-reading a time cell back as a Date and reformatting it is timezone-dependent and
+therefore reads with `valueRenderOption` left at its default *formatted* value —
+reading a time cell back as a date and reformatting it is timezone-dependent and
 produces wildly wrong runtimes. If the results page refuses to build a set, the
-fix is:
-
-> run **`fixLengths`** from the Apps Script editor
-
-That rewrites the whole Length column as plain text `m:ss` and sets the column
-format to text, so Sheets can never reinterpret it again. (Manual equivalent:
-select the Length column, Format -> Number -> Plain text, retype the values.)
+fix is: select the Length column, **Format -> Number -> Plain text**, and retype
+the offending values as `m:ss`.
 
 `parseLen()` on both pages accepts `m:ss`, `h:mm:ss` and Sheets' rendered forms
 (`3:23:00`, `3:23:00 AM`), treating anything longer than 15 minutes as a
@@ -185,10 +217,21 @@ needs a keys player.
 They are links rather than stored copies on purpose: tabs and lyrics are
 copyrighted, and a link always shows the current, correct version.
 
-Locked rows (organiser requests) are protected server-side — a voter cannot
-overwrite them, though an admin can still edit or delete them here.
+Locked rows (organiser requests) are protected server-side — `/api/vote`
+refuses to write to them, though an admin can still edit or delete them here.
+`/api/learn` accepts them, because the locked songs are exactly the ones
+everybody has to learn.
 
-## After editing apps-script.gs
+## Who knows what
 
-Deploy -> Manage deployments -> edit -> Version: **New version** -> Deploy.
-Without that the live site keeps running the old code.
+`learn.html` is the practice tracker. Pick your name, mark each song **Not
+started / In progress / Know it**, save. Tap the same button again to clear it
+back to "haven't said".
+
+- The dots on each row are the whole band: filled = knows it, ringed =
+  learning it, empty = not started or hasn't said. So you can see at a glance
+  which song is holding the set up, and who to ask.
+- Filters: **In the running order** (uses the saved manual order),
+  **Every song**, **Mine not done**.
+- It covers every song including the locked ones, and it never affects the
+  vote or the generated setlist.

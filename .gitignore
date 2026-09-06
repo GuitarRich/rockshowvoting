@@ -1,2 +1,15 @@
 _to_delete/
 .DS_Store
+
+# Vercel
+.vercel
+node_modules/
+
+# Secrets — never commit
+.env
+.env.*
+*-*.json.key
+bunsnroses-*.json
+*.iam.gserviceaccount.com.json
+service-account*.json
+.env*

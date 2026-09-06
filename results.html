@@ -128,7 +128,7 @@
 
 <header>
   <h1>Setlist Vote — <span>Live Results</span></h1>
-  <p class="sub">October anniversary show &middot; one continuous 90-minute set &middot; <a href="index.html">back to the ballot</a></p>
+  <p class="sub">October anniversary show &middot; one continuous 90-minute set &middot; <a href="index.html">back to the ballot</a> &middot; <a href="learn.html">who knows what</a></p>
 </header>
 
 <div class="tabs">
@@ -149,7 +149,7 @@
 
   <div class="card">
     <h2>Fallback &mdash; published CSV</h2>
-    <p>Only needed if the Apps Script backend isn't set up. In the Sheet: <strong>File &rarr; Share &rarr; Publish to web</strong>, choose <strong>Comma-separated values (.csv)</strong>, publish, and paste the link below.</p>
+    <p>Only needed if the API isn't reachable. In the Sheet: <strong>File &rarr; Share &rarr; Publish to web</strong>, choose <strong>Comma-separated values (.csv)</strong>, publish, and paste the link below.</p>
     <input type="text" id="csvurl" placeholder="https://docs.google.com/spreadsheets/d/e/…/pub?output=csv" autocomplete="off">
     <div class="btnrow">
       <button class="btn ghost" id="fetchBtn">Fetch votes</button>
@@ -860,9 +860,9 @@ async function adminPost(body, verb){
   if(!API) throw new Error('no backend configured');
   if(!ADMIN_KEY) ADMIN_KEY = (prompt('Admin key (same one as the admin page)') || '').trim();
   if(!ADMIN_KEY) throw new Error('cancelled');
-  const r = await fetch(API, {method:'POST',
-    headers:{'Content-Type':'text/plain;charset=utf-8'},
-    body: JSON.stringify({action:'admin', key:ADMIN_KEY, ...body})});
+  const r = await fetch(API+'/admin', {method:'POST',
+    headers:{'Content-Type':'application/json'},
+    body: JSON.stringify({key:ADMIN_KEY, ...body})});
   const j = await r.json();
   if(!j.ok){ if(/admin key/i.test(j.error||'')) ADMIN_KEY = '';
              throw new Error(j.error || 'unknown error'); }
@@ -966,7 +966,7 @@ document.getElementById('copySet').onclick = ()=>{
   });
 };
 
-// ---- live backend (Apps Script) ----
+// ---- live backend (the api/ functions, same origin) ----
 const API = (window.SETLIST_API || '').trim();
 if(!API) document.getElementById('apiCard').classList.add('hide');
 
@@ -1009,7 +1009,7 @@ async function pullApi(silent){
   }
   st.className='status'; st.textContent='Fetching…';
   try{
-    const r = await fetch(API,{method:'GET'});
+    const r = await fetch(API+'/data',{method:'GET'});
     const j = await r.json();
     if(!j.ok) throw new Error(j.error||'unknown error');
     DATA = fromApi(j.data);

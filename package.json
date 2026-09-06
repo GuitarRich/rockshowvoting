@@ -1,0 +1,10 @@
+{
+  "name": "rockshow-setlist-vote",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "engines": { "node": ">=20" },
+  "dependencies": {
+    "googleapis": "^144.0.0"
+  }
+}
