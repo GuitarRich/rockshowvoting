@@ -24,6 +24,16 @@
   .tabs button{font:600 13px/1 inherit;color:var(--muted);cursor:pointer;background:var(--panel);
     border:1px solid var(--line);border-radius:8px;padding:11px 15px}
   .tabs button.on{background:var(--amber);border-color:var(--amber);color:#231a09}
+  .setsize{font-size:12.5px;color:var(--muted);display:inline-flex;align-items:center;gap:6px;
+    white-space:nowrap}
+  .setsize input{width:72px;font:600 13px/1 inherit;color:var(--ink);background:var(--panel2);
+    border:1px solid var(--line);border-radius:7px;padding:8px 9px}
+  .forcecell{display:inline-flex;gap:4px}
+  .forcebtn{font:700 10.5px/1 inherit;letter-spacing:.04em;color:var(--muted);cursor:pointer;
+    background:var(--panel2);border:1px solid var(--line);border-radius:6px;padding:6px 7px}
+  .forcebtn:hover{color:var(--ink);border-color:#3a3f4e}
+  .forcebtn.on{background:var(--amber);border-color:var(--amber);color:#231a09}
+  .forcebtn:disabled{opacity:.45;cursor:progress}
 
   .card{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:16px 18px;margin:0 0 20px}
   .card h2{font-size:12px;text-transform:uppercase;letter-spacing:.09em;color:var(--amber);margin:0 0 10px}
@@ -178,6 +188,7 @@
     highest-scoring song is usually <strong>not</strong> first: a natural closer is deliberately placed last.
     For pure score order, use the <strong>Full ranking</strong> tab.</p>
   </div>
+  <div id="setBar"></div>
   <div id="orderBar"></div>
   <div id="setGuitar" class="guitar"></div>
   <div class="card" style="padding:0;overflow:hidden">
@@ -391,6 +402,7 @@ function parse(text){
 
 // ===================== selection =====================
 function buildSet(D){
+  if(D.set && D.set.fromApi) return setFromApi(D);
   const chosen=[], notes=[];
   // locked, non-pick
   D.rows.filter(r=>r.isLocked && !r.isPick).forEach(r=>chosen.push({...r,why:'locked'}));
@@ -443,6 +455,40 @@ function buildSet(D){
   // Selection is PURE TOTAL SCORE — the highest-scoring songs go in until the
   // 90 minutes is full. Nothing is promoted or demoted against the vote; the
   // shortfalls below surface as warnings on the page instead.
+  return {chosen, notes, cappedKeys};
+}
+
+/**
+ * The set as the backend worked it out — including a frozen list, a song
+ * count, and any song forced in or out. Everything after this point (ordering,
+ * warnings, the ranking cut line) is unchanged and runs on `chosen` exactly as
+ * it does for a locally-built set.
+ */
+function setFromApi(D){
+  const notes = [];
+  if(D.set.blocked){
+    const bad = D.rows.filter(r=>!r.secs);
+    notes.push('BAD_LENGTHS:'+bad.length+':'+bad.slice(0,4).map(s=>s.song).join(', '));
+    return {chosen:[], notes, blocked:true};
+  }
+  const chosen = D.rows.filter(r=>r.inSet).map(r=>({...r,
+    why: r.force==='IN' ? 'forced' : (r.isLocked || r.isPick ? 'locked' : 'voted')}));
+
+  // Which songs the per-band limit cost a place. Recomputed here purely to
+  // label them on the ranking tab — it changes nothing about the selection.
+  const aKey = r => String(r.artist||'').trim().toLowerCase();
+  const perArtist = {};
+  chosen.forEach(r=>{ perArtist[aKey(r)] = (perArtist[aKey(r)]||0)+1; });
+  const cappedKeys = new Set();
+  D.rows.filter(r=>!r.inSet && r.score >= 0 && r.force !== 'OUT').forEach(r=>{
+    if(MAX_PER_ARTIST && (perArtist[aKey(r)]||0) >= MAX_PER_ARTIST)
+      cappedKeys.add(r.song+'|'+r.artist);
+  });
+
+  const rejected = D.rows.filter(r=>!r.inSet && r.score < 0).length;
+  const leftOut  = D.rows.filter(r=>!r.inSet && r.score >= 0
+    && !cappedKeys.has(r.song+'|'+r.artist)).length;
+  notes.push('COUNTS:'+rejected+':'+leftOut+':'+cappedKeys.size);
   return {chosen, notes, cappedKeys};
 }
 
@@ -707,7 +753,11 @@ function render(){
       (swaps[i] ? '<span class="tag tune swap" title="Guitar change">&#8635; '+esc(tuneOf(s))+'</span>' : '') +
       (role ? '<span class="tag role">'+role+'</span>' : '') +
       (s.why==='locked' ? '<span class="tag hi">LOCKED</span>' : '') +
-      '<span class="tag">'+(s.score>0?'+':'')+s.score+'</span>';
+      (s.force==='IN' ? '<span class="tag hi">FORCED IN</span>' : '') +
+      '<span class="tag">'+(s.score>0?'+':'')+s.score+'</span>' +
+      (DATA.set && DATA.set.fromApi
+        ? '<button type="button" class="forcebtn" data-force="OUT" data-key="'+esc(skey(s))+
+          '" title="Force this song out of the set">&#10005;</button>' : '');
     return '<div class="setrow" draggable="true" data-i="'+i+'" data-key="'+esc(skey(s))+'">'+
       '<span class="grip" title="Drag to reorder">&#8942;&#8942;</span>'+
       '<span class="num">'+(i+1)+'</span>'+
@@ -723,6 +773,29 @@ function render(){
         '</span>'+
       '</span></div>';
   }).join('');
+
+  // --- set controls: lock, size, and what has been forced
+  const setBar = document.getElementById('setBar');
+  if(!DATA.set || !DATA.set.fromApi){ setBar.innerHTML = ''; }
+  else {
+    const meta = DATA.set;
+    const forcedIn  = DATA.rows.filter(r=>r.force==='IN').length;
+    const forcedOut = DATA.rows.filter(r=>r.force==='OUT').length;
+    const forced = (forcedIn||forcedOut)
+      ? ' <span class="tag">'+forcedIn+' forced in, '+forcedOut+' out</span>' : '';
+    const size = '<label class="setsize">Songs in the set '+
+      '<input id="maxSongs" type="number" min="0" max="60" step="1" value="'+
+        (meta.maxSongs||'')+'" placeholder="by time">'+
+      '</label><button class="btn ghost" id="applySize">Apply</button>';
+    setBar.innerHTML = meta.locked
+      ? '<div class="obar saved"><span><strong>Set locked.</strong> These '+meta.count+
+        ' songs stay put however people vote.'+forced+'</span>'+size+
+        '<button class="btn" id="unlockSet">Unlock &amp; follow the vote</button></div>'
+      : '<div class="obar"><span><strong>Set follows the vote</strong> &mdash; '+meta.count+
+        ' songs, '+mmss(meta.seconds)+(meta.maxSongs?'':' of 90:00')+
+        '. It moves as votes come in.'+forced+'</span>'+size+
+        '<button class="btn" id="lockSet">Lock this set</button></div>';
+  }
 
   // --- order-mode banner + save/reset controls
   const bar = document.getElementById('orderBar');
@@ -772,16 +845,18 @@ function render(){
   // --- ranking
   const ranked = DATA.rows.filter(r=>!r.isLocked).sort((a,b)=>b.score-a.score||b.musts-a.musts);
   let run=ordered.filter(s=>s.why==='locked').reduce((a,s)=>a+s.secs+GAP,0), cutShown=false;
+  const canForce = !!(DATA.set && DATA.set.fromApi);
   let rh='<thead><tr><th class="nosort">#</th><th class="nosort">Song</th><th class="nosort">Artist</th>'+
     '<th class="nosort">Lead</th><th class="nosort">Len</th><th class="nosort">Score</th>'+
     '<th class="nosort">MUSTs</th><th class="nosort">NOs</th>'+
-    '<th class="nosort">Parts</th></tr></thead><tbody>';
+    '<th class="nosort">Parts</th>'+(canForce?'<th class="nosort">Force</th>':'')+
+    '</tr></thead><tbody>';
   ranked.forEach((r,i)=>{
     const sel = inSet.has(r.song+'|'+r.artist);
     if(!sel && !cutShown){
       cutShown = true;
-      rh += '<tr><td colspan="9" style="color:var(--red);font-size:11.5px;letter-spacing:.08em;'+
-        'text-transform:uppercase;background:rgba(209,91,91,.07)">— 90-minute cut line —</td></tr>';
+      rh += '<tr><td colspan="'+(canForce?10:9)+'" style="color:var(--red);font-size:11.5px;'+
+        'letter-spacing:.08em;text-transform:uppercase;background:rgba(209,91,91,.07)">— cut line —</td></tr>';
     }
     const nos = Object.values(r.votes).filter(x=>String(x).toUpperCase()==='NO').length;
     if(r.score < 0 && !cutShown){ /* negatives sort below the cut anyway */ }
@@ -794,7 +869,8 @@ function render(){
       '<td class="c"><span class="score '+(r.score>0?'pos':r.score<0?'neg':'zero')+'">'+
         (r.score>0?'+':'')+r.score+'</span></td>'+
       '<td class="c len">'+(r.musts||'')+'</td><td class="c len">'+(nos||'')+'</td>'+
-      '<td>'+partLinks(r)+'</td></tr>';
+      '<td>'+partLinks(r)+'</td>'+
+      (canForce ? '<td class="c">'+forceCell(r)+'</td>' : '')+'</tr>';
   });
   document.getElementById('rankTable').innerHTML = rh+'</tbody>';
 
@@ -871,6 +947,53 @@ async function adminPost(body, verb){
   render();
   return verb;
 }
+
+/** Three states per song: forced in, forced out, or left to the vote. */
+function forceCell(r){
+  const k = esc(r.song+'|'+r.artist);
+  const btn = (val,label,title) =>
+    '<button type="button" class="forcebtn'+(r.force===val?' on':'')+'" data-force="'+
+      (r.force===val?'':val)+'" data-key="'+k+'" title="'+title+'">'+label+'</button>';
+  return '<span class="forcecell">'+
+    btn('IN','IN','Force into the set whatever it scored')+
+    btn('OUT','OUT','Keep out of the set whatever it scored')+'</span>';
+}
+
+// Force in/out, from either the setlist row or the ranking table.
+document.addEventListener('click', async e => {
+  const b = e.target.closest('.forcebtn'); if(!b) return;
+  const key = b.dataset.key, value = b.dataset.force;
+  b.disabled = true;
+  try{
+    await adminPost({force:[{key, value}]}, 'forced');
+  }catch(err){
+    if(err.message !== 'cancelled') alert('Could not change that: '+err.message);
+    b.disabled = false;
+  }
+});
+
+document.getElementById('setBar').addEventListener('click', async e => {
+  const b = e.target.closest('button'); if(!b) return;
+  const bar = document.getElementById('setBar');
+  const say = (t, cls) => bar.insertAdjacentHTML('beforeend',
+    '<div class="status '+(cls||'')+'" style="width:100%">'+esc(t)+'</div>');
+  b.disabled = true;
+  try{
+    if(b.id === 'lockSet'){
+      await adminPost({lockSet:true}, 'locked');
+    } else if(b.id === 'unlockSet'){
+      if(!confirm('Unlock the set? The frozen list is thrown away and the set goes back to '+
+                  'following the vote.')){ b.disabled = false; return; }
+      await adminPost({lockSet:false}, 'unlocked');
+    } else if(b.id === 'applySize'){
+      const n = Math.max(0, parseInt(document.getElementById('maxSongs').value, 10) || 0);
+      await adminPost({maxSongs:n}, 'sized');
+    }
+  }catch(err){
+    if(err.message !== 'cancelled') say('That did not work: '+err.message, 'err');
+    b.disabled = false;
+  }
+});
 
 document.getElementById('orderBar').addEventListener('click', async e => {
   const b = e.target.closest('button'); if(!b) return;
@@ -992,13 +1115,17 @@ function fromApi(payload){
     const secs = parseLen(r.len);
     const {score, musts, xs} = scoreOf(r.votes, voters);
     return {song:r.song, artist:r.artist, lead:(r.lead||'').toUpperCase(),
+      inSet: !!r.inSet, force: String(r.force||'').toUpperCase(),
       lenTxt: secs ? (Math.floor(secs/60)+':'+String(secs%60).padStart(2,'0')) : String(r.len||''),
       secs, sec:r.section,
       isLocked:/^LOCKED/i.test(r.section), isPick:/pick ONE/i.test(r.section),
       votes:r.votes, score, musts, xs, e:m.e, tags:m.tags, order:Number(r.order)||0,
       tuning: String(r.tuning||'').trim()};
   });
-  return {voters, rows};
+  // The API decides what is in the set, so the learn page, this page and the
+  // sheet can never disagree about it. `set` is absent on the CSV fallback,
+  // and buildSet() then works it out locally as it always did.
+  return {voters, rows, set: payload.set ? {...payload.set, fromApi:true} : null};
 }
 
 async function pullApi(silent){

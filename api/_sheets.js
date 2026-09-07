@@ -12,9 +12,13 @@ const VOTES_TAB = "Votes";
 const GRID_TAB = "Grid";
 const TUNINGS_TAB = "Tunings";
 const LEARN_TAB = "Learning";
+const SETTINGS_TAB = "Settings";
 
 const SONG_HEADERS = [
   "Key", "Section", "Song", "Artist", "Lead", "Length", "Energy", "Tags", "Order",
+  // IN forces a song into the set whatever it scored, OUT keeps it out
+  // whatever it scored. Blank leaves it to the vote.
+  "Force",
 ];
 const VOTE_HEADERS = ["Name", "UpdatedAt", "AppVersion", "VoteCount", "VotesJSON"];
 const TUNING_HEADERS = ["Key", "Song", "Artist", "Tuning"];
@@ -22,6 +26,10 @@ const TUNING_HEADERS = ["Key", "Song", "Artist", "Tuning"];
 // then save a vote and a practice status at the same moment without either
 // write clobbering the other's row.
 const LEARN_HEADERS = ["Name", "UpdatedAt", "AppVersion", "KnownCount", "LearnJSON"];
+const SETTINGS_HEADERS = ["Key", "Value"];
+
+// Defaults for a sheet that has never had a setting written to it.
+const SETTINGS_DEFAULTS = { maxSongs: 0, locked: false, lockedKeys: [] };
 
 let cached = null;
 
@@ -68,7 +76,7 @@ export async function ensureTabs() {
   const id = sheetId();
   const meta = await sheets.spreadsheets.get({ spreadsheetId: id });
   const have = new Set(meta.data.sheets.map((s) => s.properties.title));
-  const wanted = [SONGS_TAB, VOTES_TAB, GRID_TAB, TUNINGS_TAB, LEARN_TAB];
+  const wanted = [SONGS_TAB, VOTES_TAB, GRID_TAB, TUNINGS_TAB, LEARN_TAB, SETTINGS_TAB];
   const missing = wanted.filter((t) => !have.has(t));
 
   if (missing.length) {
@@ -81,12 +89,13 @@ export async function ensureTabs() {
   }
   // Headers are rewritten whenever they drift, on every tab, not just new ones.
   await Promise.all([
-    ensureHeaders(sheets, id, SONGS_TAB, "A1:I1", SONG_HEADERS),
+    ensureHeaders(sheets, id, SONGS_TAB, "A1:J1", SONG_HEADERS),
     ensureHeaders(sheets, id, VOTES_TAB, "A1:E1", VOTE_HEADERS),
     ensureHeaders(sheets, id, TUNINGS_TAB, "A1:D1", TUNING_HEADERS),
     ensureHeaders(sheets, id, LEARN_TAB, "A1:E1", LEARN_HEADERS),
+    ensureHeaders(sheets, id, SETTINGS_TAB, "A1:B1", SETTINGS_HEADERS),
   ]);
-  return { SONGS_TAB, VOTES_TAB, GRID_TAB, TUNINGS_TAB, LEARN_TAB };
+  return { SONGS_TAB, VOTES_TAB, GRID_TAB, TUNINGS_TAB, LEARN_TAB, SETTINGS_TAB };
 }
 
 async function ensureHeaders(sheets, id, tab, range, headers) {
@@ -111,13 +120,14 @@ export async function readAll() {
   const res = await sheets.spreadsheets.values.batchGet({
     spreadsheetId: id,
     ranges: [
-      `${SONGS_TAB}!A2:I500`,
+      `${SONGS_TAB}!A2:J500`,
       `${VOTES_TAB}!A2:E200`,
       `${TUNINGS_TAB}!A2:D500`,
       `${LEARN_TAB}!A2:E200`,
+      `${SETTINGS_TAB}!A2:B50`,
     ],
   });
-  const [songRows = [], voteRows = [], tuningRows = [], learnRows = []] =
+  const [songRows = [], voteRows = [], tuningRows = [], learnRows = [], settingRows = []] =
     res.data.valueRanges.map((r) => r.values || []);
 
   const songs = songRows
@@ -134,6 +144,7 @@ export async function readAll() {
         .split(/[,;]\s*/)
         .filter(Boolean),
       order: Number(String(r[8] || "").trim()) || 0,
+      force: forceValue(r[9]),
     }));
 
   const voters = {};
@@ -179,7 +190,7 @@ export async function readAll() {
     tunings
   );
 
-  return { songs, voters, learners, tunings: seeded };
+  return { songs, voters, learners, settings: parseSettings(settingRows), tunings: seeded };
 }
 
 /**
@@ -212,6 +223,76 @@ export async function syncTunings(entries, existing) {
     out[r[0]] = r[3];
   });
   return out;
+}
+
+/** Only IN, OUT or nothing. Anything else in the cell is treated as nothing. */
+export function forceValue(raw) {
+  const v = String(raw || "").trim().toUpperCase();
+  return v === "IN" || v === "OUT" ? v : "";
+}
+
+/**
+ * The Settings tab is a plain key/value list so it stays readable and
+ * hand-editable — the whole point of keeping this on a sheet.
+ */
+function parseSettings(rows) {
+  const out = { ...SETTINGS_DEFAULTS, lockedKeys: [] };
+  for (const r of rows) {
+    const key = String(r[0] || "").trim();
+    const raw = String(r[1] ?? "").trim();
+    if (key === "maxSongs") out.maxSongs = Math.max(0, Number(raw) || 0);
+    else if (key === "locked") out.locked = /^(true|yes|1)$/i.test(raw);
+    else if (key === "lockedKeys") {
+      try {
+        const parsed = JSON.parse(raw || "[]");
+        out.lockedKeys = Array.isArray(parsed) ? parsed.map(String) : [];
+      } catch {
+        out.lockedKeys = [];
+      }
+    }
+  }
+  return out;
+}
+
+/** Write only the settings named; anything else on the tab is left alone. */
+export async function writeSettings(patch) {
+  const keys = Object.keys(patch || {});
+  if (!keys.length) return;
+  await ensureTabs();
+  const sheets = sheetsClient();
+  const id = sheetId();
+  const res = await sheets.spreadsheets.values.get({
+    spreadsheetId: id,
+    range: `${SETTINGS_TAB}!A2:A50`,
+  });
+  const have = (res.data.values || []).map((r) => String(r[0] || "").trim());
+  const updates = [];
+  const appends = [];
+  for (const key of keys) {
+    const value =
+      typeof patch[key] === "object" ? JSON.stringify(patch[key]) : String(patch[key]);
+    const i = have.indexOf(key);
+    if (i >= 0) updates.push({ range: `${SETTINGS_TAB}!A${i + 2}:B${i + 2}`, values: [[key, value]] });
+    else {
+      appends.push([key, value]);
+      have.push(key);
+    }
+  }
+  if (updates.length) {
+    await sheets.spreadsheets.values.batchUpdate({
+      spreadsheetId: id,
+      requestBody: { valueInputOption: "RAW", data: updates },
+    });
+  }
+  if (appends.length) {
+    await sheets.spreadsheets.values.append({
+      spreadsheetId: id,
+      range: `${SETTINGS_TAB}!A2:B2`,
+      valueInputOption: "RAW",
+      insertDataOption: "INSERT_ROWS",
+      requestBody: { values: appends },
+    });
+  }
 }
 
 /**
@@ -307,7 +388,7 @@ export async function writeSongs(songs) {
   const id = sheetId();
   await sheets.spreadsheets.values.clear({
     spreadsheetId: id,
-    range: `${SONGS_TAB}!A2:I500`,
+    range: `${SONGS_TAB}!A2:J500`,
   });
   if (!songs.length) return;
   await sheets.spreadsheets.values.update({
@@ -325,6 +406,7 @@ export async function writeSongs(songs) {
         Number(s.energy) > 0 ? Number(s.energy) : "",
         Array.isArray(s.tags) ? s.tags.join(",") : String(s.tags || ""),
         Number(s.order) > 0 ? Number(s.order) : "",
+        forceValue(s.force),
       ]),
     },
   });

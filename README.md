@@ -39,11 +39,12 @@ every vote and practice mark already recorded against it.
 
 | Tab | Holds |
 |---|---|
-| `Songs` | Key, Section, Song, Artist, Lead, Length, Energy, Tags, Order. |
+| `Songs` | Key, Section, Song, Artist, Lead, Length, Energy, Tags, Order, Force. |
 | `Votes` | One row per person: their whole ballot as JSON. |
 | `Learning` | One row per person: their practice statuses as JSON. |
 | `Tunings` | One row per song. Blank means E standard; a blank you typed is respected. |
 | `Grid` | Derived, human-readable matrix. Rewritten on every save — never edit it. |
+| `Settings` | Key/value: `maxSongs`, `locked`, `lockedKeys`. Hand-editable. |
 
 Missing tabs and headers are created on the first request, so there is no setup
 script to run.
@@ -222,16 +223,43 @@ refuses to write to them, though an admin can still edit or delete them here.
 `/api/learn` accepts them, because the locked songs are exactly the ones
 everybody has to learn.
 
+## Controlling the set
+
+The set is worked out **by the API**, once, and served to every page — so the
+results page, the learn page and the sheet can never disagree about which songs
+the band actually has to play. Three controls sit above the generated setlist
+on the results page. All of them ask for the admin key.
+
+| Control | What it does |
+|---|---|
+| **Songs in the set** | A hard song count. Set 20 and the top 20 by score go in; the runtime it lands on is reported, not enforced. Leave it blank (0) and the 90 minutes decides the cut instead. |
+| **Lock this set** | Snapshots exactly the songs in the set right now into `lockedKeys`. The list then stays put however people vote. |
+| **Unlock** | Throws the snapshot away and hands the set back to the vote. |
+| **IN / OUT** | Per song, on the Full ranking tab and as ✕ on each setlist row. Forces a song in or out whatever it scored. |
+
+Precedence, highest first: **force OUT**, then **force IN**, then a **locked
+snapshot**, then the vote. So a forced song still overrides a locked list —
+you can correct a frozen set without unlocking it and losing it.
+
+Locking is the answer to "the order keeps moving and nobody trusts it". Lock
+once the vote has settled, and the band can learn a list that will not change
+under them.
+
 ## Who knows what
 
 `learn.html` is the practice tracker. Pick your name, mark each song **Not
 started / In progress / Know it**, save. Tap the same button again to clear it
 back to "haven't said".
 
+- It shows **the songs that made the set** — the ones people actually have to
+  play — not the whole ballot. The page says whether that set is locked or can
+  still move, so nobody learns twenty songs off a provisional list.
 - The dots on each row are the whole band: filled = knows it, ringed =
   learning it, empty = not started or hasn't said. So you can see at a glance
   which song is holding the set up, and who to ask.
-- Filters: **In the running order** (uses the saved manual order),
-  **Every song**, **Mine not done**.
-- It covers every song including the locked ones, and it never affects the
-  vote or the generated setlist.
+- Filters: **In the set**, **In the set, mine not done**, and **Every song on
+  the ballot** for marking things you already know that did not make it.
+- The counter is always about the set, whichever list is on screen: marking
+  songs that are not in it must not make anyone look ready.
+- It covers every song in the set including the locked ones, and it never
+  affects the vote or the generated setlist.

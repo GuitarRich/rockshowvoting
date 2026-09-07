@@ -121,6 +121,9 @@
      having both.</p>
   <p>The dots on each row are the whole band: <strong>filled</strong> = knows it,
      <strong>ringed</strong> = learning it, <strong>empty</strong> = not started or hasn&rsquo;t said.</p>
+  <p>It shows <strong>the songs that made the set</strong> &mdash; the ones you actually have to
+     play. That list is built from the vote, so it can still move: switch to
+     <strong>Every song on the ballot</strong> to mark anything else you already know.</p>
 </div>
 
 <div class="card">
@@ -130,9 +133,9 @@
 </div>
 
 <div class="filters" id="filters">
-  <button type="button" data-f="set">In the running order</button>
-  <button type="button" data-f="all" class="on">Every song</button>
-  <button type="button" data-f="todo">Mine not done</button>
+  <button type="button" data-f="set" class="on">In the set</button>
+  <button type="button" data-f="todo">In the set, mine not done</button>
+  <button type="button" data-f="all">Every song on the ballot</button>
 </div>
 <p class="filternote" id="filternote"></p>
 
@@ -166,9 +169,10 @@ const STATES = [
 const CLS = {'NOT STARTED':'none','IN PROGRESS':'wip','KNOW':'know'};
 
 let ROWS = [];              // every row from the sheet, in sheet order
-let LEARNERS = [];          // names that have a "<name> knows" column
+let LEARNERS = [];          // everyone who can mark a song
+let SET = {count:0, blocked:false, badLengths:[]};
 let me = null;
-let filter = 'all';
+let filter = 'set';         // the set is what people came here for
 const mine = {};            // 'Song|Artist' -> sheet value ('' = not answered)
 
 const esc   = s => String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
@@ -193,27 +197,36 @@ function parseLen(v){
 const mmss = t => t ? Math.floor(t/60)+":"+String(Math.round(t%60)).padStart(2,'0') : '—';
 
 // ---- filtering --------------------------------------------------------
-const hasOrder = () => ROWS.some(r => r.order > 0);
+// "In the set" is the API's answer, not this page's: one selection, computed
+// once, so the learn page and the results page can never disagree about which
+// songs the band actually has to play.
+const setRows = () => {
+  const rows = ROWS.filter(r => r.inSet);
+  // A saved running order is the order they'll be played in; without one,
+  // sheet order is as good as anything.
+  return ROWS.some(r => r.inSet && r.order > 0)
+    ? rows.slice().sort((a,b) => (a.order||999) - (b.order||999))
+    : rows;
+};
 function visible(){
-  let rows = ROWS;
-  if(filter === 'set')  rows = ROWS.filter(r => r.order > 0).sort((a,b)=>a.order-b.order);
-  if(filter === 'todo') rows = ROWS.filter(r => (mine[keyOf(r)]||'') !== 'KNOW');
-  return rows;
+  if(filter === 'all')  return ROWS;
+  if(filter === 'todo') return setRows().filter(r => (mine[keyOf(r)]||'') !== 'KNOW');
+  return setRows();
 }
 
 // ---- render -----------------------------------------------------------
 function renderAll(){
   const rows = visible();
-  const grouped = filter !== 'set';       // the running order is one flat list
+  const grouped = filter === 'all';       // the set reads as one flat list
   let html = '', lastG = null;
 
-  rows.forEach(r=>{
+  rows.forEach((r,i)=>{
     const g = r.section || 'Songs';
     if(grouped && g !== lastG){ html += '<h3 class="sec">'+esc(g)+'</h3>'; lastG = g; }
     const k = keyOf(r), secs = parseLen(r.len);
     const locked = /^LOCKED/i.test(r.section);
     html += '<div class="row" data-key="'+esc(k)+'"><div class="info">'+
-      '<span class="title">'+(filter==='set'?'<span style="color:var(--dim)">'+r.order+'.</span> ':'')+
+      '<span class="title">'+(grouped?'':'<span style="color:var(--dim)">'+(i+1)+'.</span> ')+
         esc(r.song)+'</span>'+
       '<span class="meta">'+badge(r.lead)+
         (locked?'<span class="badge lockbadge">LOCKED</span>':'')+
@@ -286,14 +299,18 @@ document.getElementById('filters').addEventListener('click', e=>{
   renderAll();
 });
 
+// The count that matters is always the set, whichever list is on screen:
+// marking songs that aren't in it must not make you look ready.
 function refresh(){
-  const total = ROWS.length;
-  const n = v => ROWS.filter(r=>(mine[keyOf(r)]||'')===v).length;
+  const set = setRows(), total = set.length;
+  const n = v => set.filter(r=>(mine[keyOf(r)]||'')===v).length;
   const know = n('KNOW'), wip = n('IN PROGRESS'), started = n('NOT STARTED');
   const unsaid = total - know - wip - started;
-  document.getElementById('line1').innerHTML =
-    '<b>'+know+'</b> known &middot; <b>'+wip+'</b> in progress &middot; '+
-    '<b>'+started+'</b> not started' + (unsaid ? ' &middot; '+unsaid+' unanswered' : '');
+  document.getElementById('line1').innerHTML = total
+    ? '<b>'+know+'</b> of <b>'+total+'</b> known &middot; <b>'+wip+'</b> in progress' +
+      (started ? ' &middot; <b>'+started+'</b> not started' : '') +
+      (unsaid ? ' &middot; '+unsaid+' unanswered' : '')
+    : 'No set yet — nobody has voted enough for one.';
   document.getElementById('barKnow').style.width = total ? (know/total*100)+'%' : 0;
   document.getElementById('barWip').style.width  = total ? (wip/total*100)+'%'  : 0;
   document.getElementById('save').disabled = !me || !ROWS.length;
@@ -319,6 +336,7 @@ async function pull(){
 
     ROWS = j.data.rows || [];
     LEARNERS = j.data.learners || [];
+    SET = j.data.set || {count:0, blocked:false, badLengths:[], locked:false};
 
     Object.keys(mine).forEach(k=>delete mine[k]);
     let found = 0;
@@ -329,11 +347,21 @@ async function pull(){
       });
     }
 
-    const setBtn = document.querySelector('#filters button[data-f="set"]');
-    setBtn.disabled = !hasOrder();
-    document.getElementById('filternote').textContent = hasOrder()
-      ? '' : 'No running order saved in the sheet yet, so “In the running order” is empty.';
-    if(filter === 'set' && !hasOrder()){
+    // Say which list this is and whether it can still move, so nobody learns
+    // twenty songs off a set that turns out to be provisional.
+    const empty = !setRows().length;
+    document.getElementById('filternote').textContent =
+      SET.blocked
+        ? 'Some songs have an unreadable Length in the sheet, so the set cannot be worked out. '+
+          'Tell Rich. Showing every song on the ballot for now.'
+      : empty
+        ? 'No set yet — not enough votes. Showing every song on the ballot.'
+      : SET.locked
+        ? 'The set is locked: these ' + SET.count + ' songs are final.'
+        : 'The set follows the vote, so it can still change before the show.';
+
+    // Nothing to filter to yet: fall back to the ballot rather than a blank page.
+    if(filter !== 'all' && (empty || SET.blocked)){
       filter = 'all';
       document.querySelectorAll('#filters button')
         .forEach(x=>x.classList.toggle('on', x.dataset.f==='all'));

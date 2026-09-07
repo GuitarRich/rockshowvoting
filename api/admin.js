@@ -1,6 +1,15 @@
-import { readAll, writeSongs, writeTunings, writeGrid, readBody } from "./_sheets.js";
+import {
+  readAll,
+  writeSongs,
+  writeTunings,
+  writeGrid,
+  writeSettings,
+  forceValue,
+  readBody,
+} from "./_sheets.js";
+import { selectSet } from "./_selection.js";
 import { songKey } from "../setlist.js";
-import { buildPayload, keyResolver, ok, fail, methodGuard } from "./_payload.js";
+import { buildPayload, keyResolver, rosterOf, ok, fail, methodGuard } from "./_payload.js";
 
 /**
  * Add / edit / remove songs, and set the manual running order.
@@ -10,7 +19,8 @@ import { buildPayload, keyResolver, ok, fail, methodGuard } from "./_payload.js"
  * never be described as any.
  *
  * Body: {key, add:[{...}], update:[{key:'Song|Artist', ...}], remove:['Song|Artist'],
- *        order:[{key, pos}], clearOrder:true}
+ *        order:[{key, pos}], clearOrder:true,
+ *        force:[{key, value:'IN'|'OUT'|''}], maxSongs:20, lockSet:true|false}
  */
 export default async function handler(req, res) {
   if (methodGuard(req, res, "POST")) return;
@@ -86,6 +96,14 @@ export default async function handler(req, res) {
       result.added++;
     }
 
+    // --- force a song in or out, overriding what it scored
+    for (const f of body.force || []) {
+      const s = keyResolver(songs)(f.key);
+      if (!s) continue;
+      s.force = forceValue(f.value);
+      result.forced = (result.forced || 0) + 1;
+    }
+
     // --- manual running order, stored per song rather than by index so a song
     // that later drops out cannot shift everything below it.
     if (body.clearOrder) {
@@ -107,7 +125,7 @@ export default async function handler(req, res) {
     }
 
     const touched =
-      result.added || result.removed || result.updated ||
+      result.added || result.removed || result.updated || result.forced ||
       result.orderCleared || result.ordered;
     if (touched) await writeSongs(songs);
 
@@ -115,9 +133,40 @@ export default async function handler(req, res) {
     // row for a song added a moment ago, and writeTunings only ever fills in a
     // row that already exists. The other order silently dropped the tuning
     // typed on the admin page when the song was new.
-    const fresh = await readAll();
+    let fresh = await readAll();
     await writeTunings(tuningEdits);
     const tunings = { ...fresh.tunings, ...tuningEdits };
+
+    // --- how many songs the set holds. 0 hands the decision back to the clock.
+    if (body.maxSongs !== undefined) {
+      const n = Math.max(0, Math.floor(Number(body.maxSongs) || 0));
+      await writeSettings({ maxSongs: n });
+      fresh = { ...fresh, settings: { ...fresh.settings, maxSongs: n } };
+      result.maxSongs = n;
+    }
+
+    // --- lock: snapshot exactly the songs that are in the set right now, so
+    // the list stops moving as votes come in. Unlocking throws the snapshot
+    // away and hands the set back to the vote.
+    if (body.lockSet !== undefined) {
+      const lock = !!body.lockSet;
+      let lockedKeys = [];
+      if (lock) {
+        // Take the snapshot from an unlocked run, or re-locking would just
+        // freeze the frozen list and a stale one could never be refreshed.
+        const sel = selectSet(buildPayload({ ...fresh, tunings }).rows, rosterOf(fresh.voters, fresh.learners),
+          { settings: { ...fresh.settings, locked: false, lockedKeys: [] } });
+        if (sel.blocked) {
+          return fail(res, 409,
+            "Cannot lock the set: some songs have an unreadable Length, so there is no set to freeze.");
+        }
+        lockedKeys = [...sel.inSet];
+      }
+      await writeSettings({ locked: lock, lockedKeys });
+      fresh = { ...fresh, settings: { ...fresh.settings, locked: lock, lockedKeys } };
+      result.locked = lock;
+      result.lockedCount = lockedKeys.length;
+    }
 
     try {
       await writeGrid(fresh.songs, fresh.voters, tunings, fresh.learners);

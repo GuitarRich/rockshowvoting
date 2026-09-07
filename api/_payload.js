@@ -1,4 +1,5 @@
 import { WEIGHTS, MAX_PER_ARTIST, VOTERS, LEARN_VALUES, songKey } from "../setlist.js";
+import { selectSet } from "./_selection.js";
 
 /**
  * The wire shape every page speaks: one row per song with a votes map and a
@@ -8,7 +9,7 @@ import { WEIGHTS, MAX_PER_ARTIST, VOTERS, LEARN_VALUES, songKey } from "../setli
  * backend served, so the pages did not have to be rewritten to move here.
  */
 export function buildPayload(state) {
-  const { songs, voters, learners, tunings } = state;
+  const { songs, voters, learners, tunings, settings = {} } = state;
   const roster = rosterOf(voters, learners);
 
   const rows = songs.map((s) => {
@@ -32,11 +33,17 @@ export function buildPayload(state) {
       energy: s.energy,
       tags: s.tags,
       order: s.order,
+      force: s.force || "",
       tuning: tunings[s.k] || "",
       votes,
       learn,
     };
   });
+
+  // Which songs are actually in the set, worked out here so every page agrees
+  // on it rather than each deciding for itself.
+  const sel = selectSet(rows, roster, { settings });
+  for (const r of rows) r.inSet = sel.inSet.has(r.k);
 
   return {
     voters: roster,
@@ -44,6 +51,18 @@ export function buildPayload(state) {
     learnValues: LEARN_VALUES,
     weights: WEIGHTS,
     limits: { maxPerArtist: MAX_PER_ARTIST },
+    set: {
+      count: sel.inSet.size,
+      seconds: sel.seconds,
+      // Frozen: votes no longer move this list.
+      locked: !!sel.locked,
+      // 0 means the 90 minutes decides where the set gets cut.
+      maxSongs: Number(settings.maxSongs) || 0,
+      // True when a length in the sheet is unreadable: the 90-minute cap
+      // cannot bind, so no song can honestly be called in or out.
+      blocked: sel.blocked,
+      badLengths: sel.badLengths,
+    },
     rows,
   };
 }
