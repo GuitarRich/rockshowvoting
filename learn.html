@@ -314,14 +314,22 @@ function renderProgress(){
   // Everyone knowing it is the only state that means "we can play this".
   const allKnow = set.filter(r => LEARNERS.every(n => statusFor(r, n) === 'KNOW')).length;
   const untouched = set.filter(r => LEARNERS.every(n => !statusFor(r, n))).length;
+  const silent = LEARNERS.filter(n => !set.some(r => statusFor(r, n)));
 
   document.getElementById('heroNum').textContent = allKnow;
   document.getElementById('heroLabel').textContent =
     'song' + (allKnow === 1 ? '' : 's') + ' the whole band knows, of ' + total + ' in the set';
-  document.getElementById('heroSub').innerHTML = untouched
-    ? '<b>' + untouched + '</b> song' + (untouched === 1 ? '' : 's') +
-      ' nobody has touched yet.'
-    : 'Every song in the set has somebody working on it.';
+
+  // A low headline usually means people haven't answered rather than that the
+  // band can't play anything, so say which it is — otherwise the number reads
+  // as bad news about the songs.
+  document.getElementById('heroSub').innerHTML = silent.length
+    ? 'Nothing yet from <b>' + silent.map(esc).join('</b>, <b>') + '</b> &mdash; ' +
+      'the figure above counts only songs <em>everyone</em> has marked as known.'
+    : untouched
+      ? '<b>' + untouched + '</b> song' + (untouched === 1 ? '' : 's') +
+        ' nobody has touched yet.'
+      : 'Every song in the set has somebody working on it.';
 
   document.getElementById('bars').innerHTML = LEARNERS.map(who=>{
     const n = v => set.filter(r => statusFor(r, who) === v).length;
