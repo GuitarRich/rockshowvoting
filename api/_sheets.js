@@ -4,6 +4,8 @@ import {
   songKey,
   isVoteValue,
   isLearnValue,
+  VOTERS,
+  BAND,
   TUNING_SEEDS,
 } from "../setlist.js";
 
@@ -421,11 +423,13 @@ export async function writeGrid(songs, voters, tunings = {}, learners = {}) {
   await ensureTabs();
   const sheets = sheetsClient();
   const id = sheetId();
-  const who = Object.keys(voters).filter(
-    (n) => Object.keys(voters[n].votes || {}).length
+  // Columns follow the current lists, so someone who has left the band stops
+  // appearing here even though their row is still on the Votes tab.
+  const who = VOTERS.filter(
+    (n) => voters[n] && Object.keys(voters[n].votes || {}).length
   );
-  const knows = Object.keys(learners).filter(
-    (n) => Object.keys(learners[n].learn || {}).length
+  const knows = BAND.filter(
+    (n) => learners[n] && Object.keys(learners[n].learn || {}).length
   );
   const header = [
     "Song", "Artist", "Lead", "Length", "Tuning", ...who, "SCORE", "MUSTs", "Votes cast",

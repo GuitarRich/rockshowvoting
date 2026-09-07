@@ -154,7 +154,7 @@ export default async function handler(req, res) {
       if (lock) {
         // Take the snapshot from an unlocked run, or re-locking would just
         // freeze the frozen list and a stale one could never be refreshed.
-        const sel = selectSet(buildPayload({ ...fresh, tunings }).rows, rosterOf(fresh.voters, fresh.learners),
+        const sel = selectSet(buildPayload({ ...fresh, tunings }).rows, rosterOf(),
           { settings: { ...fresh.settings, locked: false, lockedKeys: [] } });
         if (sel.blocked) {
           return fail(res, 409,

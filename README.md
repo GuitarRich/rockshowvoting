@@ -16,8 +16,8 @@ they open a page and tap.
 | `results.html`| Live tally, every person's votes, auto-generated running order. |
 | `admin.html` | Add / edit / remove songs. Key-protected. |
 | `learn.html` | Who knows what. Each player marks every song Not started / In progress / Know it. |
-| `config.js` | The API path (`/api`) and the voter names for the browser. |
-| `setlist.js` | Shared constants: weights, the band, vote and learn values, key/length helpers. |
+| `config.js` | The API path (`/api`), plus the voter and band names for the browser. |
+| `setlist.js` | Shared constants: weights, `VOTERS`, `BAND`, vote and learn values, key/length helpers. |
 | `api/` | The backend. One function per action, plus `_sheets.js` for all sheet access. |
 | `apps-script.gs` | **Retired.** The previous backend, kept for reference only. |
 
@@ -222,6 +222,26 @@ Locked rows (organiser requests) are protected server-side — `/api/vote`
 refuses to write to them, though an admin can still edit or delete them here.
 `/api/learn` accepts them, because the locked songs are exactly the ones
 everybody has to learn.
+
+## Who votes, and who plays
+
+Two lists in `setlist.js`, and they are not the same people:
+
+- **`VOTERS`** — everyone with a ballot. Includes people who are coming to the
+  show but not playing.
+- **`BAND`** — the players. Only these appear on the learn page: being asked
+  whether you know a song you will never play is just noise.
+
+The lists are the only authority. Taking a name off `VOTERS` stops their votes
+counting immediately and drops their column from the `Grid` tab, but **nothing
+is deleted** — their row stays on the `Votes` tab, so putting the name back
+restores their ballot exactly. `/api/vote` and `/api/learn` both refuse a name
+that is not on the relevant list, and store under the list's spelling, so a
+typo can never create a second row for the same person.
+
+That is how a line-up change is done: swap the name. The person who left stops
+shaping the set, and their replacement starts with a blank ballot rather than
+inheriting opinions they never gave.
 
 ## Controlling the set
 

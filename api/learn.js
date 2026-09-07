@@ -1,5 +1,5 @@
 import { readAll, writeLearner, writeGrid, readBody } from "./_sheets.js";
-import { isLearnValue } from "../setlist.js";
+import { isLearnValue, BAND } from "../setlist.js";
 import { buildPayload, keyResolver, ok, fail, methodGuard } from "./_payload.js";
 
 /**
@@ -15,10 +15,16 @@ export default async function handler(req, res) {
     const body = await readBody(req);
     const person = String(body.person || body.name || body.voter || "").trim();
     if (!person) return fail(res, 400, "No name supplied.");
+    // Only the band practises: voting on the setlist does not put you on stage.
+    const known = BAND.find((n) => n.toLowerCase() === person.toLowerCase());
+    if (!known) {
+      return fail(res, 400,
+        `"${person}" is not in the band, so there is nothing to track. If that is wrong, add the name to BAND in setlist.js.`);
+    }
 
     const state = await readAll();
     const resolve = keyResolver(state.songs);
-    const learn = { ...((state.learners[person] || {}).learn || {}) };
+    const learn = { ...((state.learners[known] || {}).learn || {}) };
 
     let written = 0;
     for (const [raw, value] of Object.entries(body.learn || {})) {
@@ -35,14 +41,14 @@ export default async function handler(req, res) {
       written++;
     }
 
-    await writeLearner({ name: person, learn, ts: Date.now(), version: body.version });
+    await writeLearner({ name: known, learn, ts: Date.now(), version: body.version });
     const fresh = await readAll();
     try {
       await writeGrid(fresh.songs, fresh.voters, fresh.tunings, fresh.learners);
     } catch (e) {
       console.error("grid rewrite failed:", e.message);
     }
-    return ok(res, { person, written, data: buildPayload(fresh) });
+    return ok(res, { person: known, written, data: buildPayload(fresh) });
   } catch (e) {
     return fail(res, 500, e.message);
   }

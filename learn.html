@@ -204,8 +204,11 @@
 
 <script src="config.js"></script>
 <script>
-const API    = (window.SETLIST_API || '').trim();
-const VOTERS = window.SETLIST_VOTERS || ["Rich","Ashley","CJ","Justin","Isaac","Julie","Organiser"];
+const API  = (window.SETLIST_API || '').trim();
+// The band, not the voters: Julie and the organiser vote on the setlist but do
+// not play, so they never appear here. The API is authoritative; this is only
+// the fallback for when it cannot be reached.
+let BAND = window.SETLIST_BAND || ["Rich","Ashley","Ethan","Justin","Isaac"];
 
 // Sheet values, and the button labels that map onto them. The sheet stores the
 // long form so the Grid tab reads as English; the page never invents a fourth.
@@ -217,7 +220,7 @@ const STATES = [
 const CLS = {'NOT STARTED':'none','IN PROGRESS':'wip','KNOW':'know'};
 
 let ROWS = [];              // every row from the sheet, in sheet order
-let LEARNERS = [];          // everyone who can mark a song
+let LEARNERS = BAND.slice();  // everyone who can mark a song
 let SET = {count:0, blocked:false, badLengths:[]};
 let me = null;
 let filter = 'set';         // the set is what people came here for
@@ -394,8 +397,12 @@ function paintRow(k){
 }
 
 // ---- who am i ---------------------------------------------------------
-document.getElementById('who').innerHTML =
-  VOTERS.map(v=>'<button type="button" data-v="'+esc(v)+'">'+esc(v)+'</button>').join('');
+function renderWho(){
+  document.getElementById('who').innerHTML =
+    BAND.map(v=>'<button type="button" data-v="'+esc(v)+'"'+(v===me?' class="on"':'')+'>'+
+      esc(v)+'</button>').join('');
+}
+renderWho();
 document.getElementById('who').addEventListener('click', e=>{
   const b = e.target.closest('button'); if(!b) return;
   setMe(b.dataset.v);
@@ -406,6 +413,8 @@ function setMe(name){
   try{ localStorage.setItem('setlist.me', name); }catch(ignore){}
   document.querySelectorAll('#who button').forEach(x=>x.classList.toggle('on', x.dataset.v===me));
 }
+
+/** Only the band can be marked off, so the dots and bars follow BAND. */
 
 // ---- interaction ------------------------------------------------------
 document.getElementById('list').addEventListener('click', e=>{
@@ -461,7 +470,12 @@ async function pull(){
     if(!j.ok) throw new Error(j.error||'unknown error');
 
     ROWS = j.data.rows || [];
-    LEARNERS = j.data.learners || [];
+    // The API decides who is in the band; the local list is only a fallback.
+    BAND = (j.data.band && j.data.band.length) ? j.data.band : BAND;
+    LEARNERS = (j.data.learners && j.data.learners.length) ? j.data.learners : BAND;
+    // Someone whose name has come off the list must not stay selected.
+    if(me && !BAND.includes(me)){ me = null; try{ localStorage.removeItem('setlist.me'); }catch(ignore){} }
+    renderWho();
     SET = j.data.set || {count:0, blocked:false, badLengths:[], locked:false};
 
     Object.keys(mine).forEach(k=>delete mine[k]);
@@ -496,7 +510,7 @@ async function pull(){
     renderAll();
 
     if(!LEARNERS.length){
-      note('The backend returned nobody who can mark songs. Tell Rich — VOTERS in '+
+      note('The backend returned nobody who can mark songs. Tell Rich — BAND in '+
            'setlist.js is empty.','err');
       document.getElementById('save').disabled = true;
       return;
@@ -539,7 +553,7 @@ document.getElementById('save').addEventListener('click', async ()=>{
 // ---- go ---------------------------------------------------------------
 let remembered = null;
 try{ remembered = localStorage.getItem('setlist.me'); }catch(ignore){}
-if(remembered && VOTERS.includes(remembered)) setMe(remembered);
+if(remembered && BAND.includes(remembered)) setMe(remembered);
 refresh();
 pull();
 </script>

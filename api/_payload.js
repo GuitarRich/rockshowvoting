@@ -1,4 +1,4 @@
-import { WEIGHTS, MAX_PER_ARTIST, VOTERS, LEARN_VALUES, songKey } from "../setlist.js";
+import { WEIGHTS, MAX_PER_ARTIST, VOTERS, BAND, LEARN_VALUES, songKey } from "../setlist.js";
 import { selectSet } from "./_selection.js";
 
 /**
@@ -10,7 +10,8 @@ import { selectSet } from "./_selection.js";
  */
 export function buildPayload(state) {
   const { songs, voters, learners, tunings, settings = {} } = state;
-  const roster = rosterOf(voters, learners);
+  const roster = rosterOf();
+  const band = BAND.filter((n) => roster.includes(n));
 
   const rows = songs.map((s) => {
     const votes = {};
@@ -47,7 +48,9 @@ export function buildPayload(state) {
 
   return {
     voters: roster,
-    learners: roster,
+    // Only the band practises. Julie and the organiser vote and stop there.
+    learners: band,
+    band,
     learnValues: LEARN_VALUES,
     weights: WEIGHTS,
     limits: { maxPerArtist: MAX_PER_ARTIST },
@@ -68,19 +71,15 @@ export function buildPayload(state) {
 }
 
 /**
- * The band, plus anyone the sheet has data for who is not on the list. A name
- * that was renamed in setlist.js must not make its existing votes vanish.
+ * Exactly the people listed in VOTERS, in that order.
+ *
+ * The sheet is deliberately NOT consulted for who counts. Someone who leaves
+ * the band keeps their row on the Votes tab — nothing is deleted — but their
+ * ballot stops shaping the set the moment their name comes off the list, and
+ * goes back to counting if it is ever put back.
  */
-export function rosterOf(voters = {}, learners = {}) {
-  const seen = new Set(VOTERS);
-  const out = [...VOTERS];
-  for (const name of [...Object.keys(voters), ...Object.keys(learners)]) {
-    if (!seen.has(name)) {
-      seen.add(name);
-      out.push(name);
-    }
-  }
-  return out;
+export function rosterOf() {
+  return [...VOTERS];
 }
 
 /**

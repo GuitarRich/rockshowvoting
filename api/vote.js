@@ -1,5 +1,5 @@
 import { readAll, writeVoter, writeGrid, readBody } from "./_sheets.js";
-import { isVoteValue } from "../setlist.js";
+import { isVoteValue, VOTERS } from "../setlist.js";
 import { buildPayload, keyResolver, ok, fail, methodGuard } from "./_payload.js";
 
 /**
@@ -13,10 +13,15 @@ export default async function handler(req, res) {
     const body = await readBody(req);
     const voter = String(body.voter || body.name || "").trim();
     if (!voter) return fail(res, 400, "No voter name supplied.");
+    const known = VOTERS.find((n) => n.toLowerCase() === voter.toLowerCase());
+    if (!known) {
+      return fail(res, 400,
+        `"${voter}" is not on the voting list. If that is wrong, add the name to VOTERS in setlist.js.`);
+    }
 
     const state = await readAll();
     const resolve = keyResolver(state.songs);
-    const votes = { ...((state.voters[voter] || {}).votes || {}) };
+    const votes = { ...((state.voters[known] || {}).votes || {}) };
 
     let written = 0;
     for (const [raw, value] of Object.entries(body.votes || {})) {
@@ -36,7 +41,7 @@ export default async function handler(req, res) {
       written++;
     }
 
-    await writeVoter({ name: voter, votes, ts: Date.now(), version: body.version });
+    await writeVoter({ name: known, votes, ts: Date.now(), version: body.version });
     const fresh = await readAll();
     // The Grid tab is derived and disposable, so a formatting failure must
     // never fail a vote that has already been saved.
@@ -45,7 +50,7 @@ export default async function handler(req, res) {
     } catch (e) {
       console.error("grid rewrite failed:", e.message);
     }
-    return ok(res, { voter, written, data: buildPayload(fresh) });
+    return ok(res, { voter: known, written, data: buildPayload(fresh) });
   } catch (e) {
     return fail(res, 500, e.message);
   }

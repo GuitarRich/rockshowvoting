@@ -9,6 +9,8 @@
 window.SETLIST_API = "/api";
 
 
-// The people voting. Must match VOTERS in setlist.js, which is what the API
-// serves; this copy only exists so a page still renders with the API down.
-window.SETLIST_VOTERS = ["Rich", "Ashley", "CJ", "Justin", "Isaac", "Julie", "Organiser"];
+// The people voting, and the subset of them who are in the band. Must match
+// VOTERS and BAND in setlist.js, which is what the API serves; these copies
+// only exist so a page still renders with the API down.
+window.SETLIST_VOTERS = ["Rich", "Ashley", "Ethan", "Justin", "Isaac", "Julie", "Organiser"];
+window.SETLIST_BAND   = ["Rich", "Ashley", "Ethan", "Justin", "Isaac"];

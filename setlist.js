@@ -9,9 +9,20 @@ export const WEIGHTS = { MUST: 6, YES: 2, MAYBE: 1, NO: -4 };
 // "X" is a marker on the pick-ONE locked sections, not a scored vote.
 export const VOTE_VALUES = ["MUST", "YES", "MAYBE", "NO", "X"];
 
-// The band. Server-side source of truth for who has a column; config.js
-// repeats it for the browser so a page still renders with the API down.
-export const VOTERS = ["Rich", "Ashley", "CJ", "Justin", "Isaac", "Julie", "Organiser"];
+// Who votes. Server-side source of truth; config.js repeats it for the browser
+// so a page still renders with the API down.
+//
+// A name removed here stops counting immediately — their row on the Votes tab
+// is left alone, so nothing is destroyed and putting the name back restores
+// their ballot. CJ left the band and Ethan replaced him: CJ's votes no longer
+// shape the set, and Ethan starts with a blank ballot rather than inheriting
+// opinions he never gave.
+export const VOTERS = ["Rich", "Ashley", "Ethan", "Justin", "Isaac", "Julie", "Organiser"];
+
+// Who actually plays. Julie and the organiser vote on the setlist but are not
+// in the band, so they never appear on the practice tracker — being asked
+// whether you know a song you will not be playing is just noise.
+export const BAND = ["Rich", "Ashley", "Ethan", "Justin", "Isaac"];
 
 // How well each player knows each song. Deliberately a separate axis from the
 // vote: a song you love and have never played is MUST + NOT STARTED. Absent
