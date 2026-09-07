@@ -107,6 +107,11 @@
       <option value="Drop C#"><option value="Drop C"><option value="D standard">
     </datalist>
     <div class="btnrow"><button class="btn" id="addBtn">Add to the list</button></div>
+    <p style="margin-top:10px"><strong>Keys</strong> says how much the keyboard matters:
+      <strong>Essential</strong> (the song does not work without it), <strong>Adds to it</strong>,
+      or <strong>Not needed</strong>. Leave it on &ldquo;not judged&rdquo; until someone has
+      actually decided &mdash; blank and &ldquo;not needed&rdquo; are different answers, and the
+      learn page shows them differently.</p>
     <p style="margin-top:10px"><strong>Tuning</strong> is free text &mdash; type whatever you
       actually use. Leave it blank and the setlist treats the song as E standard. The generated
       running order flags every point where the tuning changes from the song before it, so you
@@ -180,7 +185,13 @@ async function load(){
 function draw(){
   const vs = STATE.voters;
   let h = '<thead><tr><th>#</th><th>Song</th><th>Artist</th><th>Lead</th><th>Len</th>'+
-    '<th>Energy</th><th>Tuning</th><th>Tags</th><th>Section</th><th>Votes in</th><th></th></tr></thead><tbody>';
+    '<th>Energy</th><th>Tuning</th><th>Keys</th><th>Tags</th><th>Section</th><th>Votes in</th><th></th></tr></thead><tbody>';
+
+  // Blank is a real answer here — "nobody has judged it" is not "no keys part".
+  const kbOpts = cur => [['','— not judged —'],['ESSENTIAL','Essential'],
+                         ['ADDS','Adds to it'],['NONE','Not needed']]
+    .map(([v,l])=>'<option value="'+v+'"'+(String(cur||'').toUpperCase()===v?' selected':'')+'>'+l+'</option>')
+    .join('');
 
   const rowHtml = (r, i, isNew) => {
     const k = r.song+'|'+r.artist;
@@ -199,6 +210,8 @@ function draw(){
       '<td class="narrow">'+f('length', r.len||r.length||'')+'</td>'+
       '<td class="narrow">'+f('energy', r.energy||3,' type="number" min="1" max="5"')+'</td>'+
       '<td class="mid">'+f('tuning', r.tuning||'',' list="tunings" placeholder="E standard"')+'</td>'+
+      '<td class="narrow"><select data-k="'+esc(k)+'" data-f="keyboard"'+(isNew?' data-new="1"':'')+'>'+
+        kbOpts(e.keyboard ?? r.keyboard ?? '')+'</select></td>'+
       '<td class="mid">'+f('tags', (r.tags||[]).join?.(', ') ?? r.tags ?? '')+'</td>'+
       '<td class="mid">'+f('section', r.section||'')+'</td>'+
       '<td class="votes">'+(isNew?'—':cast+'/'+vs.length)+'</td>'+
@@ -276,6 +289,7 @@ document.getElementById('apply').onclick = async ()=>{
   const btn = document.getElementById('apply');
   btn.disabled = true; msg('Saving…');
   const update = Object.entries(edits).map(([k,v])=>({key:k, ...v,
+    keyboard: v.keyboard,
     energy: v.energy!==undefined ? +v.energy : undefined,
     tags:   v.tags!==undefined ? v.tags.split(/[,;]\s*/).filter(Boolean) : undefined}));
   try{

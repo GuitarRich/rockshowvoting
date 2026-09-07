@@ -34,6 +34,16 @@ export function isLearnValue(v) {
   return LEARN_VALUES.includes(String(v || "").trim().toUpperCase());
 }
 
+// How much the keyboard matters on a song. Blank means nobody has said yet,
+// which is NOT the same as NONE — a keys player needs to know the difference
+// between "no part needed" and "no answer".
+export const KEYBOARD_VALUES = ["ESSENTIAL", "ADDS", "NONE"];
+
+export function keyboardValue(raw) {
+  const v = String(raw || "").trim().toUpperCase();
+  return KEYBOARD_VALUES.includes(v) ? v : "";
+}
+
 // No more than this many songs by any one band make the final set. Counted
 // across locked songs too. 0 disables the cap.
 export const MAX_PER_ARTIST = 2;

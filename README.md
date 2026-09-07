@@ -39,7 +39,7 @@ every vote and practice mark already recorded against it.
 
 | Tab | Holds |
 |---|---|
-| `Songs` | Key, Section, Song, Artist, Lead, Length, Energy, Tags, Order, Force. |
+| `Songs` | Key, Section, Song, Artist, Lead, Length, Energy, Tags, Order, Force, Keyboard. |
 | `Votes` | One row per person: their whole ballot as JSON. |
 | `Learning` | One row per person: their practice statuses as JSON. |
 | `Tunings` | One row per song. Blank means E standard; a blank you typed is respected. |
@@ -265,6 +265,17 @@ Locking is the answer to "the order keeps moving and nobody trusts it". Lock
 once the vote has settled, and the band can learn a list that will not change
 under them.
 
+## Keyboard
+
+Each song carries a **Keyboard** judgement, set on the admin page:
+`ESSENTIAL` (the song does not work without it), `ADDS` (keys lift it, but it
+stands up without them), or `NONE` (no part needed). Blank means nobody has
+judged it yet — deliberately different from `NONE`, because a keys player needs
+to tell "no part needed" from "no answer".
+
+It shows as a badge on the learn page, and songs marked essential get a `KEYS`
+chip on the generated running order.
+
 ## Who knows what
 
 `learn.html` is the practice tracker. Pick your name, mark each song **Not
@@ -274,9 +285,13 @@ back to "haven't said".
 - It shows **the songs that made the set** — the ones people actually have to
   play — not the whole ballot. The page says whether that set is locked or can
   still move, so nobody learns twenty songs off a provisional list.
-- The dots on each row are the whole band: filled = knows it, ringed =
-  learning it, empty = not started or hasn't said. So you can see at a glance
-  which song is holding the set up, and who to ask.
+- Each song lists the band **by name**, grouped by stage — knows it, learning,
+  not started, no reply — so "who do I chase about this song" is answered
+  without hovering anything. Initials are the shortest that stay unique, so a
+  Justin and a Julie never share a chip. A song everyone knows collapses to a
+  single line saying so.
+- A chart at the top gives the same picture the other way round: one stacked
+  bar per player, with the number of songs the whole band knows leading.
 - Filters: **In the set**, **In the set, mine not done**, and **Every song on
   the ballot** for marking things you already know that did not make it.
 - The counter is always about the set, whichever list is on screen: marking

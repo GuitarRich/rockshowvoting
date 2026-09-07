@@ -35,6 +35,7 @@ export function buildPayload(state) {
       tags: s.tags,
       order: s.order,
       force: s.force || "",
+      keyboard: s.keyboard || "",
       tuning: tunings[s.k] || "",
       votes,
       learn,

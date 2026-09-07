@@ -60,6 +60,12 @@
   .duet{background:rgba(79,180,119,.16);color:#6fd096}
   .lockbadge{background:rgba(232,163,61,.16);color:var(--amber)}
   .tune{color:var(--dim)}
+  /* How much the keyboard matters. Only ESSENTIAL shouts; the rest inform. */
+  .kb{display:inline-block;font-size:10.5px;font-weight:700;letter-spacing:.05em;
+    padding:1px 6px;border-radius:4px;margin-left:6px;vertical-align:1px;white-space:nowrap}
+  .kb.essential{background:rgba(139,127,212,.22);color:#a99ff0}
+  .kb.adds{background:transparent;border:1px solid var(--line);color:var(--muted)}
+  .kb.none{color:var(--dim)}
 
   /* --- band progress chart -------------------------------------------------
      Series fills are a step deeper than the button colours: validated against
@@ -94,13 +100,21 @@
     border:1px solid var(--line);border-radius:7px;padding:7px 9px;font-size:12.5px;
     color:var(--ink);box-shadow:0 6px 20px rgba(0,0,0,.45);max-width:230px}
 
-  /* one dot per band member: filled green = knows it, amber ring = learning it */
-  .band{display:flex;gap:3px;flex:0 0 auto;align-items:center;margin-top:4px}
-  .band i{width:9px;height:9px;border-radius:50%;border:1px solid var(--line);background:transparent;display:inline-block}
-  .band i.know{background:var(--know);border-color:var(--know)}
-  .band i.wip{border-color:var(--wip);background:rgba(189,122,5,.45)}
-  .band i.none{border-color:#3a3f4e;background:transparent}
-  .bandnum{font-size:11.5px;color:var(--dim);margin-left:5px}
+  /* Who is at what stage, said in names rather than anonymous dots: the whole
+     point of the row is "who do I chase", and that needs a person on it. */
+  .band{display:flex;flex-wrap:wrap;align-items:center;gap:4px 12px;margin-top:6px}
+  .grp{display:flex;align-items:center;gap:5px}
+  .grp b{font-size:10.5px;font-weight:600;letter-spacing:.05em;text-transform:uppercase;
+    color:var(--dim);white-space:nowrap}
+  .chip{display:inline-flex;align-items:center;justify-content:center;min-width:19px;height:19px;
+    padding:0 5px;border-radius:10px;font-size:11px;font-weight:700;letter-spacing:.02em;
+    border:1px solid transparent;cursor:default}
+  .chip.know{background:var(--know);color:#08210f}
+  .chip.wip{background:var(--wip);color:#231a09}
+  .chip.ns{background:var(--notstarted);color:var(--ink)}
+  .chip.unsaid{background:transparent;border-color:var(--line);color:var(--dim)}
+  .allset{font-size:10.5px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;
+    color:var(--know)}
 
   .btns{display:flex;gap:5px;flex:0 0 auto}
   .btns button{font:600 11px/1.25 inherit;letter-spacing:.02em;color:var(--muted);cursor:pointer;
@@ -165,8 +179,9 @@
   <p>This is <strong>separate from the vote</strong>. Marking a song as known does not put it in the
      set, and voting MUST on a song you have never played is fine &mdash; that is the point of
      having both.</p>
-  <p>The dots on each row are the whole band: <strong>filled</strong> = knows it,
-     <strong>ringed</strong> = learning it, <strong>empty</strong> = not started or hasn&rsquo;t said.</p>
+  <p>Each song lists the band by initial under it, grouped by where they are:
+     <strong>knows it</strong>, <strong>learning</strong>, <strong>not started</strong>,
+     <strong>no reply</strong>. Hover a name to see who it is.</p>
   <p>It shows <strong>the songs that made the set</strong> &mdash; the ones you actually have to
      play. That list is built from the vote, so it can still move: switch to
      <strong>Every song on the ballot</strong> to mark anything else you already know.</p>
@@ -282,8 +297,9 @@ function renderAll(){
       '<span class="meta">'+badge(r.lead)+
         (locked?'<span class="badge lockbadge">LOCKED</span>':'')+
         esc(r.artist)+' &middot; '+mmss(secs)+
-        (r.tuning?' &middot; <span class="tune">'+esc(r.tuning)+'</span>':'')+'</span>'+
-      bandDots(r)+
+        (r.tuning?' &middot; <span class="tune">'+esc(r.tuning)+'</span>':'')+
+        keyboardBadge(r)+'</span>'+
+      bandChips(r)+
       '</div><div class="btns">'+
         STATES.map(s=>'<button type="button" data-key="'+esc(k)+'" data-v="'+s.v+'">'+
           s.label+'</button>').join('')+
@@ -373,17 +389,43 @@ document.addEventListener('mouseout', e=>{
   if(e.target.closest('[data-tip]')) tip().style.display = 'none';
 });
 
-/** One dot per band member, so you can see at a glance who is holding a song up. */
-function bandDots(r){
+/**
+ * Who is where on this song, by name. Grouped by stage rather than listed in
+ * band order: the question is "who still has to learn this", and that answer
+ * should not have to be assembled from five separate colours.
+ *
+ * Your own chip follows what is on screen, unsaved marks included, so the row
+ * never contradicts the buttons beside it.
+ */
+function bandChips(r){
   if(!LEARNERS.length) return '';
-  const dots = LEARNERS.map(n=>{
-    const v = (r.learn && r.learn[n]) || '';
-    const cls = CLS[v] || 'none';
-    const said = v ? v.toLowerCase() : 'not said';
-    return '<i class="'+cls+'" title="'+esc(n)+': '+esc(said)+'"></i>';
+  const status = n => (n === me) ? (mine[keyOf(r)] || '') : ((r.learn && r.learn[n]) || '');
+  const groups = [
+    ['KNOW',        'know',   'knows it'],
+    ['IN PROGRESS', 'wip',    'learning'],
+    ['NOT STARTED', 'ns',     'not started'],
+    ['',            'unsaid', 'no reply'],
+  ];
+  if(LEARNERS.every(n => status(n) === 'KNOW')){
+    return '<span class="band"><span class="allset">&#10003; the whole band knows this one</span></span>';
+  }
+  const html = groups.map(([val, cls, label])=>{
+    const who = LEARNERS.filter(n => status(n) === val);
+    if(!who.length) return '';
+    return '<span class="grp"><b>'+label+'</b>'+who.map(n=>
+      '<span class="chip '+cls+'" data-tip="'+esc(n)+': '+esc(label)+'">'+
+        esc(INITIALS[n] || n.slice(0,1).toUpperCase())+'</span>').join('')+'</span>';
   }).join('');
-  const know = LEARNERS.filter(n=>((r.learn&&r.learn[n])||'')==='KNOW').length;
-  return '<span class="band">'+dots+'<span class="bandnum">'+know+'/'+LEARNERS.length+' know it</span></span>';
+  return '<span class="band">'+html+'</span>';
+}
+
+/** Your own chip moves the moment you tap, without redrawing the whole list. */
+function repaintChips(k){
+  const row = document.querySelector('.row[data-key="'+CSS.escape(k)+'"]');
+  if(!row) return;
+  const r = ROWS.find(x => keyOf(x) === k);
+  const band = row.querySelector('.band');
+  if(r && band) band.outerHTML = bandChips(r);
 }
 
 function paintRow(k){
@@ -414,7 +456,38 @@ function setMe(name){
   document.querySelectorAll('#who button').forEach(x=>x.classList.toggle('on', x.dataset.v===me));
 }
 
-/** Only the band can be marked off, so the dots and bars follow BAND. */
+/**
+ * Keyboard importance, said plainly. Blank stays blank: "nobody has judged it"
+ * and "no keys part" are different answers and must not look the same.
+ */
+const KB = {
+  ESSENTIAL: ['essential', 'KEYS ESSENTIAL', 'The song does not work without a keyboard part'],
+  ADDS:      ['adds',      'KEYS ADD',       'Keys lift it, but it stands up without them'],
+  NONE:      ['none',      'no keys',        'No keyboard part needed'],
+};
+function keyboardBadge(r){
+  const k = KB[String(r.keyboard||'').toUpperCase()];
+  if(!k) return '';
+  return ' <span class="kb '+k[0]+'" data-tip="'+esc(k[2])+'">'+esc(k[1])+'</span>';
+}
+
+/**
+ * Shortest initials that still tell the band apart — one letter where it is
+ * unique, two where it is not, so a Justin and a Julie never share a chip.
+ */
+function initials(names){
+  const out = {};
+  names.forEach(n=>{
+    let len = 1;
+    while(len < n.length &&
+          names.some(o => o !== n && o.slice(0,len).toLowerCase() === n.slice(0,len).toLowerCase())) len++;
+    out[n] = n.slice(0, len).toUpperCase();
+  });
+  return out;
+}
+let INITIALS = {};
+
+/** Only the band can be marked off, so the chips and bars follow BAND. */
 
 // ---- interaction ------------------------------------------------------
 document.getElementById('list').addEventListener('click', e=>{
@@ -423,6 +496,7 @@ document.getElementById('list').addEventListener('click', e=>{
   const k = b.dataset.key;
   mine[k] = (mine[k] === b.dataset.v) ? '' : b.dataset.v;   // tap again to clear
   paintRow(k);
+  repaintChips(k);
   if(filter === 'todo') renderAll(); else refresh();
 });
 
@@ -473,6 +547,7 @@ async function pull(){
     // The API decides who is in the band; the local list is only a fallback.
     BAND = (j.data.band && j.data.band.length) ? j.data.band : BAND;
     LEARNERS = (j.data.learners && j.data.learners.length) ? j.data.learners : BAND;
+    INITIALS = initials(LEARNERS);
     // Someone whose name has come off the list must not stay selected.
     if(me && !BAND.includes(me)){ me = null; try{ localStorage.removeItem('setlist.me'); }catch(ignore){} }
     renderWho();
@@ -553,6 +628,7 @@ document.getElementById('save').addEventListener('click', async ()=>{
 // ---- go ---------------------------------------------------------------
 let remembered = null;
 try{ remembered = localStorage.getItem('setlist.me'); }catch(ignore){}
+INITIALS = initials(LEARNERS);
 if(remembered && BAND.includes(remembered)) setMe(remembered);
 refresh();
 pull();

@@ -6,6 +6,7 @@ import {
   isLearnValue,
   VOTERS,
   BAND,
+  keyboardValue,
   TUNING_SEEDS,
 } from "../setlist.js";
 
@@ -21,6 +22,8 @@ const SONG_HEADERS = [
   // IN forces a song into the set whatever it scored, OUT keeps it out
   // whatever it scored. Blank leaves it to the vote.
   "Force",
+  // ESSENTIAL / ADDS / NONE. Blank means nobody has judged it yet.
+  "Keyboard",
 ];
 const VOTE_HEADERS = ["Name", "UpdatedAt", "AppVersion", "VoteCount", "VotesJSON"];
 const TUNING_HEADERS = ["Key", "Song", "Artist", "Tuning"];
@@ -91,7 +94,7 @@ export async function ensureTabs() {
   }
   // Headers are rewritten whenever they drift, on every tab, not just new ones.
   await Promise.all([
-    ensureHeaders(sheets, id, SONGS_TAB, "A1:J1", SONG_HEADERS),
+    ensureHeaders(sheets, id, SONGS_TAB, "A1:K1", SONG_HEADERS),
     ensureHeaders(sheets, id, VOTES_TAB, "A1:E1", VOTE_HEADERS),
     ensureHeaders(sheets, id, TUNINGS_TAB, "A1:D1", TUNING_HEADERS),
     ensureHeaders(sheets, id, LEARN_TAB, "A1:E1", LEARN_HEADERS),
@@ -122,7 +125,7 @@ export async function readAll() {
   const res = await sheets.spreadsheets.values.batchGet({
     spreadsheetId: id,
     ranges: [
-      `${SONGS_TAB}!A2:J500`,
+      `${SONGS_TAB}!A2:K500`,
       `${VOTES_TAB}!A2:E200`,
       `${TUNINGS_TAB}!A2:D500`,
       `${LEARN_TAB}!A2:E200`,
@@ -147,6 +150,7 @@ export async function readAll() {
         .filter(Boolean),
       order: Number(String(r[8] || "").trim()) || 0,
       force: forceValue(r[9]),
+      keyboard: keyboardValue(r[10]),
     }));
 
   const voters = {};
@@ -390,7 +394,7 @@ export async function writeSongs(songs) {
   const id = sheetId();
   await sheets.spreadsheets.values.clear({
     spreadsheetId: id,
-    range: `${SONGS_TAB}!A2:J500`,
+    range: `${SONGS_TAB}!A2:K500`,
   });
   if (!songs.length) return;
   await sheets.spreadsheets.values.update({
@@ -409,6 +413,7 @@ export async function writeSongs(songs) {
         Array.isArray(s.tags) ? s.tags.join(",") : String(s.tags || ""),
         Number(s.order) > 0 ? Number(s.order) : "",
         forceValue(s.force),
+        keyboardValue(s.keyboard),
       ]),
     },
   });

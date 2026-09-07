@@ -28,6 +28,7 @@
     white-space:nowrap}
   .setsize input{width:72px;font:600 13px/1 inherit;color:var(--ink);background:var(--panel2);
     border:1px solid var(--line);border-radius:7px;padding:8px 9px}
+  .tag.keys{background:rgba(139,127,212,.22);color:#a99ff0}
   .forcecell{display:inline-flex;gap:4px}
   .forcebtn{font:700 10.5px/1 inherit;letter-spacing:.04em;color:var(--muted);cursor:pointer;
     background:var(--panel2);border:1px solid var(--line);border-radius:6px;padding:6px 7px}
@@ -754,6 +755,7 @@ function render(){
       (role ? '<span class="tag role">'+role+'</span>' : '') +
       (s.why==='locked' ? '<span class="tag hi">LOCKED</span>' : '') +
       (s.force==='IN' ? '<span class="tag hi">FORCED IN</span>' : '') +
+      (s.keyboard==='ESSENTIAL' ? '<span class="tag keys" title="The song does not work without a keyboard part">KEYS</span>' : '') +
       '<span class="tag">'+(s.score>0?'+':'')+s.score+'</span>' +
       (DATA.set && DATA.set.fromApi
         ? '<button type="button" class="forcebtn" data-force="OUT" data-key="'+esc(skey(s))+
@@ -1116,6 +1118,7 @@ function fromApi(payload){
     const {score, musts, xs} = scoreOf(r.votes, voters);
     return {song:r.song, artist:r.artist, lead:(r.lead||'').toUpperCase(),
       inSet: !!r.inSet, force: String(r.force||'').toUpperCase(),
+      keyboard: String(r.keyboard||'').toUpperCase(),
       lenTxt: secs ? (Math.floor(secs/60)+':'+String(secs%60).padStart(2,'0')) : String(r.len||''),
       secs, sec:r.section,
       isLocked:/^LOCKED/i.test(r.section), isPick:/pick ONE/i.test(r.section),

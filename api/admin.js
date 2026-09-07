@@ -8,7 +8,7 @@ import {
   readBody,
 } from "./_sheets.js";
 import { selectSet } from "./_selection.js";
-import { songKey } from "../setlist.js";
+import { songKey, keyboardValue } from "../setlist.js";
 import { buildPayload, keyResolver, rosterOf, ok, fail, methodGuard } from "./_payload.js";
 
 /**
@@ -20,7 +20,8 @@ import { buildPayload, keyResolver, rosterOf, ok, fail, methodGuard } from "./_p
  *
  * Body: {key, add:[{...}], update:[{key:'Song|Artist', ...}], remove:['Song|Artist'],
  *        order:[{key, pos}], clearOrder:true,
- *        force:[{key, value:'IN'|'OUT'|''}], maxSongs:20, lockSet:true|false}
+ *        force:[{key, value:'IN'|'OUT'|''}], maxSongs:20, lockSet:true|false,
+ *        keyboard:[{key, value:'ESSENTIAL'|'ADDS'|'NONE'|''}]}
  */
 export default async function handler(req, res) {
   if (methodGuard(req, res, "POST")) return;
@@ -52,6 +53,7 @@ export default async function handler(req, res) {
           : String(u.tags).split(/[,;]\s*/).filter(Boolean);
       }
       if (u.tuning !== undefined) tuningEdits[s.k] = String(u.tuning).trim();
+      if (u.keyboard !== undefined) s.keyboard = keyboardValue(u.keyboard);
       result.updated++;
     }
 
@@ -85,6 +87,7 @@ export default async function handler(req, res) {
           ? a.tags
           : String(a.tags || "").split(/[,;]\s*/).filter(Boolean),
         order: 0,
+        keyboard: keyboardValue(a.keyboard),
       };
       let at = -1;
       songs.forEach((s, i) => {
@@ -102,6 +105,14 @@ export default async function handler(req, res) {
       if (!s) continue;
       s.force = forceValue(f.value);
       result.forced = (result.forced || 0) + 1;
+    }
+
+    // --- how much the keyboard matters, judged per song
+    for (const kb of body.keyboard || []) {
+      const s = keyResolver(songs)(kb.key);
+      if (!s) continue;
+      s.keyboard = keyboardValue(kb.value);
+      result.keyboard = (result.keyboard || 0) + 1;
     }
 
     // --- manual running order, stored per song rather than by index so a song
@@ -126,7 +137,7 @@ export default async function handler(req, res) {
 
     const touched =
       result.added || result.removed || result.updated || result.forced ||
-      result.orderCleared || result.ordered;
+      result.keyboard || result.orderCleared || result.ordered;
     if (touched) await writeSongs(songs);
 
     // Read back BEFORE writing tunings: that read is what creates the Tunings
