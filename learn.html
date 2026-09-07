@@ -61,11 +61,44 @@
   .lockbadge{background:rgba(232,163,61,.16);color:var(--amber)}
   .tune{color:var(--dim)}
 
+  /* --- band progress chart -------------------------------------------------
+     Series fills are a step deeper than the button colours: validated against
+     this panel for the lightness band, chroma floor, CVD separation (protan
+     dE 8.8) and 3:1 contrast. The two neutrals are not series — "not started"
+     is a muted fill, "hasn't said" is the bare track. */
+  :root{ --know:#3f9e68; --wip:#bd7a05; --notstarted:#4a4f5c; }
+  .chart h2{margin-bottom:14px}
+  .hero{display:flex;align-items:baseline;gap:10px;margin:0 0 4px}
+  .hero b{font-size:48px;line-height:1;font-weight:700;letter-spacing:-.02em;color:var(--ink)}
+  .hero span{font-size:13.5px;color:var(--muted)}
+  .herosub{font-size:13px;color:var(--muted);margin:0 0 16px}
+  .herosub b{color:var(--ink)}
+  .bars{display:grid;grid-template-columns:auto 1fr auto;gap:7px 11px;align-items:center}
+  .bars .who-name{font-size:13px;color:var(--muted);white-space:nowrap}
+  .bars .who-name.me{color:var(--ink);font-weight:600}
+  .track{display:flex;gap:2px;height:14px;background:var(--panel2);border-radius:4px;overflow:hidden}
+  .track i{display:block;height:100%;min-width:0}
+  .track i:last-child{border-radius:0 4px 4px 0}
+  .track i.know{background:var(--know)}
+  .track i.wip{background:var(--wip)}
+  .track i.ns{background:var(--notstarted)}
+  .bars .count{font-size:12.5px;color:var(--muted);font-variant-numeric:tabular-nums;white-space:nowrap}
+  .bars .count b{color:var(--ink)}
+  .legend{display:flex;flex-wrap:wrap;gap:12px;margin-top:14px;font-size:12.5px;color:var(--muted)}
+  .legend span{display:inline-flex;align-items:center;gap:6px}
+  .legend i{width:11px;height:11px;border-radius:3px;display:inline-block;background:var(--panel2)}
+  .legend i.know{background:var(--know)} .legend i.wip{background:var(--wip)}
+  .legend i.ns{background:var(--notstarted)}
+  .legend i.unsaid{border:1px solid var(--line)}
+  #tip{position:fixed;z-index:9;pointer-events:none;display:none;background:var(--panel2);
+    border:1px solid var(--line);border-radius:7px;padding:7px 9px;font-size:12.5px;
+    color:var(--ink);box-shadow:0 6px 20px rgba(0,0,0,.45);max-width:230px}
+
   /* one dot per band member: filled green = knows it, amber ring = learning it */
   .band{display:flex;gap:3px;flex:0 0 auto;align-items:center;margin-top:4px}
   .band i{width:9px;height:9px;border-radius:50%;border:1px solid var(--line);background:transparent;display:inline-block}
-  .band i.know{background:var(--green);border-color:var(--green)}
-  .band i.wip{border-color:var(--amber);background:rgba(232,163,61,.28)}
+  .band i.know{background:var(--know);border-color:var(--know)}
+  .band i.wip{border-color:var(--wip);background:rgba(189,122,5,.45)}
   .band i.none{border-color:#3a3f4e;background:transparent}
   .bandnum{font-size:11.5px;color:var(--dim);margin-left:5px}
 
@@ -111,6 +144,19 @@
     <a href="index.html">the ballot</a> &middot; <a href="results.html">results</a></p>
 </header>
 
+<div class="card chart" id="progress" hidden>
+  <h2>Where the band is up to</h2>
+  <p class="hero"><b id="heroNum">0</b><span id="heroLabel"></span></p>
+  <p class="herosub" id="heroSub"></p>
+  <div class="bars" id="bars"></div>
+  <div class="legend">
+    <span><i class="know"></i>Knows it</span>
+    <span><i class="wip"></i>Learning it</span>
+    <span><i class="ns"></i>Not started</span>
+    <span><i class="unsaid"></i>Hasn&rsquo;t said</span>
+  </div>
+</div>
+
 <div class="card">
   <h2>How this works</h2>
   <p>Pick your name, then mark each song <strong>Not started</strong>, <strong>In progress</strong>
@@ -142,6 +188,8 @@
 <div id="list"></div>
 
 </div>
+
+<div id="tip" role="status"></div>
 
 <footer>
   <div class="fbar">
@@ -245,6 +293,75 @@ function renderAll(){
   refresh();
 }
 
+/**
+ * Where the band is up to: one stacked bar per player over the songs in the
+ * set. Part-to-whole per person, so a stacked bar; the whole-band figure leads
+ * because "can we play this yet" is a band question, not a personal one.
+ *
+ * Your own bar counts what is on screen, including marks you have not saved,
+ * so the chart never disagrees with the buttons underneath it.
+ */
+function renderProgress(){
+  const card = document.getElementById('progress');
+  const set = setRows(), total = set.length;
+  if(!total || !LEARNERS.length){ card.hidden = true; return; }
+  card.hidden = false;
+
+  const statusFor = (r, who) => (who === me)
+    ? (mine[keyOf(r)] || '')
+    : ((r.learn && r.learn[who]) || '');
+
+  // Everyone knowing it is the only state that means "we can play this".
+  const allKnow = set.filter(r => LEARNERS.every(n => statusFor(r, n) === 'KNOW')).length;
+  const untouched = set.filter(r => LEARNERS.every(n => !statusFor(r, n))).length;
+
+  document.getElementById('heroNum').textContent = allKnow;
+  document.getElementById('heroLabel').textContent =
+    'song' + (allKnow === 1 ? '' : 's') + ' the whole band knows, of ' + total + ' in the set';
+  document.getElementById('heroSub').innerHTML = untouched
+    ? '<b>' + untouched + '</b> song' + (untouched === 1 ? '' : 's') +
+      ' nobody has touched yet.'
+    : 'Every song in the set has somebody working on it.';
+
+  document.getElementById('bars').innerHTML = LEARNERS.map(who=>{
+    const n = v => set.filter(r => statusFor(r, who) === v).length;
+    const know = n('KNOW'), wip = n('IN PROGRESS'), ns = n('NOT STARTED');
+    const unsaid = total - know - wip - ns;
+    const pct = v => (v / total * 100) + '%';
+    const seg = (cls, val, label) => val
+      ? '<i class="'+cls+'" style="width:'+pct(val)+'" data-tip="'+esc(who)+': '+val+' '+label+'"></i>'
+      : '';
+    return '<span class="who-name'+(who===me?' me':'')+'">'+esc(who)+'</span>'+
+      '<span class="track" data-tip="'+esc(who)+': '+know+' of '+total+' known">'+
+        seg('know', know, 'known')+
+        seg('wip', wip, 'in progress')+
+        seg('ns', ns, 'not started')+
+      '</span>'+
+      '<span class="count"><b>'+know+'</b>/'+total+
+        (unsaid === total ? ' &middot; not said' : '')+'</span>';
+  }).join('');
+}
+
+// Hover detail for every segment. A tooltip rather than a number on each one:
+// four labels per bar across seven bars would be unreadable.
+const tip = () => document.getElementById('tip');
+document.addEventListener('mouseover', e=>{
+  const el = e.target.closest('[data-tip]'); if(!el) return;
+  const t = tip();
+  t.textContent = el.dataset.tip;
+  t.style.display = 'block';
+});
+document.addEventListener('mousemove', e=>{
+  const t = tip();
+  if(t.style.display !== 'block') return;
+  const pad = 14;
+  t.style.left = Math.min(e.clientX + pad, innerWidth - t.offsetWidth - 8) + 'px';
+  t.style.top  = Math.max(8, e.clientY - t.offsetHeight - pad) + 'px';
+});
+document.addEventListener('mouseout', e=>{
+  if(e.target.closest('[data-tip]')) tip().style.display = 'none';
+});
+
 /** One dot per band member, so you can see at a glance who is holding a song up. */
 function bandDots(r){
   if(!LEARNERS.length) return '';
@@ -314,6 +431,7 @@ function refresh(){
   document.getElementById('barKnow').style.width = total ? (know/total*100)+'%' : 0;
   document.getElementById('barWip').style.width  = total ? (wip/total*100)+'%'  : 0;
   document.getElementById('save').disabled = !me || !ROWS.length;
+  renderProgress();
 }
 
 function note(text, cls){
