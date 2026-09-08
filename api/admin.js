@@ -21,7 +21,7 @@ import { buildPayload, keyResolver, rosterOf, ok, fail, methodGuard } from "./_p
  * Body: {key, add:[{...}], update:[{key:'Song|Artist', ...}], remove:['Song|Artist'],
  *        order:[{key, pos}], clearOrder:true,
  *        force:[{key, value:'IN'|'OUT'|''}], maxSongs:20, lockSet:true|false,
- *        keyboard:[{key, value:'ESSENTIAL'|'ADDS'|'NONE'|''}]}
+ *        keyboard:[{key, value:'ESSENTIAL'|'ADDS'|'NONE'|''}], gigDate:'2026-10-24'}
  */
 export default async function handler(req, res) {
   if (methodGuard(req, res, "POST")) return;
@@ -154,6 +154,17 @@ export default async function handler(req, res) {
       await writeSettings({ maxSongs: n });
       fresh = { ...fresh, settings: { ...fresh.settings, maxSongs: n } };
       result.maxSongs = n;
+    }
+
+    // --- when the show is. Bounds the availability calendar.
+    if (body.gigDate !== undefined) {
+      const d = String(body.gigDate || "").trim();
+      if (d && !/^\d{4}-\d{2}-\d{2}$/.test(d)) {
+        return fail(res, 400, "gigDate must be YYYY-MM-DD, or empty to clear it.");
+      }
+      await writeSettings({ gigDate: d });
+      fresh = { ...fresh, settings: { ...fresh.settings, gigDate: d } };
+      result.gigDate = d;
     }
 
     // --- lock: snapshot exactly the songs that are in the set right now, so

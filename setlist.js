@@ -34,6 +34,21 @@ export function isLearnValue(v) {
   return LEARN_VALUES.includes(String(v || "").trim().toUpperCase());
 }
 
+// Availability, one answer per person per day. Absent means "hasn't said",
+// which is NOT "can't make it" — the calendar shows those differently, because
+// an unanswered day is a chase and a NO is a fact.
+export const AVAILABILITY_VALUES = ["YES", "NO"];
+
+export function availabilityValue(raw) {
+  const v = String(raw || "").trim().toUpperCase();
+  return AVAILABILITY_VALUES.includes(v) ? v : "";
+}
+
+/** Days are plain "YYYY-MM-DD" strings — no dates, no timezones, no drift. */
+export function isDayKey(k) {
+  return /^\d{4}-\d{2}-\d{2}$/.test(String(k || "").trim());
+}
+
 // How much the keyboard matters on a song. Blank means nobody has said yet,
 // which is NOT the same as NONE — a keys player needs to know the difference
 // between "no part needed" and "no answer".

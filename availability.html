@@ -1,0 +1,423 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>October Anniversary Show — Who Can Make It</title>
+<style>
+  :root{
+    --bg:#0d0e12; --panel:#16181f; --panel2:#1d2029; --line:#2a2e3a;
+    --ink:#e9eaf0; --muted:#9298a8; --dim:#6b7182;
+    --amber:#e8a33d; --violet:#8b7fd4;
+    /* Status ramp for a day, validated against this panel: lightness band,
+       chroma floor, CVD separation and normal-vision separation all pass. The
+       red sits just under 3:1 on its own, which is why every cell carries a
+       visible count rather than relying on the fill alone. */
+    --all:#3f9e68; --one:#bd7a05; --few:#b03a2e; --unknown:#2a2e3a;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--ink);
+    font:16px/1.5 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    padding-bottom:126px;-webkit-text-size-adjust:100%}
+  .wrap{max-width:860px;margin:0 auto;padding:0 16px}
+  header{padding:28px 0 18px;border-bottom:1px solid var(--line);margin-bottom:22px}
+  h1{font-size:26px;line-height:1.15;margin:0 0 6px;letter-spacing:-.01em}
+  h1 span{color:var(--amber)}
+  .sub{color:var(--muted);font-size:14px;margin:0}
+  a{color:var(--amber)}
+  .card{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:16px 18px;margin:0 0 22px}
+  .card h2{font-size:13px;text-transform:uppercase;letter-spacing:.09em;color:var(--amber);margin:0 0 10px}
+  .card p{margin:0 0 8px;font-size:14px;color:var(--muted)}
+  .card p:last-child{margin-bottom:0}
+  .card strong{color:var(--ink)}
+
+  .whoami{font-size:13px;color:var(--muted);margin-bottom:8px}
+  .who{display:flex;flex-wrap:wrap;gap:6px}
+  .who button{font:600 14px/1 inherit;color:var(--muted);cursor:pointer;background:var(--panel2);
+    border:1px solid var(--line);border-radius:8px;padding:11px 15px}
+  .who button.on{background:var(--amber);border-color:var(--amber);color:#231a09}
+  .loadnote{font-size:13px;margin-top:10px;color:var(--muted)}
+  .loadnote.ok{color:#4fb477} .loadnote.err{color:#d15b5b}
+
+  .hero{display:flex;align-items:baseline;gap:10px;margin:0 0 4px}
+  .hero b{font-size:48px;line-height:1;font-weight:700;letter-spacing:-.02em;color:var(--ink)}
+  .hero span{font-size:13.5px;color:var(--muted)}
+  .herosub{font-size:13px;color:var(--muted);margin:0}
+  .herosub b{color:var(--ink)}
+  .best{display:flex;flex-wrap:wrap;gap:6px;margin-top:12px}
+  .best button{font:600 12.5px/1 inherit;color:var(--ink);cursor:pointer;background:var(--panel2);
+    border:1px solid var(--line);border-radius:7px;padding:8px 10px}
+  .best button:hover{border-color:#3a3f4e}
+  .best button i{font-style:normal;color:var(--muted);font-weight:400}
+
+  h3.mon{font-size:12px;text-transform:uppercase;letter-spacing:.11em;color:var(--dim);
+    margin:22px 0 8px;padding-bottom:7px;border-bottom:1px solid var(--line)}
+  .dow,.grid{display:grid;grid-template-columns:repeat(7,1fr);gap:5px}
+  .dow{margin-bottom:5px}
+  .dow span{font-size:10.5px;letter-spacing:.06em;text-transform:uppercase;color:var(--dim);
+    text-align:center}
+  .day{position:relative;aspect-ratio:1/1;border-radius:8px;border:1px solid var(--line);
+    background:var(--panel2);display:flex;flex-direction:column;align-items:center;
+    justify-content:center;gap:1px;cursor:pointer;padding:2px;font:inherit;color:var(--ink);
+    min-height:44px}
+  /* Readable before you pick a name — everyone else's answers are the point. */
+  .day:disabled{cursor:default}
+  .day.pad{visibility:hidden}
+  .day .n{font-size:13.5px;font-weight:600;line-height:1}
+  .day .c{font-size:10px;color:var(--muted);line-height:1;font-variant-numeric:tabular-nums}
+  .day.all{background:var(--all);border-color:var(--all)}
+  .day.all .n,.day.all .c{color:#08210f}
+  .day.one{background:var(--one);border-color:var(--one)}
+  .day.one .n,.day.one .c{color:#231a09}
+  .day.few{background:var(--few);border-color:var(--few)}
+  .day.few .n,.day.few .c{color:#fdeaea}
+  .day.mine{box-shadow:inset 0 0 0 2px var(--ink)}
+  .day.gig{outline:2px solid var(--violet);outline-offset:1px}
+  .day .me{position:absolute;top:3px;right:4px;font-size:9px;font-weight:700;letter-spacing:.04em}
+  .day.no .n{text-decoration:line-through}
+
+  .legend{display:flex;flex-wrap:wrap;gap:12px;margin-top:14px;font-size:12.5px;color:var(--muted)}
+  .legend span{display:inline-flex;align-items:center;gap:6px}
+  .legend i{width:12px;height:12px;border-radius:4px;display:inline-block;background:var(--panel2);
+    border:1px solid var(--line)}
+  .legend i.all{background:var(--all);border-color:var(--all)}
+  .legend i.one{background:var(--one);border-color:var(--one)}
+  .legend i.few{background:var(--few);border-color:var(--few)}
+
+  #tip{position:fixed;z-index:9;pointer-events:none;display:none;background:var(--panel2);
+    border:1px solid var(--line);border-radius:7px;padding:8px 10px;font-size:12.5px;
+    color:var(--ink);box-shadow:0 6px 20px rgba(0,0,0,.45);max-width:250px;white-space:pre-line}
+
+  footer{position:fixed;left:0;right:0;bottom:0;background:rgba(13,14,18,.96);
+    border-top:1px solid var(--line);backdrop-filter:blur(8px);padding:11px 0}
+  .fbar{display:flex;align-items:center;gap:14px;max-width:860px;margin:0 auto;padding:0 16px}
+  .stats{flex:1;min-width:0;font-size:13px;color:var(--muted);line-height:1.35}
+  .stats b{color:var(--ink);font-size:15px}
+  .savemsg{font-size:12.5px;margin-top:5px}
+  .savemsg.ok{color:#4fb477} .savemsg.err{color:#d15b5b}
+  #save{font:700 14px/1 inherit;cursor:pointer;background:var(--amber);color:#231a09;border:none;
+    border-radius:9px;padding:14px 18px;flex:0 0 auto}
+  #save:disabled{background:var(--panel2);color:var(--dim);cursor:not-allowed}
+  @media(max-width:560px){
+    h1{font-size:21px}
+    .day{min-height:40px}
+    .day .n{font-size:12.5px}
+    .day .c{font-size:9px}
+    #save{padding:13px 14px;font-size:13px}
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<header>
+  <h1>October Anniversary Show — <span>Who Can Make It</span></h1>
+  <p class="sub">Rehearsal availability up to the gig &middot;
+    <a href="index.html">the ballot</a> &middot; <a href="results.html">results</a> &middot;
+    <a href="learn.html">who knows what</a></p>
+</header>
+
+<div class="card" id="summary" hidden>
+  <h2>Best days to rehearse</h2>
+  <p class="hero"><b id="heroNum">0</b><span id="heroLabel"></span></p>
+  <p class="herosub" id="heroSub"></p>
+  <div class="best" id="best"></div>
+</div>
+
+<div class="card">
+  <h2>How this works</h2>
+  <p>Pick your name, then tap the days you <strong>can</strong> make. Tap again to say you
+     <strong>can&rsquo;t</strong>, and a third time to clear it back to no answer &mdash;
+     &ldquo;can&rsquo;t make it&rdquo; and &ldquo;haven&rsquo;t said&rdquo; are different things,
+     and only one of them is a reason to chase somebody.</p>
+  <p>A day goes <strong>green</strong> when every one of you can make it, <strong>amber</strong>
+     when one can&rsquo;t, and <strong>red</strong> when two or more can&rsquo;t. Days nobody has
+     ruled out but not everyone has confirmed stay grey &mdash; the count on each day says how
+     many are in so far.</p>
+  <p>Hover or tap-and-hold a day to see exactly who. Your own answers show a white outline, and
+     nothing is saved until you press the button at the bottom.</p>
+</div>
+
+<div class="card">
+  <p class="whoami">Who are you?</p>
+  <div class="who" id="who"></div>
+  <div class="loadnote" id="loadnote"></div>
+</div>
+
+<div id="cal"></div>
+
+<div class="legend">
+  <span><i class="all"></i>Everyone free</span>
+  <span><i class="one"></i>One can&rsquo;t</span>
+  <span><i class="few"></i>Two or more can&rsquo;t</span>
+  <span><i></i>Waiting on answers</span>
+</div>
+
+</div>
+
+<div id="tip" role="status"></div>
+
+<footer>
+  <div class="fbar">
+    <div class="stats">
+      <span id="line1">Pick your name to start.</span>
+      <div class="savemsg" id="savemsg"></div>
+    </div>
+    <button id="save" disabled>Save my days</button>
+  </div>
+</footer>
+
+<script src="config.js"></script>
+<script>
+const API = (window.SETLIST_API || '').trim();
+// The band, not the voters: this calendar exists to get five people in a room.
+let BAND = window.SETLIST_BAND || ["Rich","Ashley","Ethan","Justin","Isaac"];
+
+let AVAIL = {};            // name -> {'2026-10-03':'YES'|'NO'}
+let GIG = '';              // 'YYYY-MM-DD', or '' if nobody has set it
+let me = null;
+const mine = {};           // my own answers, including unsaved ones
+
+const esc = s => String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+
+// Days are plain YYYY-MM-DD strings throughout — built from local date parts,
+// never from toISOString(), which shifts the date backwards west of UTC and
+// would have people marking the wrong day every evening.
+const key = d => d.getFullYear() + '-' +
+  String(d.getMonth()+1).padStart(2,'0') + '-' +
+  String(d.getDate()).padStart(2,'0');
+const parseKey = k => { const [y,m,d] = k.split('-').map(Number); return new Date(y, m-1, d); };
+const MONTHS = ['January','February','March','April','May','June','July','August','September',
+                'October','November','December'];
+const DOW = ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
+const pretty = k => { const d = parseKey(k);
+  return DOW[(d.getDay()+6)%7] + ' ' + d.getDate() + ' ' + MONTHS[d.getMonth()].slice(0,3); };
+
+const today = () => { const d = new Date(); d.setHours(0,0,0,0); return d; };
+
+/** Every day from today up to and including the gig. */
+function days(){
+  const out = [], from = today();
+  const to = GIG ? parseKey(GIG) : new Date(from.getFullYear(), from.getMonth(), from.getDate()+56);
+  if(to < from) return out;
+  for(let d = new Date(from); d <= to; d.setDate(d.getDate()+1)) out.push(key(new Date(d)));
+  return out;
+}
+
+const statusFor = (day, who) => (who === me)
+  ? (mine[day] || '')
+  : ((AVAIL[who] && AVAIL[who][day]) || '');
+
+/** One day's headline: who is in, who is out, who has not said. */
+function dayState(day){
+  const yes = BAND.filter(n => statusFor(day, n) === 'YES');
+  const no  = BAND.filter(n => statusFor(day, n) === 'NO');
+  const quiet = BAND.filter(n => !statusFor(day, n));
+  const cls = no.length >= 2 ? 'few'
+            : no.length === 1 ? 'one'
+            : (yes.length === BAND.length && BAND.length) ? 'all' : '';
+  return {yes, no, quiet, cls};
+}
+
+// ---- render -----------------------------------------------------------
+function renderCal(){
+  const list = days();
+  if(!list.length){ document.getElementById('cal').innerHTML =
+    '<p style="color:var(--muted);font-size:14px">The gig date has passed, so there is nothing to plan.</p>';
+    return; }
+
+  let html = '', month = null;
+  list.forEach((day, i) => {
+    const d = parseKey(day);
+    if(d.getMonth() !== month){
+      if(month !== null) html += '</div>';
+      month = d.getMonth();
+      html += '<h3 class="mon">'+MONTHS[month]+' '+d.getFullYear()+'</h3>'+
+        '<div class="dow">'+DOW.map(x=>'<span>'+x+'</span>').join('')+'</div><div class="grid">';
+      // Line the first day up under its weekday.
+      const pad = (d.getDay()+6)%7;
+      for(let p=0;p<pad;p++) html += '<span class="day pad"></span>';
+    }
+    const st = dayState(day);
+    const my = statusFor(day, me);
+    html += '<button type="button" class="day '+st.cls+
+      (my ? ' mine' : '')+(my==='NO' ? ' no' : '')+(day===GIG ? ' gig' : '')+
+      '" data-day="'+day+'"'+(me ? '' : ' disabled')+' data-tip="'+esc(tipFor(day))+'">'+
+      (my ? '<span class="me">'+(my==='YES'?'&#10003;':'&#10005;')+'</span>' : '')+
+      '<span class="n">'+d.getDate()+'</span>'+
+      '<span class="c">'+st.yes.length+'/'+BAND.length+'</span>'+
+      '</button>';
+  });
+  document.getElementById('cal').innerHTML = html + '</div>';
+  renderSummary();
+}
+
+function tipFor(day){
+  const st = dayState(day);
+  const line = (label, who) => who.length ? label + ': ' + who.join(', ') : '';
+  return [pretty(day) + (day===GIG ? '  — THE GIG' : ''),
+          line('Can make it', st.yes),
+          line("Can't", st.no),
+          line('No answer', st.quiet)].filter(Boolean).join('\n');
+}
+
+function renderSummary(){
+  const list = days();
+  const card = document.getElementById('summary');
+  if(!list.length || !BAND.length){ card.hidden = true; return; }
+  card.hidden = false;
+
+  const full = list.filter(d => dayState(d).cls === 'all');
+  document.getElementById('heroNum').textContent = full.length;
+  document.getElementById('heroLabel').textContent =
+    'day' + (full.length === 1 ? '' : 's') + ' the whole band is free' +
+    (GIG ? ', between now and the gig' : ' in the next eight weeks');
+
+  const quiet = BAND.filter(n => !list.some(d => statusFor(d, n)));
+  document.getElementById('heroSub').innerHTML = quiet.length
+    ? 'Nothing yet from <b>' + quiet.map(esc).join('</b>, <b>') + '</b> — a day only goes green ' +
+      'once <em>everyone</em> has said yes to it.'
+    : full.length
+      ? 'Tap one to see who confirmed it.'
+      : 'No day yet has everyone on it. The best options are below.';
+
+  // Best days first: most people free, then soonest. A day somebody has ruled
+  // out is never "best", however many others are free.
+  const ranked = list
+    .map(d => ({d, st: dayState(d)}))
+    .filter(x => !x.st.no.length && x.st.yes.length)
+    .sort((a,b) => b.st.yes.length - a.st.yes.length || (a.d < b.d ? -1 : 1))
+    .slice(0, 6);
+  document.getElementById('best').innerHTML = ranked.length
+    ? ranked.map(x => '<button type="button" data-tip="'+esc(tipFor(x.d))+'">'+
+        esc(pretty(x.d))+' <i>'+x.st.yes.length+'/'+BAND.length+'</i></button>').join('')
+    : '';
+}
+
+// ---- who am i ---------------------------------------------------------
+function renderWho(){
+  document.getElementById('who').innerHTML =
+    BAND.map(v=>'<button type="button" data-v="'+esc(v)+'"'+(v===me?' class="on"':'')+'>'+
+      esc(v)+'</button>').join('');
+}
+renderWho();
+document.getElementById('who').addEventListener('click', e=>{
+  const b = e.target.closest('button'); if(!b) return;
+  me = b.dataset.v;
+  try{ localStorage.setItem('setlist.me', me); }catch(ignore){}
+  renderWho();
+  Object.keys(mine).forEach(k=>delete mine[k]);
+  Object.assign(mine, AVAIL[me] || {});
+  renderCal(); refresh();
+  const said = Object.keys(mine).length;
+  note(said ? 'Loaded your '+said+' answer'+(said===1?'':'s')+' — change whatever you like and save again.'
+            : 'Nothing from you yet. Tap the days you can make.', 'ok');
+});
+
+// ---- interaction ------------------------------------------------------
+// can make it -> can't -> no answer. Three taps, no separate controls.
+document.getElementById('cal').addEventListener('click', e=>{
+  const b = e.target.closest('.day'); if(!b || !me) return;
+  const day = b.dataset.day;
+  mine[day] = mine[day] === 'YES' ? 'NO' : mine[day] === 'NO' ? '' : 'YES';
+  if(!mine[day]) delete mine[day];
+  renderCal(); refresh();
+});
+
+const tip = () => document.getElementById('tip');
+document.addEventListener('mouseover', e=>{
+  const el = e.target.closest('[data-tip]'); if(!el) return;
+  const t = tip(); t.textContent = el.dataset.tip; t.style.display = 'block';
+});
+document.addEventListener('mousemove', e=>{
+  const t = tip(); if(t.style.display !== 'block') return;
+  t.style.left = Math.min(e.clientX + 14, innerWidth - t.offsetWidth - 8) + 'px';
+  t.style.top  = Math.max(8, e.clientY - t.offsetHeight - 14) + 'px';
+});
+document.addEventListener('mouseout', e=>{
+  if(e.target.closest('[data-tip]')) tip().style.display = 'none';
+});
+
+function refresh(){
+  const list = days();
+  const yes = list.filter(d => mine[d] === 'YES').length;
+  const no  = list.filter(d => mine[d] === 'NO').length;
+  document.getElementById('line1').innerHTML = me
+    ? '<b>'+yes+'</b> day'+(yes===1?'':'s')+' you can make &middot; <b>'+no+'</b> you can&rsquo;t'+
+      (list.length - yes - no ? ' &middot; '+(list.length - yes - no)+' unanswered' : '')
+    : 'Pick your name to start.';
+  document.getElementById('save').disabled = !me;
+}
+
+function note(text, cls){
+  const el = document.getElementById('loadnote');
+  el.className = 'loadnote'+(cls?' '+cls:'');
+  el.textContent = text;
+}
+
+// ---- load -------------------------------------------------------------
+async function pull(){
+  if(!API){ note('config.js has no SETLIST_API path, so there is no backend to read.','err'); return; }
+  note('Loading everyone’s days…');
+  try{
+    const r = await fetch(API+'/data',{method:'GET'});
+    const j = await r.json();
+    if(!j.ok) throw new Error(j.error||'unknown error');
+    BAND = (j.data.band && j.data.band.length) ? j.data.band : BAND;
+    AVAIL = j.data.availability || {};
+    GIG = j.data.gigDate || '';
+    if(me && !BAND.includes(me)){ me = null; try{ localStorage.removeItem('setlist.me'); }catch(ignore){} }
+    renderWho();
+    Object.keys(mine).forEach(k=>delete mine[k]);
+    if(me) Object.assign(mine, AVAIL[me] || {});
+    renderCal(); refresh();
+    const said = me ? Object.keys(mine).length : 0;
+    note(!me ? 'Calendar loaded. Pick your name to start.'
+             : (said ? 'Loaded your '+said+' answer'+(said===1?'':'s')+
+                       ' — change whatever you like and save again.'
+                     : 'Nothing from you yet. Tap the days you can make.'), 'ok');
+  }catch(e){
+    note('Could not reach the backend ('+e.message+'). Reload to try again.','err');
+  }
+}
+
+// ---- save -------------------------------------------------------------
+document.getElementById('save').addEventListener('click', async ()=>{
+  const btn = document.getElementById('save'), msg = document.getElementById('savemsg');
+  if(!me || !API) return;
+  // Every day in range, so a cleared answer travels as an empty string rather
+  // than simply going missing and leaving the old one on the sheet.
+  const payload = {};
+  days().forEach(d=>{ payload[d] = mine[d] || ''; });
+
+  btn.disabled = true; msg.className='savemsg'; msg.textContent='Saving…';
+  try{
+    const r = await fetch(API+'/availability',{method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({person:me, days:payload})});
+    const j = await r.json();
+    if(!j.ok) throw new Error(j.error||'unknown error');
+    if(j.data){
+      AVAIL = j.data.availability || AVAIL;
+      GIG = j.data.gigDate || GIG;
+      renderCal();
+    }
+    msg.className='savemsg ok';
+    msg.textContent='Saved — everyone can see your days now.';
+    btn.textContent='Saved!';
+    setTimeout(()=>{btn.textContent='Save my days';},2600);
+  }catch(e){
+    msg.className='savemsg err';
+    msg.textContent='Save failed ('+e.message+'). Nothing was lost — try again.';
+  }finally{ btn.disabled=false; }
+});
+
+// ---- go ---------------------------------------------------------------
+let remembered = null;
+try{ remembered = localStorage.getItem('setlist.me'); }catch(ignore){}
+if(remembered && BAND.includes(remembered)) me = remembered;
+renderWho(); renderCal(); refresh();
+pull();
+</script>
+</body>
+</html>

@@ -9,7 +9,7 @@ import { selectSet } from "./_selection.js";
  * backend served, so the pages did not have to be rewritten to move here.
  */
 export function buildPayload(state) {
-  const { songs, voters, learners, tunings, settings = {} } = state;
+  const { songs, voters, learners, availability = {}, tunings, settings = {} } = state;
   const roster = rosterOf();
   const band = BAND.filter((n) => roster.includes(n));
 
@@ -55,6 +55,12 @@ export function buildPayload(state) {
     learnValues: LEARN_VALUES,
     weights: WEIGHTS,
     limits: { maxPerArtist: MAX_PER_ARTIST },
+    // Who can make which day, keyed by plain "YYYY-MM-DD". Only the band: the
+    // calendar is for getting five people in a room.
+    availability: Object.fromEntries(
+      band.map((n) => [n, (availability[n] && availability[n].days) || {}])
+    ),
+    gigDate: settings.gigDate || "",
     set: {
       count: sel.inSet.size,
       seconds: sel.seconds,

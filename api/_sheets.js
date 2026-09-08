@@ -16,6 +16,7 @@ const GRID_TAB = "Grid";
 const TUNINGS_TAB = "Tunings";
 const LEARN_TAB = "Learning";
 const SETTINGS_TAB = "Settings";
+const AVAIL_TAB = "Availability";
 
 const SONG_HEADERS = [
   "Key", "Section", "Song", "Artist", "Lead", "Length", "Energy", "Tags", "Order",
@@ -32,9 +33,10 @@ const TUNING_HEADERS = ["Key", "Song", "Artist", "Tuning"];
 // write clobbering the other's row.
 const LEARN_HEADERS = ["Name", "UpdatedAt", "AppVersion", "KnownCount", "LearnJSON"];
 const SETTINGS_HEADERS = ["Key", "Value"];
+const AVAIL_HEADERS = ["Name", "UpdatedAt", "AppVersion", "DaysFree", "DaysJSON"];
 
 // Defaults for a sheet that has never had a setting written to it.
-const SETTINGS_DEFAULTS = { maxSongs: 0, locked: false, lockedKeys: [] };
+const SETTINGS_DEFAULTS = { maxSongs: 0, locked: false, lockedKeys: [], gigDate: "" };
 
 let cached = null;
 
@@ -81,7 +83,7 @@ export async function ensureTabs() {
   const id = sheetId();
   const meta = await sheets.spreadsheets.get({ spreadsheetId: id });
   const have = new Set(meta.data.sheets.map((s) => s.properties.title));
-  const wanted = [SONGS_TAB, VOTES_TAB, GRID_TAB, TUNINGS_TAB, LEARN_TAB, SETTINGS_TAB];
+  const wanted = [SONGS_TAB, VOTES_TAB, GRID_TAB, TUNINGS_TAB, LEARN_TAB, SETTINGS_TAB, AVAIL_TAB];
   const missing = wanted.filter((t) => !have.has(t));
 
   if (missing.length) {
@@ -99,8 +101,9 @@ export async function ensureTabs() {
     ensureHeaders(sheets, id, TUNINGS_TAB, "A1:D1", TUNING_HEADERS),
     ensureHeaders(sheets, id, LEARN_TAB, "A1:E1", LEARN_HEADERS),
     ensureHeaders(sheets, id, SETTINGS_TAB, "A1:B1", SETTINGS_HEADERS),
+    ensureHeaders(sheets, id, AVAIL_TAB, "A1:E1", AVAIL_HEADERS),
   ]);
-  return { SONGS_TAB, VOTES_TAB, GRID_TAB, TUNINGS_TAB, LEARN_TAB, SETTINGS_TAB };
+  return { SONGS_TAB, VOTES_TAB, GRID_TAB, TUNINGS_TAB, LEARN_TAB, SETTINGS_TAB, AVAIL_TAB };
 }
 
 async function ensureHeaders(sheets, id, tab, range, headers) {
@@ -130,10 +133,12 @@ export async function readAll() {
       `${TUNINGS_TAB}!A2:D500`,
       `${LEARN_TAB}!A2:E200`,
       `${SETTINGS_TAB}!A2:B50`,
+      `${AVAIL_TAB}!A2:E200`,
     ],
   });
-  const [songRows = [], voteRows = [], tuningRows = [], learnRows = [], settingRows = []] =
-    res.data.valueRanges.map((r) => r.values || []);
+  const [
+    songRows = [], voteRows = [], tuningRows = [], learnRows = [], settingRows = [], availRows = [],
+  ] = res.data.valueRanges.map((r) => r.values || []);
 
   const songs = songRows
     .filter((r) => r[2] && r[3])
@@ -179,6 +184,19 @@ export async function readAll() {
     learners[name] = { learn, ts: Number(updatedAt) || 0 };
   }
 
+  const availability = {};
+  for (const r of availRows) {
+    const [name, updatedAt, , , json] = r;
+    if (!name) continue;
+    let days = {};
+    try {
+      days = JSON.parse(json || "{}");
+    } catch {
+      days = {};
+    }
+    availability[name] = { days, ts: Number(updatedAt) || 0 };
+  }
+
   // A row's presence makes it authoritative, even with a blank tuning cell:
   // a cleared cell means "E standard", not "fall back to the seed".
   const tunings = {};
@@ -196,7 +214,14 @@ export async function readAll() {
     tunings
   );
 
-  return { songs, voters, learners, settings: parseSettings(settingRows), tunings: seeded };
+  return {
+    songs,
+    voters,
+    learners,
+    availability,
+    settings: parseSettings(settingRows),
+    tunings: seeded,
+  };
 }
 
 /**
@@ -248,6 +273,7 @@ function parseSettings(rows) {
     const raw = String(r[1] ?? "").trim();
     if (key === "maxSongs") out.maxSongs = Math.max(0, Number(raw) || 0);
     else if (key === "locked") out.locked = /^(true|yes|1)$/i.test(raw);
+    else if (key === "gigDate") out.gigDate = /^\d{4}-\d{2}-\d{2}$/.test(raw) ? raw : "";
     else if (key === "lockedKeys") {
       try {
         const parsed = JSON.parse(raw || "[]");
@@ -342,6 +368,19 @@ export async function writeVoter({ name, votes, ts, version }) {
     version || "",
     Object.keys(votes).length,
     JSON.stringify(votes),
+  ]);
+}
+
+/** Which days one person can make. Separate tab, same row-per-person shape. */
+export async function writeAvailability({ name, days, ts, version }) {
+  await ensureTabs();
+  const free = Object.values(days).filter((v) => v === "YES").length;
+  await upsertByName(AVAIL_TAB, name, [
+    name,
+    String(ts),
+    version || "",
+    free,
+    JSON.stringify(days),
   ]);
 }
 

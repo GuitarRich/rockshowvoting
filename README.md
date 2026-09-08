@@ -16,6 +16,7 @@ they open a page and tap.
 | `results.html`| Live tally, every person's votes, auto-generated running order. |
 | `admin.html` | Add / edit / remove songs. Key-protected. |
 | `learn.html` | Who knows what. Each player marks every song Not started / In progress / Know it. |
+| `availability.html` | Who can make it. Each player taps the days they are free up to the gig. |
 | `config.js` | The API path (`/api`), plus the voter and band names for the browser. |
 | `setlist.js` | Shared constants: weights, `VOTERS`, `BAND`, vote and learn values, key/length helpers. |
 | `api/` | The backend. One function per action, plus `_sheets.js` for all sheet access. |
@@ -28,6 +29,7 @@ they open a page and tap.
 | `/api/data` | GET | — | Everything: songs, votes, learn statuses, tunings, weights, limits. |
 | `/api/vote` | POST | `{voter, votes}` | Saves one person's votes. |
 | `/api/learn` | POST | `{person, learn}` | Saves one person's practice statuses. |
+| `/api/availability` | POST | `{person, days}` | Saves one person's free days. |
 | `/api/admin` | POST | `{key, add, update, remove, order}` | Song edits and the manual order. |
 | `/api/health` | GET | — | Which env vars are set, whether the sheet opens. Check this first. |
 
@@ -44,7 +46,8 @@ every vote and practice mark already recorded against it.
 | `Learning` | One row per person: their practice statuses as JSON. |
 | `Tunings` | One row per song. Blank means E standard; a blank you typed is respected. |
 | `Grid` | Derived, human-readable matrix. Rewritten on every save — never edit it. |
-| `Settings` | Key/value: `maxSongs`, `locked`, `lockedKeys`. Hand-editable. |
+| `Availability` | One row per player: which days they can make, as JSON keyed `YYYY-MM-DD`. |
+| `Settings` | Key/value: `maxSongs`, `locked`, `lockedKeys`, `gigDate`. Hand-editable. |
 
 Missing tabs and headers are created on the first request, so there is no setup
 script to run.
@@ -264,6 +267,25 @@ you can correct a frozen set without unlocking it and losing it.
 Locking is the answer to "the order keeps moving and nobody trusts it". Lock
 once the vote has settled, and the band can learn a list that will not change
 under them.
+
+## Who can make it
+
+`availability.html` is the rehearsal calendar, running from today to `gigDate`
+in the Settings tab. Pick your name, then tap a day: **can make it** → **can't**
+→ back to no answer. Nothing saves until you press the button.
+
+A day is **green** when every player has said yes, **amber** when one has said
+no, **red** when two or more have, and stays grey while it is only waiting on
+answers — a day nobody has confirmed must not look like a day everybody has
+refused. Every cell carries a `free/total` count, so the colour is never the
+only thing saying what a day means. Hovering names who is in, who is out, and
+who has not replied.
+
+The card at the top ranks the best days: most people free first, soonest as the
+tie-break, and a day anybody has ruled out never appears there however many
+others are free.
+
+Only `BAND` appears — the calendar exists to get the players in a room.
 
 ## Keyboard
 
