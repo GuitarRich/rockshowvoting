@@ -80,7 +80,7 @@ Every story below depends on this phase.
   - Skip tabs that already start with `bak-`. If today's backup already exists, skip it.
   - Print the list.
   - Use the credentials in `.env.development.local` (loaded with `node --env-file`).
-- [ ] T008 Run `pnpm env`, then `pnpm backup` against the live sheet. **This is the first live write**, and it only duplicates tabs. Record the tab list in `scripts/out/backup-log.txt`.
+- [ ] T008 Run `pnpm run env:pull`, then `pnpm backup` against the live sheet. **This is the first live write**, and it only duplicates tabs. Record the tab list in `scripts/out/backup-log.txt`.
 - [X] T009 Write `test/october.test.js`.
   - Load `test/fixtures/oct-sheet.json` into `fakeSheets` and call `api/data.js` with no `show` param.
   - Assert that every field present in `test/fixtures/oct-payload.json` is deep-equal in the new response. Extra fields are allowed.
@@ -198,8 +198,8 @@ Every story below depends on this phase.
 
 ### November migration (Band Vote → `nov`)
 
-- [ ] T029 Create `scripts/fixtures/bandvote-tracks-v32.json`, a frozen copy of the `TRACKS` array from BV:`catalog.js` at v32, with all 73 entries in order. Each entry is `{i, name, artist, seconds, year, bpm, era, energy, tags, lead}`. Build it by importing BV:`catalog.js` from a one-off node command, and commit the JSON.
-- [ ] T030 Create `scripts/lib/bandvote-map.js`, with pure functions (no I/O):
+- [X] T029 Create `scripts/fixtures/bandvote-tracks-v32.json`, a frozen copy of the `TRACKS` array from BV:`catalog.js` at v32, with all 73 entries in order. Each entry is `{i, name, artist, seconds, year, bpm, era, energy, tags, lead}`. Build it by importing BV:`catalog.js` from a one-off node command, and commit the JSON.
+- [X] T030 Create `scripts/lib/bandvote-map.js`, with pure functions (no I/O):
   - `keyMap(tracks, addedRows)` returns `Map` from `b<i>` or an added key to `songKey`.
   - `mapVote(n)` maps `3→MUST`, `2→YES`, `1→MAYBE` and `0→NO`; anything else maps to `null`.
   - `mapProgress(s)` maps `know-it→KNOW`, `in-progress→IN PROGRESS` and `not-started→NOT STARTED`.
@@ -207,13 +207,13 @@ Every story below depends on this phase.
   - `secsToMmss(n)`.
   - `crossCheck(rowsWithTitleArtist, keyMap)` throws an error listing every row whose Title/Artist doesn't match the key it maps to.
   - `buildNovTabs(source)` returns the rows for `nov·Songs`, `nov·Votes`, `nov·Learning` and `nov·Settings`, plus the Library, Lyrics, Tempos and Tunings additions. It follows the table in data-model.md "Migration mapping".
-- [ ] T031 [P] Write `test/migrate.test.js` against fixture excerpts of the Band Vote tabs. Check:
+- [X] T031 [P] Write `test/migrate.test.js` against fixture excerpts of the Band Vote tabs. Check:
   - the key map for `b0`, `b72` and an added song;
   - that `crossCheck` fails on a deliberately wrong title;
   - every value transform;
   - that Tunings clashes keep the existing value and are reported;
   - that `buildNovTabs` output round-trips through `readAll({prefix:"nov·"})` using fakeSheets.
-- [ ] T032 Create `scripts/migrate-bandvote.js`.
+- [X] T032 Create `scripts/migrate-bandvote.js`.
   - **Modes and access:**
     - It has three modes: the default dry run, `--apply` and `--verify`.
     - It reads the source sheet `14nIIefs1Jks8kaU2YzuSLbpuXPDQqzW-zt4asu5TYS0` with a **read-only** scope (`spreadsheets.readonly`). It uses a separate client, so writing to the source is impossible.

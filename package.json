@@ -9,7 +9,7 @@
     "test": "node --test \"test/**/*.test.js\"",
     "dev": "node dev-server.js",
     "dev:real": "vercel dev",
-    "env": "vercel env pull .env.development.local",
+    "env:pull": "vercel env pull --environment=production .env.development.local",
     "backup": "node --env-file=.env.development.local scripts/backup-sheet.js",
     "migrate:nov": "node --env-file=.env.development.local scripts/migrate-bandvote.js"
   },
