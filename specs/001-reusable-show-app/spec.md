@@ -4,7 +4,7 @@
 
 **Created**: 2026-09-24
 
-**Status**: Clarified
+**Status**: Implemented (Phases 1–2); Phase 3 is gated until after 24 Oct 2026. The migration was checked against Band Vote; see `scripts/out/nov-migration-verify.txt`, which is local and not committed.
 
 **Input**: User description: "we are going to use "band vote/" as the guiding repo here. I want to basically update "rock show/" to have all the functionality of the original, but keep any functionality that was added and doesn't exist in "band vote/". Ultimately I want to create an app that I can reuse multiple times for new shows."
 

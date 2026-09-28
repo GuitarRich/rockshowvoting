@@ -541,7 +541,7 @@ Every story below depends on this phase.
   - When the show is past, pages hide all save and vote controls and show a banner.
 - [X] T067 [US1] Add a "New show" form to `admin.html` (id, name, gig date, and "copy songs and settings from"). It posts to `/api/shows`, then opens the Show settings panel for the new show.
 - [X] T068 [US1] Remove the remaining hardcoded show text: grep the whole repo for `October`, `Anniversary`, `Bun's`, `BUN'S`, `anniversary`, `Creed`, `Nickelback`, `Rich` (in user-facing strings), `90:00` and `two per band`. Replace each user-facing string with a value from `data.show` or `data.settings`. Leave code comments where the history is useful. Record the grep output in the commit message.
-- [ ] T069 [US1] Reduce `config.js` to `window.SETLIST_API = "/api"`. Take out `SETLIST_VOTERS` and `SETLIST_BAND`, and point the offline fallbacks in the pages at the last `data` payload cached in `localStorage` (`rs_last_<show>`), wrapped in try/catch.
+- [ ] T069 [US1] (Deferred to Phase 14: October's original pages still read their fallback lists from config.js.) Reduce `config.js` to `window.SETLIST_API = "/api"`. Take out `SETLIST_VOTERS` and `SETLIST_BAND`, and point the offline fallbacks in the pages at the last `data` payload cached in `localStorage` (`rs_last_<show>`), wrapped in try/catch.
 - [X] T070 [P] [US1] Write `test/no-hardcoding.test.js`. It reads every `*.html` file and fails if a user-facing text node contains `October`, `Anniversary` or `Bun's`, apart from an allowlist of comment lines.
 
 ---
@@ -607,7 +607,7 @@ Every story below depends on this phase.
 
 ## Phase 13: Polish & Cross-Cutting Concerns
 
-- [ ] T077 [P] Rewrite `README.md` for the multi-show app. Cover:
+- [X] T077 [P] Rewrite `README.md` for the multi-show app. Cover:
   - the pages
   - the Shows registry and the tab prefixes
   - the library tabs
@@ -619,13 +619,13 @@ Every story below depends on this phase.
   - setup
   Fix the stale text: Order is column I, and the button names are the real ones.
 - [X] T078 [P] Update `api/_payload.js` and every page to show one `VERSION` constant from `setlist.js`, starting at `v33`. Add a `CHANGES` log in `setlist.js`, continuing Band Vote's log, and show it on the ballot gate.
-- [ ] T079 [P] Accessibility and phone pass on every page at 375px:
+- [X] T079 [P] Accessibility and phone pass on every page at 375px:
   - no horizontal scroll;
   - tap targets of at least 40px;
   - colour is never the only signal (for example the `free/total` text on the calendar).
   Fix any problems in `app.css`.
-- [ ] T080 Run quickstart.md §1, §2 and §4 end to end, and record the results in `specs/001-reusable-show-app/checklists/validation.md`.
-- [ ] T081 Update `specs/001-reusable-show-app/spec.md` status to "Implemented (Phases 1–2)", and add a note linking `scripts/out/nov-migration-verify.txt`.
+- [X] T080 Run quickstart.md §1, §2 and §4 end to end, and record the results in `specs/001-reusable-show-app/checklists/validation.md`.
+- [X] T081 Update `specs/001-reusable-show-app/spec.md` status to "Implemented (Phases 1–2)", and add a note linking `scripts/out/nov-migration-verify.txt`.
 
 ---
 
