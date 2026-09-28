@@ -469,15 +469,15 @@ Every story below depends on this phase.
 2. All three appear.
 3. No votes or learning come with it.
 
-- [ ] T056 [P] [US7] Write `test/api.library.test.js`. Check:
+- [X] T056 [P] [US7] Write `test/api.library.test.js`. Check:
   - Adding a song to a show copies Length, Year, Era, Energy, Tags, Lead and Keyboard from `Library` when the show's row leaves them blank.
   - An explicit `-` in Tags stays empty.
   - A rename through admin `update` keeps the key, so votes, learning, lyrics and tempo are all preserved.
   - Every show admin save upserts that show's song details into `Library`.
-- [ ] T057 [US7] In `api/admin.js` `add[]`:
+- [X] T057 [US7] In `api/admin.js` `add[]`:
   - When a field is missing, fill it from `readLibrary()` for that key.
   - After any add or update, call `upsertLibrary` with the song's details, so every show keeps the library up to date.
-- [ ] T058 [US7] In `api/_payload.js`, when a show row leaves a song-detail field blank and the row isn't curated, fall back to `Library`. Follow the curated rule in data-model.md "Show Songs"; this is the override path Phase 3 removes.
+- [X] T058 [US7] In `api/_payload.js`, when a show row leaves a song-detail field blank and the row isn't curated, fall back to `Library`. Follow the curated rule in data-model.md "Show Songs"; this is the override path Phase 3 removes.
 
 ---
 
@@ -491,19 +491,19 @@ Every story below depends on this phase.
 3. Edit a keyboard value.
 4. Without the code, every write gets 403.
 
-- [ ] T059 [US8] Update the `admin.html` gate.
+- [X] T059 [US8] Update the `admin.html` gate.
   - Replace "ADMIN_KEY in apps-script.gs" with "owner code".
   - Validate the code with an empty `/api/admin {show, ownerCode}` call.
   - Keep the code in memory only.
   - Read `?show` through `store.js`.
-- [ ] T060 [US8] Add the admin song fields in `admin.html`:
+- [X] T060 [US8] Add the admin song fields in `admin.html`:
   - Add a Keyboard select to the add form.
   - Add Year and Era to the table.
   - The Lead dropdown options come from `settings.leads`, and the Era options from `settings.eras`.
   - The bulk-paste format stays `Song | Artist | Lead | Length | Energy | Section | tags | tuning`.
   - Update the help text to match.
-- [ ] T061 [US8] In `admin.html`, warn before removing a song that has votes: "N people have voted on this — remove anyway?". Use an inline confirm row, not `confirm()`.
-- [ ] T062 [US8] Add a "Show settings" panel to `admin.html` that edits the show's settings from data-model.md "Show Settings":
+- [X] T061 [US8] In `admin.html`, warn before removing a song that has votes: "N people have voted on this — remove anyway?". Use an inline confirm row, not `confirm()`.
+- [X] T062 [US8] Add a "Show settings" panel to `admin.html` that edits the show's settings from data-model.md "Show Settings":
   - name, occasion, band name
   - gig date
   - voters and band (tag inputs; the band must be a subset of the voters)
@@ -512,7 +512,7 @@ Every story below depends on this phase.
   - warnings (checkboxes)
   - leads, eras
   It saves through `/api/admin {settings}`. Extend `api/admin.js` to validate and write the keys with `writeSettings`, and to keep `gigDate` in sync with `Shows.GigDate`.
-- [ ] T063 [P] [US8] Add these tests to `test/api.auth.test.js`:
+- [X] T063 [P] [US8] Add these tests to `test/api.auth.test.js`:
   - An admin `settings` write with an invalid `band` (not a subset of voters) gets 400.
   - A valid write shows up in the next `/api/data`.
 
@@ -527,22 +527,22 @@ Every story below depends on this phase.
 2. Load every page with `?show=test`.
 3. The new names and limits appear everywhere, and no October or Bun's & Roses text does.
 
-- [ ] T064 [P] [US1] Write `test/api.createShow.test.js`. Check:
+- [X] T064 [P] [US1] Write `test/api.createShow.test.js`. Check:
   - `POST /api/shows {ownerCode, create:{id:"test", name, gigDate, copyFrom:"nov"}}` creates the `test·Songs` and `test·Settings` tabs, copying the songs but no votes, learning or availability.
   - A duplicate id gets 409.
   - A bad id gets 400.
   - `update {status:"past"}` makes writes to that show get 409.
-- [ ] T065 [US1] Create `api/shows.js`.
+- [X] T065 [US1] Create `api/shows.js`.
   - GET returns `{shows, defaultId}`.
   - POST checks requireOwner, then handles either `create` or `update`, following contracts/api.md. `create` calls `ensureTabs(newShow)` and copies Songs (show fields and song details) and Settings from `copyFrom`.
-- [ ] T066 [US1] Add a show switcher to `store.js` and to the header of every page: `index.html`, `results.html`, `learn.html`, `availability.html`, `admin.html`, `lyrics.html` and `click.html`.
+- [X] T066 [US1] Add a show switcher to `store.js` and to the header of every page: `index.html`, `results.html`, `learn.html`, `availability.html`, `admin.html`, `lyrics.html` and `click.html`.
   - It is a `<select>` of `/api/shows`, and changing it sets `?show=`.
   - Past shows are labelled "(past, read-only)".
   - When the show is past, pages hide all save and vote controls and show a banner.
-- [ ] T067 [US1] Add a "New show" form to `admin.html` (id, name, gig date, and "copy songs and settings from"). It posts to `/api/shows`, then opens the Show settings panel for the new show.
-- [ ] T068 [US1] Remove the remaining hardcoded show text: grep the whole repo for `October`, `Anniversary`, `Bun's`, `BUN'S`, `anniversary`, `Creed`, `Nickelback`, `Rich` (in user-facing strings), `90:00` and `two per band`. Replace each user-facing string with a value from `data.show` or `data.settings`. Leave code comments where the history is useful. Record the grep output in the commit message.
+- [X] T067 [US1] Add a "New show" form to `admin.html` (id, name, gig date, and "copy songs and settings from"). It posts to `/api/shows`, then opens the Show settings panel for the new show.
+- [X] T068 [US1] Remove the remaining hardcoded show text: grep the whole repo for `October`, `Anniversary`, `Bun's`, `BUN'S`, `anniversary`, `Creed`, `Nickelback`, `Rich` (in user-facing strings), `90:00` and `two per band`. Replace each user-facing string with a value from `data.show` or `data.settings`. Leave code comments where the history is useful. Record the grep output in the commit message.
 - [ ] T069 [US1] Reduce `config.js` to `window.SETLIST_API = "/api"`. Take out `SETLIST_VOTERS` and `SETLIST_BAND`, and point the offline fallbacks in the pages at the last `data` payload cached in `localStorage` (`rs_last_<show>`), wrapped in try/catch.
-- [ ] T070 [P] [US1] Write `test/no-hardcoding.test.js`. It reads every `*.html` file and fails if a user-facing text node contains `October`, `Anniversary` or `Bun's`, apart from an allowlist of comment lines.
+- [X] T070 [P] [US1] Write `test/no-hardcoding.test.js`. It reads every `*.html` file and fails if a user-facing text node contains `October`, `Anniversary` or `Bun's`, apart from an allowlist of comment lines.
 
 ---
 
@@ -582,7 +582,7 @@ Every story below depends on this phase.
   - Seed it with `test/fixtures/oct-sheet.json`, plus a small `nov·` fixture made from `scripts/fixtures/bandvote-tracks-v32.json` and patterned votes.
   - Use port 8900.
   - Set the env to `BAND_SECRET=band` and `OWNER_SECRET=owner`, and print both on start.
-- [ ] T074 [US10] Port the Admin tab tools from BV:`results.html` into `results.html`, under a new "Tools" tab:
+- [X] T074 [US10] Port the Admin tab tools from BV:`results.html` into `results.html`, under a new "Tools" tab:
   - **Copy my code / Copy all codes / Clear pooled**:
     - encode with BV `BR2-` codes;
     - the song keys are this show's `songKey`s;
@@ -592,14 +592,14 @@ Every story below depends on this phase.
     - saving another person's row needs the owner code. Extend `api/vote.js`: when `body.voter` is not the requester (`body.me`), require requireOwner.
   - **Copy all votes (CSV)**.
   - **Storage check**: version, `/api/health`, rows per tab, and the show id. Add a "Copy report" button.
-- [ ] T075 [US10] Extend `api/health.js`.
+- [X] T075 [US10] Extend `api/health.js`.
   - Report:
     - `BAND_SECRET` and `OWNER_SECRET`, as present or absent;
     - `Shows` rows;
     - the tabs found for each show's prefix;
     - the library tabs.
   - Keep the existing hints. Add a new one: "Share the sheet with the service account" when the error is 403.
-- [ ] T076 [P] [US10] Write `test/api.pool.test.js`. Check:
+- [X] T076 [P] [US10] Write `test/api.pool.test.js`. Check:
   - Writing another voter's row without the owner code gets 403; with it, 200.
   - A BR2 code for the v32 positional keys decodes to the correct `songKey`s.
 
@@ -618,7 +618,7 @@ Every story below depends on this phase.
   - migration notes
   - setup
   Fix the stale text: Order is column I, and the button names are the real ones.
-- [ ] T078 [P] Update `api/_payload.js` and every page to show one `VERSION` constant from `setlist.js`, starting at `v33`. Add a `CHANGES` log in `setlist.js`, continuing Band Vote's log, and show it on the ballot gate.
+- [X] T078 [P] Update `api/_payload.js` and every page to show one `VERSION` constant from `setlist.js`, starting at `v33`. Add a `CHANGES` log in `setlist.js`, continuing Band Vote's log, and show it on the ballot gate.
 - [ ] T079 [P] Accessibility and phone pass on every page at 375px:
   - no horizontal scroll;
   - tap targets of at least 40px;

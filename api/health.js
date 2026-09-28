@@ -1,4 +1,4 @@
-import { sheetsClient, sheetId, ensureTabs } from "./_sheets.js";
+import { sheetsClient, sheetId, ensureTabs, readShows, tabName, TABS } from "./_sheets.js";
 
 /**
  * Diagnosis endpoint. Build and check this before anything else — it turns
@@ -14,6 +14,8 @@ export default async function handler(req, res) {
       GOOGLE_PRIVATE_KEY: !!process.env.GOOGLE_PRIVATE_KEY,
       SHEET_ID: !!process.env.SHEET_ID,
       APP_SECRET: !!process.env.APP_SECRET,
+      BAND_SECRET: !!process.env.BAND_SECRET,
+      OWNER_SECRET: !!process.env.OWNER_SECRET,
     },
     owner: process.env.OWNER_NAME || "Rich",
   };
@@ -36,6 +38,19 @@ export default async function handler(req, res) {
     out.tabsAfterEnsure = (
       await sheets.spreadsheets.get({ spreadsheetId: sheetId() })
     ).data.sheets.map((s) => s.properties.title);
+    // Every show, and whether each of its tabs is there.
+    const all = new Set(out.tabsAfterEnsure);
+    const shows = await readShows();
+    out.shows = shows.map((s) => ({
+      id: s.id, name: s.name, status: s.status, requireBandCode: s.requireBandCode,
+      tabs: [TABS.SONGS_TAB, TABS.VOTES_TAB, TABS.LEARN_TAB, TABS.SETTINGS_TAB, TABS.AVAIL_TAB]
+        .map((t) => tabName(s, t) + (all.has(tabName(s, t)) ? "" : " (missing)")),
+    }));
+    out.libraryTabs = [TABS.TUNINGS_TAB, TABS.LYRICS_TAB, TABS.TEMPOS_TAB, TABS.LIBRARY_TAB]
+      .map((t) => t + (all.has(t) ? "" : " (missing)"));
+    if (shows.some((s) => s.requireBandCode) && !process.env.BAND_SECRET) {
+      out.warning = "A show asks for the band code but BAND_SECRET is not set, so its saves will fail. Set it in Vercel and redeploy.";
+    }
     out.ok = true;
   } catch (e) {
     out.ok = false;

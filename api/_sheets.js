@@ -836,7 +836,8 @@ export function songRow(s) {
     s.section || "",
     s.song,
     s.artist,
-    String(s.lead || "V1").toUpperCase(),
+    // A blank lead is kept blank: not every band splits songs by singer.
+    String(s.lead ?? "V1").toUpperCase(),
     s.len || "3:30",
     Number(s.energy) > 0 ? Number(s.energy) : "",
     Array.isArray(s.tags) ? s.tags.join(",") : String(s.tags || ""),

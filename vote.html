@@ -109,6 +109,7 @@
 
 <script type="module">
 import { VERSION, CHANGES, mmss, lenSecs, esc } from "./setlist.js";
+import { mkCode } from "./codes.js";
 import {
   currentShowId, getData, post, bandCode, setBandCode, me, setMe, navHtml, showSwitcher, wireSwitcher, link,
 } from "./store.js";
@@ -355,6 +356,8 @@ $("copy").onclick = () => {
   for (const [k, list] of Object.entries(groups)) {
     if (list.length) txt += "\n" + LABEL[k].toUpperCase() + " (" + list.length + ")\n" + list.map((x) => "  " + x).join("\n") + "\n";
   }
+  // The code on the last line is what the owner pastes back in on the setlist page.
+  txt += "\nCode (paste this on the setlist page's Tools tab):\n" + mkCode(SHOW, ME, MINE) + "\n";
   const ta = $("copyout");
   ta.value = txt;
   ta.classList.remove("hide");

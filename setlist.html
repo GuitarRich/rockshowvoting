@@ -99,6 +99,21 @@
 
       <div class="tabpanel" id="panelTools" hidden>
         <div class="merge">
+          <h4 class="disp">Pool the band's votes</h4>
+          <p class="note">When saving isn't working, everyone taps <b>Copy my code</b> and texts it to the owner.
+            The owner pastes the codes here, one per line, or drops in a CSV. Band Vote's old BR1/BR2 codes still work.
+            Saving other people's votes needs the owner code.</p>
+          <div class="actions">
+            <button class="btn ghost" id="copyMine">Copy my code</button>
+            <button class="btn ghost" id="copyAll">Copy all codes</button>
+          </div>
+          <textarea id="pasteBox" rows="3" placeholder="Paste codes (one per line) or a whole CSV"></textarea>
+          <div class="filerow"><label class="btn ghost" for="csvFile">Choose a CSV file</label>
+            <input type="file" id="csvFile" accept=".csv,text/csv"> <span id="fileName" class="note"></span></div>
+          <button class="btn" id="addCodes">Add these votes</button>
+          <div id="mergeMsg" class="note2"></div>
+        </div>
+        <div class="merge">
           <h4 class="disp">Copy all votes</h4>
           <p class="note">Every song and every vote as a CSV, for a spreadsheet or a backup.</p>
           <div class="actions"><button class="btn ghost" id="copyRaw">Copy all votes (CSV)</button></div>
@@ -121,6 +136,7 @@
 import {
   VERSION, mmss, lenSecs, esc, searchLinks, moveKey, scoreRow, songMeta, readiness,
 } from "./setlist.js";
+import { mkCode, rdCode, readVotesCSV } from "./codes.js";
 import {
   API, currentShowId, getData, post, bandCode, setBandCode, me, setMe, navHtml, link, showSwitcher, wireSwitcher,
 } from "./store.js";
@@ -637,6 +653,62 @@ $("copyRaw").onclick = () => {
     csv += [r.song, r.artist, r.year, r.section, r.len, r.inSet ? "yes" : "", ...v, score(r).score, v.filter(Boolean).length].map(q).join(",") + "\n";
   });
   put(csv, $("copyRaw"));
+};
+
+/* ---------- pooling ---------- */
+const myVotes = (name) => Object.fromEntries(DATA.rows.filter((r) => r.votes[name]).map((r) => [r.k, r.votes[name]]));
+$("copyMine").onclick = () => {
+  if (!ME || !isVoter()) { $("mergeMsg").textContent = "Pick your name first (you are just looking)."; return; }
+  put(mkCode(SHOW, ME, myVotes(ME)), $("copyMine"));
+};
+$("copyAll").onclick = () => put(DATA.voters.map((n) => mkCode(SHOW, n, myVotes(n))).join("\n"), $("copyAll"));
+
+let TRACKS = null;
+async function tracks() {
+  if (TRACKS) return TRACKS;
+  try { TRACKS = (await (await fetch("./scripts/fixtures/bandvote-tracks-v32.json")).json()).tracks; } catch (e) { TRACKS = []; }
+  return TRACKS;
+}
+async function ingest(text) {
+  const m = $("mergeMsg");
+  if (!isOwner()) { m.textContent = "Unlock owner controls first — saving other people's votes is the owner's job."; return; }
+  const known = new Set(DATA.rows.map((r) => r.k));
+  let byName = {}, skipped = 0, bad = 0;
+  if (/(^|\n)\s*"?song"?\s*,/i.test(text)) {
+    const r = readVotesCSV(text, known);
+    if (r.err) { m.textContent = r.err; return; }
+    byName = r.byName; skipped = r.unknown;
+  } else {
+    const t = /BR[12]-/.test(text) ? await tracks() : [];
+    for (const line of text.split(/[\n\r]+/).map((x) => x.trim()).filter(Boolean)) {
+      const c = rdCode(line, t);
+      if (!c) { bad++; continue; }
+      for (const [k, v] of Object.entries(c.votes)) {
+        if (known.has(k)) (byName[c.name] ||= {})[k] = v; else skipped++;
+      }
+    }
+  }
+  const names = Object.keys(byName);
+  const saved = [], refused = [];
+  for (const n of names) {
+    const d = await write("/vote", { voter: n, votes: byName[n], pool: true, ownerCode: OWNER_CODE });
+    (d ? saved : refused).push(n);
+  }
+  m.textContent = (saved.length ? "Saved votes for " + saved.join(", ") + "." : "Nothing saved.") +
+    (refused.length ? " Refused: " + refused.join(", ") + " (not on the voter list?)." : "") +
+    (skipped ? " " + skipped + " vote(s) were for songs this show doesn't have." : "") +
+    (bad ? " " + bad + " line(s) weren't codes." : "");
+  if (saved.length) { $("pasteBox").value = ""; $("fileName").textContent = ""; }
+}
+$("addCodes").onclick = () => { const t = $("pasteBox").value.trim(); if (t) ingest(t); };
+$("csvFile").onchange = (e) => {
+  const f = e.target.files && e.target.files[0];
+  if (!f) return;
+  $("fileName").textContent = f.name;
+  const rd = new FileReader();
+  rd.onload = () => ingest(String(rd.result));
+  rd.readAsText(f);
+  e.target.value = "";
 };
 
 /* ---------- storage check ---------- */

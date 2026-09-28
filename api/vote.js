@@ -1,6 +1,6 @@
 import { readAll, writeVoter, writeGrid, readBody, resolveShow } from "./_sheets.js";
 import { isVoteValue } from "../setlist.js";
-import { requireBand, requireWritable } from "./_auth.js";
+import { requireBand, requireOwner, requireWritable } from "./_auth.js";
 import {
   buildPayload, keyResolver, onList, ok, fail, methodGuard, guarded, showParam,
 } from "./_payload.js";
@@ -17,6 +17,9 @@ export default async function handler(req, res) {
     const show = await resolveShow(showParam(req, body));
     requireWritable(show);
     requireBand(show, body);
+    // Pooling writes someone else's ballot from a pasted code or CSV. That is
+    // the owner's job, so it needs the owner code as well.
+    if (body.pool) requireOwner(body);
 
     const voter = String(body.voter || body.name || "").trim();
     if (!voter) return fail(res, 400, "No voter name supplied.");

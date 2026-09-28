@@ -8,6 +8,8 @@ import {
   readBody,
   resolveShow,
   updateShow,
+  readLibrary,
+  upsertLibrary,
   SETTING_KEYS,
 } from "./_sheets.js";
 import { selectSet } from "./_selection.js";
@@ -42,6 +44,7 @@ export default async function handler(req, res) {
     const state = await readAll(show);
     let songs = state.songs.map((s) => ({ ...s }));
     const result = { added: 0, updated: 0, removed: 0 };
+    const touchedKeys = new Set();
     const tuningEdits = {};
 
     // --- update in place. The key never changes, even on a rename, so the
@@ -64,6 +67,7 @@ export default async function handler(req, res) {
       if (u.keyboard !== undefined) s.keyboard = keyboardValue(u.keyboard);
       if (u.year !== undefined) s.year = String(u.year).trim();
       if (u.era !== undefined) s.era = String(u.era).trim();
+      touchedKeys.add(s.k);
       result.updated++;
     }
 
@@ -80,27 +84,35 @@ export default async function handler(req, res) {
       result.removed = before - songs.length;
     }
 
-    // --- add, grouped under the matching section where one already exists
+    // --- add, grouped under the matching section where one already exists.
+    // A song the library already knows brings its facts with it: whatever the
+    // form leaves blank is filled from the last show that played it.
+    const library = (body.add || []).length ? await readLibrary() : {};
     for (const a of body.add || []) {
       if (!a.song || !a.artist) continue;
       const k = songKey(a.song, a.artist);
       if (songs.some((s) => s.k === k)) continue;      // never create a duplicate key
+      const lib = library[k] || {};
+      const given = (v) => v !== undefined && v !== null && String(v).trim() !== "";
+      const tags = given(a.tags)
+        ? (Array.isArray(a.tags) ? a.tags : String(a.tags).split(/[,;]\s*/).filter(Boolean))
+        : lib.tags || [];
       const row = {
         k,
         section: a.section || "Added",
         song: String(a.song),
         artist: String(a.artist),
-        lead: String(a.lead || "V1").toUpperCase(),
-        len: a.length || "3:30",
-        energy: Number(a.energy) || 0,
-        tags: Array.isArray(a.tags)
-          ? a.tags
-          : String(a.tags || "").split(/[,;]\s*/).filter(Boolean),
+        // A band with no lead labels gets no lead, rather than a V1 it never asked for.
+        lead: String(given(a.lead) ? a.lead : lib.lead || ((state.settings.leads || []).length ? "V1" : "")).toUpperCase(),
+        len: given(a.length) ? String(a.length) : lib.len || "3:30",
+        energy: Number(a.energy) || lib.energy || 0,
+        tags,
         order: 0,
-        keyboard: keyboardValue(a.keyboard),
-        year: String(a.year || "").trim(),
-        era: String(a.era || "").trim(),
+        keyboard: keyboardValue(given(a.keyboard) ? a.keyboard : lib.keyboard),
+        year: String(given(a.year) ? a.year : lib.year || "").trim(),
+        era: String(given(a.era) ? a.era : lib.era || "").trim(),
       };
+      touchedKeys.add(k);
       let at = -1;
       songs.forEach((s, i) => {
         if (s.section === row.section) at = i;
@@ -151,6 +163,16 @@ export default async function handler(req, res) {
       result.added || result.removed || result.updated || result.forced ||
       result.keyboard || result.orderCleared || result.ordered;
     if (touched) await writeSongs(show, songs);
+
+    // Keep the library in step with what this show now says about each song
+    // it added or edited, so the next show that plays it starts from here.
+    // The library's own tempo estimate is kept; nothing else is touched.
+    if (touchedKeys.size) {
+      const lib = await readLibrary();
+      await upsertLibrary(
+        songs.filter((s) => touchedKeys.has(s.k)).map((s) => ({ ...s, bpm: (lib[s.k] || {}).bpm || 0 }))
+      );
+    }
 
     // Read back BEFORE writing tunings: that read is what creates the Tunings
     // row for a song added a moment ago, and writeTunings only ever fills in a

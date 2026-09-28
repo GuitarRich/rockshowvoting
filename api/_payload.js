@@ -29,21 +29,30 @@ export function buildPayload(state) {
         .trim()
         .toUpperCase();
     }
-    const lib = library[s.k] || {};
+    // October's rows are frozen until its gig: it never borrows library facts,
+    // so songs it shares with a later show cannot move its running order.
+    const lib = (show.id && show.id !== "oct" && library[s.k]) || {};
     const tempo = tempos[s.k] || {};
+    // A show's own row wins; where it leaves a fact blank, the library's
+    // answer fills it. Energy and tags travel together, by the curated rule:
+    // a row with an Energy value uses its own tags exactly, blank included.
+    const curated = Number(s.energy) > 0;
+    const energy = curated ? s.energy : lib.energy || 0;
+    const cleared = (s.tags || []).some((t) => /^(-|none)$/i.test(t));
+    const tags = curated || cleared || !(lib.energy > 0) ? s.tags : lib.tags;
     const bpm = tempo.bpm || lib.bpm || 0;
     return {
       k: s.k,
       section: s.section,
       song: s.song,
       artist: s.artist,
-      lead: s.lead,
-      len: s.len,
-      energy: s.energy,
-      tags: s.tags,
+      lead: s.lead || lib.lead || "",
+      len: s.len || lib.len || "",
+      energy,
+      tags,
       order: s.order,
       force: s.force || "",
-      keyboard: s.keyboard || "",
+      keyboard: s.keyboard || lib.keyboard || "",
       tuning: tunings[s.k] || "",
       votes,
       learn,

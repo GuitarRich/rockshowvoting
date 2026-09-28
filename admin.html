@@ -70,15 +70,17 @@
 <div class="wrap">
 
 <header>
-  <h1>Setlist Vote — <span>Admin</span></h1>
-  <p class="sub">Edit the song list. Changes write to the Google Sheet and both pages pick them up on next load &middot;
-    <a href="index.html">ballot</a> &middot; <a href="results.html">results</a></p>
+  <h1><span id="showName">Setlist Vote</span> — <span>Admin</span></h1>
+  <p class="sub">Edit the song list and the show's settings. Changes write to the Google Sheet and every page picks them up on next load &middot;
+    <a href="index.html" data-page="vote.html">ballot</a> &middot; <a href="results.html" data-page="setlist.html">results</a>
+    &middot; <span id="showPick"></span></p>
 </header>
 
 <div class="card" id="gate">
-  <h2>Admin key</h2>
-  <p>The key you set as <strong>ADMIN_KEY</strong> in <code>apps-script.gs</code>. Not stored anywhere &mdash; retype it each visit.</p>
-  <div style="max-width:340px"><input type="password" id="key" placeholder="admin key" autocomplete="off"></div>
+  <h2>Owner code</h2>
+  <p>The owner code (<strong>OWNER_SECRET</strong> in Vercel, or the old admin key if that is all that is set).
+    Not stored anywhere &mdash; retype it each visit. It stops a bandmate changing the list by accident; it is not a login.</p>
+  <div style="max-width:340px"><input type="password" id="key" placeholder="owner code" autocomplete="off"></div>
   <div class="btnrow"><button class="btn" id="unlock">Unlock</button></div>
   <div class="status" id="gateStatus"></div>
 </div>
@@ -90,9 +92,9 @@
     <div class="grid3">
       <div><label>Song</label><input id="aSong" placeholder="Dream On"></div>
       <div><label>Artist</label><input id="aArtist" placeholder="Aerosmith"></div>
-      <div><label>Lead</label><select id="aLead"><option>V1</option><option>V2</option><option>DUET</option></select></div>
+      <div><label>Lead</label><span id="aLeadBox"><select id="aLead"><option>V1</option><option>V2</option><option>DUET</option></select></span></div>
       <div><label>Length</label><input id="aLen" placeholder="4:28"></div>
-      <div><label>Energy 1&ndash;5</label><input id="aEnergy" type="number" min="1" max="5" value="3"></div>
+      <div><label>Energy 1&ndash;5</label><input id="aEnergy" type="number" min="1" max="5" placeholder="leave blank if unsure"></div>
       <div><label>Section</label><input id="aSection" placeholder="Arena &amp; classic rock" list="sections">
         <datalist id="sections"></datalist></div>
     </div>
@@ -102,6 +104,14 @@
       <div style="grid-column:2/-1"><label>Tags (optional, comma separated)</label>
         <input id="aTags" placeholder="opener, heavy, ballad, dedication, closer, lift, dip"></div>
     </div>
+    <div class="grid3" style="margin-top:10px">
+      <div><label>Keys</label><select id="aKeys"><option value="">— not judged —</option>
+        <option value="ESSENTIAL">Essential</option><option value="ADDS">Adds to it</option><option value="NONE">Not needed</option></select></div>
+      <div><label>Year</label><input id="aYear" placeholder="1984"></div>
+      <div><label>Era</label><input id="aEra" placeholder="70s/80s" list="eras"><datalist id="eras"></datalist></div>
+    </div>
+    <p style="margin-top:10px">A song that has been in an earlier show brings its length, energy, tags,
+      lead, keys, lyrics, tempo and tuning with it &mdash; anything you leave blank here is filled from there.</p>
     <datalist id="tunings">
       <option value="E standard"><option value="Eb standard"><option value="Drop D">
       <option value="Drop C#"><option value="Drop C"><option value="D standard">
@@ -132,6 +142,46 @@
 
   <div class="scroll"><table id="tbl"></table></div>
 
+  <div class="card" id="settingsCard">
+    <h2>Show settings</h2>
+    <p>Everything that makes this show this show. Names are the authority for who votes and who plays:
+      taking a name off stops that person counting but deletes nothing, so putting it back restores them.</p>
+    <div class="grid3">
+      <div><label>Show name</label><input id="sName"></div>
+      <div><label>Band name</label><input id="sBand"></div>
+      <div><label>Gig date</label><input id="sGig" type="date"></div>
+      <div style="grid-column:1/-1"><label>Occasion (the line under the title)</label><input id="sOcc"></div>
+      <div style="grid-column:1/-1"><label>Voters (comma separated)</label><input id="sVoters"></div>
+      <div style="grid-column:1/-1"><label>Band &mdash; the players, who learn songs and book rehearsals (must also be voters)</label><input id="sPlayers"></div>
+      <div><label>Owner (shown as &ldquo;set by&rdquo;)</label><input id="sOwner"></div>
+      <div><label>Songs in the set (0 = use the time budget)</label><input id="sMax" type="number" min="0" max="60"></div>
+      <div><label>Time budget, minutes (0 = no clock)</label><input id="sBudget" type="number" min="0"></div>
+      <div><label>Seconds between songs</label><input id="sGap" type="number" min="0"></div>
+      <div><label>Max songs per artist (0 = no limit)</label><input id="sCap" type="number" min="0"></div>
+      <div><label>Running order engine</label><select id="sEngine"><option value="pacing">Pacing — best fit to a set shape, ends protected</option><option value="curve">Energy curve — seed and repair</option></select></div>
+      <div style="grid-column:1/-1"><label>Lead singer labels (comma separated; blank = no lead column)</label><input id="sLeads"></div>
+      <div style="grid-column:1/-1"><label>Era labels (comma separated)</label><input id="sEras"></div>
+    </div>
+    <div style="margin-top:10px"><label>Warnings on the setlist page</label>
+      <div id="sWarn" class="btnrow"></div></div>
+    <div class="btnrow"><button class="btn" id="saveSettings">Save settings</button></div>
+    <div class="status" id="settingsStatus"></div>
+  </div>
+
+  <div class="card">
+    <h2>Start a new show</h2>
+    <p>A new show gets its own ballot, votes, set, learning and rehearsal calendar. Copying from an earlier show brings its
+      songs and settings, never its votes. Lyrics, tempos and tunings are shared by every show already.</p>
+    <div class="grid3">
+      <div><label>Short id (letters, numbers, dashes)</label><input id="nId" placeholder="dec"></div>
+      <div><label>Name</label><input id="nName" placeholder="Christmas party"></div>
+      <div><label>Gig date</label><input id="nGig" type="date"></div>
+      <div><label>Copy songs and settings from</label><select id="nFrom"><option value="">— start empty —</option></select></div>
+    </div>
+    <div class="btnrow"><button class="btn" id="newShow">Create the show</button></div>
+    <div class="status" id="newStatus"></div>
+  </div>
+
 </div>
 </div>
 
@@ -147,6 +197,30 @@
 <script>
 const API = (window.SETLIST_API || '').trim();
 let KEY = '', STATE = null;
+const LINKED_SHOW = (new URLSearchParams(location.search).get('show') || '').trim().toLowerCase();
+let SHOW = LINKED_SHOW || 'oct';
+let SHOWS = [];
+const confirmRemove = new Set();  // rows with votes, waiting for a second click
+const WARNINGS = [['waiting','Still waiting on voters'],['vocalBalance','Vocal balance (V1/V2/duet)'],
+  ['flatStretch','Flat energy stretch'],['leadRun','Long run for one voice'],['dedication','No ballad or dedication'],['cuts','Why songs missed the cut']];
+async function loadShows(){
+  try{
+    const d = await (await fetch(API+'/shows')).json();
+    if(d.ok){ SHOWS = d.shows; if(!LINKED_SHOW && d.defaultId) SHOW = d.defaultId; }
+  }catch(ignore){}
+  const cur = SHOWS.find(x=>x.id===SHOW);
+  document.getElementById('showName').textContent = cur ? cur.name : SHOW;
+  document.getElementById('showPick').innerHTML = SHOWS.length > 1
+    ? 'show: <select id="showSel">'+SHOWS.map(x=>'<option value="'+esc(x.id)+'"'+(x.id===SHOW?' selected':'')+'>'+esc(x.name)+(x.status==='past'?' (past)':'')+'</option>').join('')+'</select>' : '';
+  const sel = document.getElementById('showSel');
+  if(sel) sel.onchange = ()=>{ location.search = '?show='+encodeURIComponent(sel.value); };
+  document.querySelectorAll('header .sub a[data-page]').forEach(a=>{
+    a.href = (SHOW==='oct' ? a.getAttribute('href').split('?')[0] : a.dataset.page) + '?show=' + encodeURIComponent(SHOW);
+  });
+  document.getElementById('nFrom').innerHTML = '<option value="">— start empty —</option>' +
+    SHOWS.map(x=>'<option value="'+esc(x.id)+'">'+esc(x.name)+'</option>').join('');
+}
+const adminBody = extra => JSON.stringify({show:SHOW, ownerCode:KEY, ...extra});
 const pendingAdd = [];      // rows queued but not yet in the sheet
 const removals = new Set(); // 'Song|Artist'
 const edits = {};           // 'Song|Artist' -> {field: value}
@@ -170,10 +244,11 @@ function syncFooter(keepMsg){
 async function load(){
   if(!API){ msg('config.js has no SETLIST_API path — nothing to talk to.','err'); return; }
   msg('Loading…');
-  const r = await fetch(API+'/data',{method:'GET'});
+  const r = await fetch(API+'/data?show='+encodeURIComponent(SHOW),{method:'GET'});
   const j = await r.json();
   if(!j.ok) throw new Error(j.error||'unknown error');
   STATE = j.data;
+  fillSettings();
   pendingAdd.length = 0; removals.clear();
   Object.keys(edits).forEach(k=>delete edits[k]);
   draw();
@@ -185,7 +260,7 @@ async function load(){
 function draw(){
   const vs = STATE.voters;
   let h = '<thead><tr><th>#</th><th>Song</th><th>Artist</th><th>Lead</th><th>Len</th>'+
-    '<th>Energy</th><th>Tuning</th><th>Keys</th><th>Tags</th><th>Section</th><th>Votes in</th><th></th></tr></thead><tbody>';
+    '<th>Energy</th><th>Tuning</th><th>Keys</th><th>Tags</th><th>Section</th><th>Year</th><th>Era</th><th>Votes in</th><th></th></tr></thead><tbody>';
 
   // Blank is a real answer here — "nobody has judged it" is not "no keys part".
   const kbOpts = cur => [['','— not judged —'],['ESSENTIAL','Essential'],
@@ -202,11 +277,15 @@ function draw(){
       .filter(Boolean).join(' ');
     const f = (name, val, extra) => '<input data-k="'+esc(k)+'" data-f="'+name+'" value="'+
       esc(e[name] ?? val)+'"'+(extra||'')+(isNew?' data-new="1"':'')+'>';
-    const lead = ['V1','V2','DUET'].map(o=>'<option'+((e.lead??r.lead)===o?' selected':'')+'>'+o+'</option>').join('');
+    const leads = (STATE.settings && STATE.settings.leads) || ['V1','V2','DUET'];
+    const lead = leads.map(o=>'<option'+((e.lead??r.lead)===o?' selected':'')+'>'+esc(o)+'</option>').join('');
+    const leadCell = leads.length
+      ? '<select data-k="'+esc(k)+'" data-f="lead"'+(isNew?' data-new="1"':'')+'><option value=""></option>'+lead+'</select>'
+      : f('lead', r.lead||'');
     return '<tr class="'+cls+'"><td class="act">'+(isNew?'new':(i??''))+'</td>'+
       '<td>'+f('song', r.song)+'</td>'+
       '<td>'+f('artist', r.artist)+'</td>'+
-      '<td class="narrow"><select data-k="'+esc(k)+'" data-f="lead"'+(isNew?' data-new="1"':'')+'>'+lead+'</select></td>'+
+      '<td class="narrow">'+leadCell+'</td>'+
       '<td class="narrow">'+f('length', r.len||r.length||'')+'</td>'+
       '<td class="narrow">'+f('energy', r.energy||3,' type="number" min="1" max="5"')+'</td>'+
       '<td class="mid">'+f('tuning', r.tuning||'',' list="tunings" placeholder="E standard"')+'</td>'+
@@ -214,9 +293,14 @@ function draw(){
         kbOpts(e.keyboard ?? r.keyboard ?? '')+'</select></td>'+
       '<td class="mid">'+f('tags', (r.tags||[]).join?.(', ') ?? r.tags ?? '')+'</td>'+
       '<td class="mid">'+f('section', r.section||'')+'</td>'+
+      '<td class="narrow">'+f('year', r.year||'')+'</td>'+
+      '<td class="narrow">'+f('era', r.era||'',' list="eras"')+'</td>'+
       '<td class="votes">'+(isNew?'—':cast+'/'+vs.length)+'</td>'+
       '<td class="act"><button class="x'+(removals.has(k)?' on':'')+'" data-rm="'+esc(k)+'"'+
-        (isNew?' data-drop="'+esc(k)+'"':'')+'>&times;</button></td></tr>';
+        (isNew?' data-drop="'+esc(k)+'"':'')+' data-cast="'+cast+'">&times;</button></td></tr>'+
+      (confirmRemove.has(k) ? '<tr class="doomed"><td></td><td colspan="13">'+cast+' people have voted on this — '+
+        '<button class="btn ghost" data-confirm="'+esc(k)+'">remove anyway</button> '+
+        '<button class="btn ghost" data-cancel="'+esc(k)+'">keep it</button></td></tr>' : '');
   };
 
   let n=0;
@@ -242,8 +326,20 @@ document.getElementById('tbl').addEventListener('change', e=>{
   if(e.target.tagName==='SELECT') e.target.dispatchEvent(new Event('input',{bubbles:true}));
 });
 document.getElementById('tbl').addEventListener('click', e=>{
+  const c = e.target.closest('button[data-confirm],button[data-cancel]');
+  if(c){
+    const kk = c.dataset.confirm || c.dataset.cancel;
+    confirmRemove.delete(kk);
+    if(c.dataset.confirm) removals.add(kk);
+    draw(); syncFooter(); return;
+  }
   const b = e.target.closest('button[data-rm]'); if(!b) return;
   const k = b.dataset.rm;
+  // Removing a song people have voted on throws their votes away with it, so
+  // it asks first — on the page, not in a browser dialog.
+  if(!b.dataset.drop && !removals.has(k) && Number(b.dataset.cast) > 0){
+    confirmRemove.add(k); draw(); return;
+  }
   if(b.dataset.drop){
     const i = pendingAdd.findIndex(r=>r.song+'|'+r.artist===k);
     if(i>=0) pendingAdd.splice(i,1);
@@ -267,9 +363,9 @@ function queue(row){
 document.getElementById('addBtn').onclick = ()=>{
   const g = id => document.getElementById(id).value.trim();
   const ok = queue({section:g('aSection')||'Added', song:g('aSong'), artist:g('aArtist'),
-    lead:g('aLead'), length:g('aLen')||'3:30', energy:+g('aEnergy')||3,
-    tags:g('aTags'), tuning:g('aTuning')});
-  if(ok){ ['aSong','aArtist','aLen','aTags','aTuning'].forEach(i=>document.getElementById(i).value=''); draw(); syncFooter(); }
+    lead:g('aLead'), length:g('aLen'), energy:+g('aEnergy')||'',
+    tags:g('aTags'), tuning:g('aTuning'), keyboard:g('aKeys'), year:g('aYear'), era:g('aEra')});
+  if(ok){ ['aSong','aArtist','aLen','aTags','aTuning','aEnergy','aYear'].forEach(i=>document.getElementById(i).value=''); draw(); syncFooter(); }
 };
 
 document.getElementById('bulkBtn').onclick = ()=>{
@@ -277,8 +373,8 @@ document.getElementById('bulkBtn').onclick = ()=>{
   let added=0;
   lines.forEach(l=>{
     const p = l.split('|').map(s=>s.trim());
-    if(queue({song:p[0], artist:p[1], lead:(p[2]||'V1').toUpperCase(), length:p[3]||'3:30',
-      energy:+p[4]||3, section:p[5]||'Added', tags:p[6]||'', tuning:p[7]||''})) added++;
+    if(queue({song:p[0], artist:p[1], lead:(p[2]||'').toUpperCase(), length:p[3]||'',
+      energy:+p[4]||'', section:p[5]||'Added', tags:p[6]||'', tuning:p[7]||''})) added++;
   });
   if(added){ document.getElementById('bulk').value=''; msg('Queued '+added+' song'+(added===1?'':'s')+'.','ok'); }
   draw(); syncFooter();
@@ -295,7 +391,7 @@ document.getElementById('apply').onclick = async ()=>{
   try{
     const r = await fetch(API+'/admin',{method:'POST',
       headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({key:KEY,
+      body:adminBody({
         add: pendingAdd.map(a=>({...a, tags:String(a.tags||'').split(/[,;]\s*/).filter(Boolean)})),
         update, remove:[...removals]})});
     const j = await r.json();
@@ -322,24 +418,81 @@ document.getElementById('unlock').onclick = async ()=>{
   try{
     // a no-op admin call — succeeds only if the key is right
     const r = await fetch(API+'/admin',{method:'POST',headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({key:KEY, add:[], update:[], remove:[]})});
+      body:adminBody({add:[], update:[], remove:[]})});
     const j = await r.json();
     if(!j.ok) throw new Error(j.error||'unknown error');
     document.getElementById('gate').classList.add('hide');
     document.getElementById('main').classList.remove('hide');
-    STATE = j.data; draw();
+    STATE = j.data; fillSettings(); draw();
     const secs=[...new Set(STATE.rows.map(x=>x.section).filter(Boolean))];
     document.getElementById('sections').innerHTML = secs.map(s=>'<option value="'+esc(s)+'">').join('');
     syncFooter();
   }catch(e){
     st.className='status err';
-    st.textContent = /admin key/i.test(e.message) ? 'That key is not right.' : 'Could not reach the backend: '+e.message;
+    st.textContent = /owner code|admin key/i.test(e.message) ? 'That code is not right.' : 'Could not reach the backend: '+e.message;
   }
 };
 document.getElementById('key').addEventListener('keydown', e=>{
   if(e.key==='Enter') document.getElementById('unlock').click();
 });
 
+// ---------------- show settings ----------------
+function fillSettings(){
+  const s = STATE.settings || {}, sh = STATE.show || {};
+  const v = (id, val) => { document.getElementById(id).value = val ?? ''; };
+  v('sName', sh.name); v('sBand', sh.bandName); v('sGig', sh.gigDate); v('sOcc', sh.occasion);
+  v('sVoters', (STATE.voters||[]).join(', ')); v('sPlayers', (STATE.band||[]).join(', '));
+  v('sOwner', sh.owner); v('sMax', s.maxSongs); v('sBudget', Math.round((s.budgetSeconds||0)/60));
+  v('sGap', s.gapSeconds); v('sCap', s.maxPerArtist); v('sEngine', s.orderEngine||'pacing');
+  v('sLeads', (s.leads||[]).join(', ')); v('sEras', (s.eras||[]).join(', '));
+  document.getElementById('sWarn').innerHTML = WARNINGS.map(([id,label]) =>
+    '<label style="display:inline-flex;gap:6px;align-items:center;margin-right:14px"><input type="checkbox" data-w="'+id+'"'+
+    ((s.warnings||[]).includes(id)?' checked':'')+' style="width:auto"> '+esc(label)+'</label>').join('');
+  document.getElementById('eras').innerHTML = (s.eras||[]).map(x=>'<option value="'+esc(x)+'">').join('');
+  const leads = s.leads || [];
+  document.getElementById('aLeadBox').innerHTML = leads.length
+    ? '<select id="aLead"><option value=""></option>'+leads.map(x=>'<option>'+esc(x)+'</option>').join('')+'</select>'
+    : '<input id="aLead" placeholder="optional">';
+}
+document.getElementById('saveSettings').onclick = async ()=>{
+  const g = id => document.getElementById(id).value.trim();
+  const list = id => g(id).split(',').map(x=>x.trim()).filter(Boolean);
+  const st = document.getElementById('settingsStatus');
+  st.className='status'; st.textContent='Saving…';
+  const settings = {
+    showName:g('sName'), bandName:g('sBand'), occasion:g('sOcc'), owner:g('sOwner'),
+    voters:list('sVoters'), band:list('sPlayers'), maxSongs:+g('sMax')||0,
+    budgetSeconds:Math.round((+g('sBudget')||0)*60), gapSeconds:+g('sGap')||0, maxPerArtist:+g('sCap')||0,
+    orderEngine:g('sEngine'), leads:list('sLeads'), eras:list('sEras'),
+    warnings:[...document.querySelectorAll('#sWarn input:checked')].map(x=>x.dataset.w),
+  };
+  try{
+    const r = await fetch(API+'/admin',{method:'POST',headers:{'Content-Type':'application/json'},
+      body:adminBody({settings, gigDate:g('sGig')})});
+    const j = await r.json();
+    if(!j.ok) throw new Error(j.error||'unknown error');
+    if(g('sName')) await fetch(API+'/shows',{method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({ownerCode:KEY, update:{id:SHOW, name:g('sName')}})});
+    STATE = j.data; fillSettings(); draw();
+    st.className='status ok'; st.textContent='Saved.';
+  }catch(e){ st.className='status err'; st.textContent='Not saved: '+e.message; }
+};
+
+// ---------------- new show ----------------
+document.getElementById('newShow').onclick = async ()=>{
+  const g = id => document.getElementById(id).value.trim();
+  const st = document.getElementById('newStatus');
+  st.className='status'; st.textContent='Creating…';
+  try{
+    const r = await fetch(API+'/shows',{method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({ownerCode:KEY, create:{id:g('nId').toLowerCase(), name:g('nName'), gigDate:g('nGig'), copyFrom:g('nFrom')||undefined}})});
+    const j = await r.json();
+    if(!j.ok) throw new Error(j.error||'unknown error');
+    st.className='status ok'; st.innerHTML='Created. <a href="?show='+encodeURIComponent(j.show.id)+'">Open its settings →</a>';
+  }catch(e){ st.className='status err'; st.textContent='Not created: '+e.message; }
+};
+
+loadShows();
 if(!API){ msg('config.js has no SETLIST_API path — set that up first.','err'); }
 </script>
 </body>
