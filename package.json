@@ -4,6 +4,15 @@
   "private": true,
   "type": "module",
   "engines": { "node": ">=20" },
+  "packageManager": "pnpm@10.14.0",
+  "scripts": {
+    "test": "node --test \"test/**/*.test.js\"",
+    "dev": "node dev-server.js",
+    "dev:real": "vercel dev",
+    "env": "vercel env pull .env.development.local",
+    "backup": "node --env-file=.env.development.local scripts/backup-sheet.js",
+    "migrate:nov": "node --env-file=.env.development.local scripts/migrate-bandvote.js"
+  },
   "dependencies": {
     "googleapis": "^144.0.0"
   }

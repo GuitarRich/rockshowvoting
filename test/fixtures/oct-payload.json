@@ -1,0 +1,1934 @@
+{
+  "voters": [
+    "Rich",
+    "Ashley",
+    "Ethan",
+    "Justin",
+    "Isaac",
+    "Julie",
+    "Organiser"
+  ],
+  "learners": [
+    "Rich",
+    "Ashley",
+    "Ethan",
+    "Justin",
+    "Isaac"
+  ],
+  "band": [
+    "Rich",
+    "Ashley",
+    "Ethan",
+    "Justin",
+    "Isaac"
+  ],
+  "learnValues": [
+    "NOT STARTED",
+    "IN PROGRESS",
+    "KNOW"
+  ],
+  "weights": {
+    "MUST": 6,
+    "YES": 2,
+    "MAYBE": 1,
+    "NO": -4
+  },
+  "limits": {
+    "maxPerArtist": 2
+  },
+  "availability": {
+    "Rich": {
+      "2026-09-14": "YES",
+      "2026-09-15": "YES",
+      "2026-09-16": "YES",
+      "2026-09-18": "YES",
+      "2026-09-19": "NO",
+      "2026-09-20": "YES",
+      "2026-09-21": "NO",
+      "2026-09-22": "YES",
+      "2026-09-23": "YES",
+      "2026-09-25": "YES",
+      "2026-09-27": "YES",
+      "2026-09-28": "YES",
+      "2026-09-29": "YES",
+      "2026-09-30": "YES",
+      "2026-10-02": "YES",
+      "2026-10-04": "YES",
+      "2026-10-05": "NO",
+      "2026-10-06": "NO",
+      "2026-10-07": "NO",
+      "2026-10-08": "NO",
+      "2026-10-09": "NO",
+      "2026-10-10": "NO",
+      "2026-10-11": "NO",
+      "2026-10-12": "NO",
+      "2026-10-13": "NO",
+      "2026-10-14": "NO",
+      "2026-10-15": "NO",
+      "2026-10-16": "NO",
+      "2026-10-17": "NO",
+      "2026-10-18": "YES",
+      "2026-10-19": "YES",
+      "2026-10-20": "YES",
+      "2026-10-21": "YES",
+      "2026-10-23": "YES",
+      "2026-10-24": "YES",
+      "2026-09-10": "NO",
+      "2026-09-11": "YES",
+      "2026-09-12": "YES",
+      "2026-09-13": "NO",
+      "2026-09-17": "NO",
+      "2026-09-24": "NO",
+      "2026-10-01": "NO"
+    },
+    "Ashley": {
+      "2026-09-12": "NO",
+      "2026-09-15": "NO",
+      "2026-09-16": "NO",
+      "2026-09-20": "NO",
+      "2026-09-22": "NO",
+      "2026-09-23": "NO",
+      "2026-09-25": "NO",
+      "2026-09-26": "NO",
+      "2026-09-27": "NO",
+      "2026-09-28": "NO",
+      "2026-09-29": "NO",
+      "2026-09-30": "NO",
+      "2026-09-13": "YES"
+    },
+    "Ethan": {
+      "2026-09-18": "NO"
+    },
+    "Justin": {},
+    "Isaac": {
+      "2026-10-05": "NO",
+      "2026-10-06": "NO",
+      "2026-10-07": "NO",
+      "2026-10-08": "NO",
+      "2026-10-09": "NO",
+      "2026-10-10": "NO",
+      "2026-10-11": "NO",
+      "2026-10-12": "NO",
+      "2026-10-13": "NO",
+      "2026-10-14": "NO",
+      "2026-10-15": "NO",
+      "2026-10-16": "NO",
+      "2026-10-17": "NO"
+    }
+  },
+  "gigDate": "2026-10-24",
+  "set": {
+    "count": 20,
+    "seconds": 5229,
+    "locked": true,
+    "maxSongs": 0,
+    "blocked": false,
+    "badLengths": []
+  },
+  "rows": [
+    {
+      "k": "dancedance-falloutboy",
+      "section": "LOCKED — organiser request",
+      "song": "Dance, Dance",
+      "artist": "Fall Out Boy",
+      "lead": "V1",
+      "len": "3:00",
+      "energy": 4,
+      "tags": [],
+      "order": 0,
+      "force": "",
+      "keyboard": "NONE",
+      "tuning": "Drop D",
+      "votes": {
+        "Rich": "",
+        "Ashley": "",
+        "Ethan": "",
+        "Justin": "",
+        "Isaac": "",
+        "Julie": "",
+        "Organiser": ""
+      },
+      "learn": {
+        "Rich": "NOT STARTED",
+        "Ashley": "KNOW",
+        "Ethan": "",
+        "Justin": "NOT STARTED",
+        "Isaac": "IN PROGRESS",
+        "Julie": "",
+        "Organiser": ""
+      },
+      "inSet": true
+    },
+    {
+      "k": "creep-radiohead",
+      "section": "LOCKED — organiser request",
+      "song": "Creep",
+      "artist": "Radiohead",
+      "lead": "V1",
+      "len": "3:56",
+      "energy": 2,
+      "tags": [
+        "dip"
+      ],
+      "order": 0,
+      "force": "",
+      "keyboard": "NONE",
+      "tuning": "E standard",
+      "votes": {
+        "Rich": "",
+        "Ashley": "",
+        "Ethan": "",
+        "Justin": "",
+        "Isaac": "",
+        "Julie": "",
+        "Organiser": ""
+      },
+      "learn": {
+        "Rich": "KNOW",
+        "Ashley": "KNOW",
+        "Ethan": "",
+        "Justin": "KNOW",
+        "Isaac": "KNOW",
+        "Julie": "",
+        "Organiser": ""
+      },
+      "inSet": true
+    },
+    {
+      "k": "higher-creed",
+      "section": "LOCKED — pick ONE Creed song (mark X)",
+      "song": "Higher",
+      "artist": "Creed",
+      "lead": "V1",
+      "len": "5:17",
+      "energy": 3,
+      "tags": [],
+      "order": 0,
+      "force": "",
+      "keyboard": "NONE",
+      "tuning": "",
+      "votes": {
+        "Rich": "",
+        "Ashley": "",
+        "Ethan": "",
+        "Justin": "",
+        "Isaac": "",
+        "Julie": "",
+        "Organiser": ""
+      },
+      "learn": {
+        "Rich": "",
+        "Ashley": "",
+        "Ethan": "",
+        "Justin": "",
+        "Isaac": "",
+        "Julie": "",
+        "Organiser": ""
+      },
+      "inSet": false
+    },
+    {
+      "k": "whatif-creed",
+      "section": "LOCKED — pick ONE Creed song (mark X)",
+      "song": "What If",
+      "artist": "Creed",
+      "lead": "V1",
+      "len": "4:07",
+      "energy": 4,
+      "tags": [
+        "heavy"
+      ],
+      "order": 0,
+      "force": "",
+      "keyboard": "NONE",
+      "tuning": "Drop D",
+      "votes": {
+        "Rich": "X",
+        "Ashley": "",
+        "Ethan": "",
+        "Justin": "",
+        "Isaac": "X",
+        "Julie": "",
+        "Organiser": "X"
+      },
+      "learn": {
+        "Rich": "IN PROGRESS",
+        "Ashley": "IN PROGRESS",
+        "Ethan": "",
+        "Justin": "NOT STARTED",
+        "Isaac": "IN PROGRESS",
+        "Julie": "",
+        "Organiser": ""
+      },
+      "inSet": true
+    },
+    {
+      "k": "onelastbreath-creed",
+      "section": "LOCKED — pick ONE Creed song (mark X)",
+      "song": "One Last Breath",
+      "artist": "Creed",
+      "lead": "V1",
+      "len": "3:59",
+      "energy": 2,
+      "tags": [
+        "ballad"
+      ],
+      "order": 0,
+      "force": "",
+      "keyboard": "ADDS",
+      "tuning": "",
+      "votes": {
+        "Rich": "",
+        "Ashley": "",
+        "Ethan": "",
+        "Justin": "",
+        "Isaac": "",
+        "Julie": "",
+        "Organiser": ""
+      },
+      "learn": {
+        "Rich": "",
+        "Ashley": "",
+        "Ethan": "",
+        "Justin": "",
+        "Isaac": "",
+        "Julie": "",
+        "Organiser": ""
+      },
+      "inSet": false
+    },
+    {
+      "k": "witharmswideopen-creed",
+      "section": "LOCKED — pick ONE Creed song (mark X)",
+      "song": "With Arms Wide Open",
+      "artist": "Creed",
+      "lead": "V1",
+      "len": "4:35",
+      "energy": 2,
+      "tags": [
+        "ballad"
+      ],
+      "order": 0,
+      "force": "",
+      "keyboard": "ADDS",
+      "tuning": "",
+      "votes": {
+        "Rich": "",
+        "Ashley": "X",
+        "Ethan": "",
+        "Justin": "",
+        "Isaac": "",
+        "Julie": "X",
+        "Organiser": ""
+      },
+      "learn": {
+        "Rich": "",
+        "Ashley": "",
+        "Ethan": "",
+        "Justin": "",
+        "Isaac": "",
+        "Julie": "",
+        "Organiser": ""
+      },
+      "inSet": false
+    },
+    {
+      "k": "howyouremindme-nickelback",
+      "section": "LOCKED — pick ONE Nickelback song (mark X)",
+      "song": "How You Remind Me",
+      "artist": "Nickelback",
+      "lead": "V1",
+      "len": "3:43",
+      "energy": 3,
+      "tags": [],
+      "order": 0,
+      "force": "",
+      "keyboard": "NONE",
+      "tuning": "Drop D",
+      "votes": {
+        "Rich": "X",
+        "Ashley": "",
+        "Ethan": "",
+        "Justin": "",
+        "Isaac": "",
+        "Julie": "X",
+        "Organiser": ""
+      },
+      "learn": {
+        "Rich": "IN PROGRESS",
+        "Ashley": "NOT STARTED",
+        "Ethan": "",
+        "Justin": "NOT STARTED",
+        "Isaac": "IN PROGRESS",
+        "Julie": "",
+        "Organiser": ""
+      },
+      "inSet": true
+    },
+    {
+      "k": "burnittotheground-nickelback",
+      "section": "LOCKED — pick ONE Nickelback song (mark X)",
+      "song": "Burn It to the Ground",
+      "artist": "Nickelback",
+      "lead": "V1",
+      "len": "3:29",
+      "energy": 4,
+      "tags": [],
+      "order": 0,
+      "force": "",
+      "keyboard": "NONE",
+      "tuning": "",
+      "votes": {
+        "Rich": "",
+        "Ashley": "",
+        "Ethan": "",
+        "Justin": "",
+        "Isaac": "",
+        "Julie": "",
+        "Organiser": ""
+      },
+      "learn": {
+        "Rich": "",
+        "Ashley": "",
+        "Ethan": "",
+        "Justin": "",
+        "Isaac": "",
+        "Julie": "",
+        "Organiser": ""
+      },
+      "inSet": false
+    },
+    {
+      "k": "photograph-nickelback",
+      "section": "LOCKED — pick ONE Nickelback song (mark X)",
+      "song": "Photograph",
+      "artist": "Nickelback",
+      "lead": "V1",
+      "len": "4:19",
+      "energy": 3,
+      "tags": [],
+      "order": 0,
+      "force": "",
+      "keyboard": "NONE",
+      "tuning": "",
+      "votes": {
+        "Rich": "",
+        "Ashley": "X",
+        "Ethan": "",
+        "Justin": "",
+        "Isaac": "",
+        "Julie": "",
+        "Organiser": ""
+      },
+      "learn": {
+        "Rich": "",
+        "Ashley": "",
+        "Ethan": "",
+        "Justin": "",
+        "Isaac": "",
+        "Julie": "",
+        "Organiser": ""
+      },
+      "inSet": false
+    },
+    {
+      "k": "anywayyouwantit-journey",
+      "section": "Arena & classic rock",
+      "song": "Any Way You Want It",
+      "artist": "Journey",
+      "lead": "V1",
+      "len": "3:23",
+      "energy": 4,
+      "tags": [],
+      "order": 0,
+      "force": "",
+      "keyboard": "ADDS",
+      "tuning": "",
+      "votes": {
+        "Rich": "NO",
+        "Ashley": "MAYBE",
+        "Ethan": "",
+        "Justin": "",
+        "Isaac": "YES",
+        "Julie": "YES",
+        "Organiser": "NO"
+      },
+      "learn": {
+        "Rich": "",
+        "Ashley": "",
+        "Ethan": "",
+        "Justin": "",
+        "Isaac": "",
+        "Julie": "",
+        "Organiser": ""
+      },
+      "inSet": false
+    },
+    {
+      "k": "dontstopbelievin-journey",
+      "section": "Arena & classic rock",
+      "song": "Don't Stop Believin'",
+      "artist": "Journey",
+      "lead": "DUET",
+      "len": "4:11",
+      "energy": 4,
+      "tags": [
+        "closer"
+      ],
+      "order": 0,
+      "force": "",
+      "keyboard": "ESSENTIAL",
+      "tuning": "E standard",
+      "votes": {
+        "Rich": "MUST",
+        "Ashley": "MUST",
+        "Ethan": "YES",
+        "Justin": "YES",
+        "Isaac": "YES",
+        "Julie": "YES",
+        "Organiser": ""
+      },
+      "learn": {
+        "Rich": "IN PROGRESS",
+        "Ashley": "KNOW",
+        "Ethan": "",
+        "Justin": "NOT STARTED",
+        "Isaac": "KNOW",
+        "Julie": "",
+        "Organiser": ""
+      },
+      "inSet": true
+    },
+    {
+      "k": "yougiveloveabadname-bonjovi",
+      "section": "Arena & classic rock",
+      "song": "You Give Love a Bad Name",
+      "artist": "Bon Jovi",
+      "lead": "DUET",
+      "len": "3:42",
+      "energy": 4,
+      "tags": [],
+      "order": 0,
+      "force": "",
+      "keyboard": "ADDS",
+      "tuning": "E standard",
+      "votes": {
+        "Rich": "YES",
+        "Ashley": "MUST",
+        "Ethan": "",
+        "Justin": "",
+        "Isaac": "MAYBE",
+        "Julie": "YES",
+        "Organiser": ""
+      },
+      "learn": {
+        "Rich": "KNOW",
+        "Ashley": "KNOW",
+        "Ethan": "",
+        "Justin": "NOT STARTED",
+        "Isaac": "KNOW",
+        "Julie": "",
+        "Organiser": ""
+      },
+      "inSet": true
+    },
+    {
+      "k": "livinonaprayer-bonjovi",
+      "section": "Arena & classic rock",
+      "song": "Livin' on a Prayer",
+      "artist": "Bon Jovi",
+      "lead": "DUET",
+      "len": "4:09",
+      "energy": 5,
+      "tags": [
+        "closer"
+      ],
+      "order": 0,
+      "force": "",
+      "keyboard": "ADDS",
+      "tuning": "",
+      "votes": {
+        "Rich": "NO",
+        "Ashley": "YES",
+        "Ethan": "",
+        "Justin": "",
+        "Isaac": "MUST",
+        "Julie": "YES",
+        "Organiser": ""
+      },
+      "learn": {
+        "Rich": "",
+        "Ashley": "",
+        "Ethan": "",
+        "Justin": "",
+        "Isaac": "",
+        "Julie": "",
+        "Organiser": ""
+      },
+      "inSet": false
+    },
+    {
+      "k": "itsmylife-bonjovi",
+      "section": "Arena & classic rock",
+      "song": "It's My Life",
+      "artist": "Bon Jovi",
+      "lead": "V1",
+      "len": "3:44",
+      "energy": 4,
+      "tags": [],
+      "order": 0,
+      "force": "",
+      "keyboard": "ADDS",
+      "tuning": "",
+      "votes": {
+        "Rich": "NO",
+        "Ashley": "YES",
+        "Ethan": "",
+        "Justin": "",
+        "Isaac": "MUST",
+        "Julie": "MAYBE",
+        "Organiser": ""
+      },
+      "learn": {
+        "Rich": "",
+        "Ashley": "",
+        "Ethan": "",
+        "Justin": "",
+        "Isaac": "",
+        "Julie": "",
+        "Organiser": ""
+      },
+      "inSet": false
+    },
+    {
+      "k": "poursomesugaronme-defleppard",
+      "section": "Arena & classic rock",
+      "song": "Pour Some Sugar on Me",
+      "artist": "Def Leppard",
+      "lead": "DUET",
+      "len": "4:25",
+      "energy": 4,
+      "tags": [
+        "closer"
+      ],
+      "order": 0,
+      "force": "",
+      "keyboard": "NONE",
+      "tuning": "",
+      "votes": {
+        "Rich": "NO",
+        "Ashley": "YES",
+        "Ethan": "",
+        "Justin": "",
+        "Isaac": "MAYBE",
+        "Julie": "YES",
+        "Organiser": ""
+      },
+      "learn": {
+        "Rich": "",
+        "Ashley": "",
+        "Ethan": "",
+        "Justin": "",
+        "Isaac": "",
+        "Julie": "",
+        "Organiser": ""
+      },
+      "inSet": false
+    },
+    {
+      "k": "photograph-defleppard",
+      "section": "Arena & classic rock",
+      "song": "Photograph",
+      "artist": "Def Leppard",
+      "lead": "DUET",
+      "len": "4:08",
+      "energy": 4,
+      "tags": [],
+      "order": 0,
+      "force": "",
+      "keyboard": "NONE",
+      "tuning": "",
+      "votes": {
+        "Rich": "YES",
+        "Ashley": "NO",
+        "Ethan": "",
+        "Justin": "",
+        "Isaac": "MAYBE",
+        "Julie": "MAYBE",
+        "Organiser": ""
+      },
+      "learn": {
+        "Rich": "",
+        "Ashley": "",
+        "Ethan": "",
+        "Justin": "",
+        "Isaac": "",
+        "Julie": "",
+        "Organiser": ""
+      },
+      "inSet": false
+    },
+    {
+      "k": "walkthisway-aerosmith",
+      "section": "Arena & classic rock",
+      "song": "Walk This Way",
+      "artist": "Aerosmith",
+      "lead": "DUET",
+      "len": "3:31",
+      "energy": 4,
+      "tags": [],
+      "order": 0,
+      "force": "",
+      "keyboard": "NONE",
+      "tuning": "",
+      "votes": {
+        "Rich": "NO",
+        "Ashley": "MAYBE",
+        "Ethan": "",
+        "Justin": "",
+        "Isaac": "YES",
+        "Julie": "YES",
+        "Organiser": ""
+      },
+      "learn": {
+        "Rich": "",
+        "Ashley": "",
+        "Ethan": "",
+        "Justin": "",
+        "Isaac": "",
+        "Julie": "",
+        "Organiser": ""
+      },
+      "inSet": false
+    },
+    {
+      "k": "idontwanttomissathing-aerosmith",
+      "section": "Arena & classic rock",
+      "song": "I Don't Want to Miss a Thing",
+      "artist": "Aerosmith",
+      "lead": "DUET",
+      "len": "4:58",
+      "energy": 1,
+      "tags": [
+        "ballad"
+      ],
+      "order": 0,
+      "force": "",
+      "keyboard": "ESSENTIAL",
+      "tuning": "",
+      "votes": {
+        "Rich": "NO",
+        "Ashley": "YES",
+        "Ethan": "",
+        "Justin": "",
+        "Isaac": "YES",
+        "Julie": "YES",
+        "Organiser": ""
+      },
+      "learn": {
+        "Rich": "",
+        "Ashley": "",
+        "Ethan": "",
+        "Justin": "",
+        "Isaac": "",
+        "Julie": "",
+        "Organiser": ""
+      },
+      "inSet": false
+    },
+    {
+      "k": "jump-vanhalen",
+      "section": "Arena & classic rock",
+      "song": "Jump",
+      "artist": "Van Halen",
+      "lead": "V1",
+      "len": "4:04",
+      "energy": 4,
+      "tags": [
+        "opener"
+      ],
+      "order": 0,
+      "force": "",
+      "keyboard": "ESSENTIAL",
+      "tuning": "Eb standard",
+      "votes": {
+        "Rich": "YES",
+        "Ashley": "YES",
+        "Ethan": "",
+        "Justin": "",
+        "Isaac": "MUST",
+        "Julie": "MAYBE",
+        "Organiser": ""
+      },
+      "learn": {
+        "Rich": "IN PROGRESS",
+        "Ashley": "IN PROGRESS",
+        "Ethan": "IN PROGRESS",
+        "Justin": "NOT STARTED",
+        "Isaac": "IN PROGRESS",
+        "Julie": "",
+        "Organiser": ""
+      },
+      "inSet": true
+    },
+    {
+      "k": "sweetchildomine-gunsnroses",
+      "section": "Arena & classic rock",
+      "song": "Sweet Child o' Mine",
+      "artist": "Guns N' Roses",
+      "lead": "V1",
+      "len": "5:03",
+      "energy": 3,
+      "tags": [],
+      "order": 0,
+      "force": "",
+      "keyboard": "NONE",
+      "tuning": "",
+      "votes": {
+        "Rich": "MAYBE",
+        "Ashley": "YES",
+        "Ethan": "",
+        "Justin": "",
+        "Isaac": "YES",
+        "Julie": "YES",
+        "Organiser": ""
+      },
+      "learn": {
+        "Rich": "",
+        "Ashley": "",
+        "Ethan": "",
+        "Justin": "",
+        "Isaac": "",
+        "Julie": "",
+        "Organiser": ""
+      },
+      "inSet": false
+    },
+    {
+      "k": "eyeofthetiger-survivor",
+      "section": "Arena & classic rock",
+      "song": "Eye of the Tiger",
+      "artist": "Survivor",
+      "lead": "V1",
+      "len": "4:05",
+      "energy": 4,
+      "tags": [
+        "opener"
+      ],
+      "order": 0,
+      "force": "",
+      "keyboard": "ADDS",
+      "tuning": "",
+      "votes": {
+        "Rich": "NO",
+        "Ashley": "YES",
+        "Ethan": "",
+        "Justin": "",
+        "Isaac": "YES",
+        "Julie": "MAYBE",
+        "Organiser": ""
+      },
+      "learn": {
+        "Rich": "",
+        "Ashley": "",
+        "Ethan": "",
+        "Justin": "",
+        "Isaac": "",
+        "Julie": "",
+        "Organiser": ""
+      },
+      "inSet": false
+    },
+    {
+      "k": "cryin-aerosmith",
+      "section": "Arena & classic rock",
+      "song": "Cryin'",
+      "artist": "Aerosmith",
+      "lead": "DUET",
+      "len": "5:08",
+      "energy": 2,
+      "tags": [
+        "ballad"
+      ],
+      "order": 0,
+      "force": "",
+      "keyboard": "ADDS",
+      "tuning": "E standard",
+      "votes": {
+        "Rich": "MUST",
+        "Ashley": "NO",
+        "Ethan": "",
+        "Justin": "YES",
+        "Isaac": "YES",
+        "Julie": "YES",
+        "Organiser": ""
+      },
+      "learn": {
+        "Rich": "NOT STARTED",
+        "Ashley": "NOT STARTED",
+        "Ethan": "",
+        "Justin": "KNOW",
+        "Isaac": "NOT STARTED",
+        "Julie": "",
+        "Organiser": ""
+      },
+      "inSet": true
+    },
+    {
+      "k": "kryptonite-3doorsdown",
+      "section": "Radio rock & post-grunge",
+      "song": "Kryptonite",
+      "artist": "3 Doors Down",
+      "lead": "V1",
+      "len": "3:53",
+      "energy": 3,
+      "tags": [],
+      "order": 0,
+      "force": "",
+      "keyboard": "NONE",
+      "tuning": "",
+      "votes": {
+        "Rich": "YES",
+        "Ashley": "YES",
+        "Ethan": "",
+        "Justin": "NO",
+        "Isaac": "MAYBE",
+        "Julie": "YES",
+        "Organiser": ""
+      },
+      "learn": {
+        "Rich": "",
+        "Ashley": "",
+        "Ethan": "",
+        "Justin": "",
+        "Isaac": "",
+        "Julie": "",
+        "Organiser": ""
+      },
+      "inSet": false
+    },
+    {
+      "k": "whenimgone-3doorsdown",
+      "section": "Radio rock & post-grunge",
+      "song": "When I'm Gone",
+      "artist": "3 Doors Down",
+      "lead": "V1",
+      "len": "4:20",
+      "energy": 3,
+      "tags": [],
+      "order": 0,
+      "force": "",
+      "keyboard": "NONE",
+      "tuning": "",
+      "votes": {
+        "Rich": "NO",
+        "Ashley": "MAYBE",
+        "Ethan": "",
+        "Justin": "NO",
+        "Isaac": "MAYBE",
+        "Julie": "MAYBE",
+        "Organiser": ""
+      },
+      "learn": {
+        "Rich": "",
+        "Ashley": "",
+        "Ethan": "",
+        "Justin": "",
+        "Isaac": "",
+        "Julie": "",
+        "Organiser": ""
+      },
+      "inSet": false
+    },
+    {
+      "k": "animalihavebecome-threedaysgrace",
+      "section": "Radio rock & post-grunge",
+      "song": "Animal I Have Become",
+      "artist": "Three Days Grace",
+      "lead": "V1",
+      "len": "3:52",
+      "energy": 4,
+      "tags": [
+        "heavy"
+      ],
+      "order": 0,
+      "force": "",
+      "keyboard": "NONE",
+      "tuning": "",
+      "votes": {
+        "Rich": "YES",
+        "Ashley": "YES",
+        "Ethan": "",
+        "Justin": "",
+        "Isaac": "MAYBE",
+        "Julie": "NO",
+        "Organiser": ""
+      },
+      "learn": {
+        "Rich": "",
+        "Ashley": "",
+        "Ethan": "",
+        "Justin": "",
+        "Isaac": "",
+        "Julie": "",
+        "Organiser": ""
+      },
+      "inSet": false
+    },
+    {
+      "k": "ihateeverythingaboutyou-threedaysgrace",
+      "section": "Radio rock & post-grunge",
+      "song": "I Hate Everything About You",
+      "artist": "Three Days Grace",
+      "lead": "V1",
+      "len": "3:51",
+      "energy": 4,
+      "tags": [
+        "heavy"
+      ],
+      "order": 0,
+      "force": "",
+      "keyboard": "NONE",
+      "tuning": "",
+      "votes": {
+        "Rich": "NO",
+        "Ashley": "MAYBE",
+        "Ethan": "",
+        "Justin": "",
+        "Isaac": "MAYBE",
+        "Julie": "YES",
+        "Organiser": ""
+      },
+      "learn": {
+        "Rich": "",
+        "Ashley": "",
+        "Ethan": "",
+        "Justin": "",
+        "Isaac": "",
+        "Julie": "",
+        "Organiser": ""
+      },
+      "inSet": false
+    },
+    {
+      "k": "thediaryofjane-breakingbenjamin",
+      "section": "Radio rock & post-grunge",
+      "song": "The Diary of Jane",
+      "artist": "Breaking Benjamin",
+      "lead": "V1",
+      "len": "3:20",
+      "energy": 4,
+      "tags": [
+        "heavy"
+      ],
+      "order": 0,
+      "force": "",
+      "keyboard": "NONE",
+      "tuning": "Drop D",
+      "votes": {
+        "Rich": "YES",
+        "Ashley": "MUST",
+        "Ethan": "",
+        "Justin": "",
+        "Isaac": "MAYBE",
+        "Julie": "YES",
+        "Organiser": ""
+      },
+      "learn": {
+        "Rich": "NOT STARTED",
+        "Ashley": "KNOW",
+        "Ethan": "",
+        "Justin": "NOT STARTED",
+        "Isaac": "NOT STARTED",
+        "Julie": "",
+        "Organiser": ""
+      },
+      "inSet": true
+    },
+    {
+      "k": "blowmeaway-breakingbenjamin",
+      "section": "Radio rock & post-grunge",
+      "song": "Blow Me Away",
+      "artist": "Breaking Benjamin",
+      "lead": "DUET",
+      "len": "3:19",
+      "energy": 4,
+      "tags": [
+        "heavy"
+      ],
+      "order": 0,
+      "force": "",
+      "keyboard": "NONE",
+      "tuning": "",
+      "votes": {
+        "Rich": "NO",
+        "Ashley": "NO",
+        "Ethan": "",
+        "Justin": "",
+        "Isaac": "MAYBE",
+        "Julie": "NO",
+        "Organiser": ""
+      },
+      "learn": {
+        "Rich": "",
+        "Ashley": "",
+        "Ethan": "",
+        "Justin": "",
+        "Isaac": "",
+        "Julie": "",
+        "Organiser": ""
+      },
+      "inSet": false
+    },
+    {
+      "k": "downwiththesickness-disturbed",
+      "section": "Radio rock & post-grunge",
+      "song": "Down with the Sickness",
+      "artist": "Disturbed",
+      "lead": "V1",
+      "len": "3:40",
+      "energy": 5,
+      "tags": [
+        "heavy"
+      ],
+      "order": 0,
+      "force": "",
+      "keyboard": "NONE",
+      "tuning": "",
+      "votes": {
+        "Rich": "NO",
+        "Ashley": "NO",
+        "Ethan": "",
+        "Justin": "",
+        "Isaac": "YES",
+        "Julie": "MUST",
+        "Organiser": ""
+      },
+      "learn": {
+        "Rich": "",
+        "Ashley": "",
+        "Ethan": "",
+        "Justin": "",
+        "Isaac": "",
+        "Julie": "",
+        "Organiser": ""
+      },
+      "inSet": false
+    },
+    {
+      "k": "thesoundofsilence-disturbed",
+      "section": "Radio rock & post-grunge",
+      "song": "The Sound of Silence",
+      "artist": "Disturbed",
+      "lead": "DUET",
+      "len": "4:08",
+      "energy": 2,
+      "tags": [
+        "dip"
+      ],
+      "order": 0,
+      "force": "",
+      "keyboard": "ESSENTIAL",
+      "tuning": "E standard",
+      "votes": {
+        "Rich": "YES",
+        "Ashley": "MAYBE",
+        "Ethan": "MUST",
+        "Justin": "",
+        "Isaac": "YES",
+        "Julie": "YES",
+        "Organiser": ""
+      },
+      "learn": {
+        "Rich": "",
+        "Ashley": "KNOW",
+        "Ethan": "IN PROGRESS",
+        "Justin": "KNOW",
+        "Isaac": "KNOW",
+        "Julie": "",
+        "Organiser": ""
+      },
+      "inSet": true
+    },
+    {
+      "k": "teenagedirtbag-wheatus",
+      "section": "Radio rock & post-grunge",
+      "song": "Teenage Dirtbag",
+      "artist": "Wheatus",
+      "lead": "V1",
+      "len": "4:02",
+      "energy": 3,
+      "tags": [],
+      "order": 0,
+      "force": "",
+      "keyboard": "NONE",
+      "tuning": "E standard",
+      "votes": {
+        "Rich": "YES",
+        "Ashley": "YES",
+        "Ethan": "",
+        "Justin": "YES",
+        "Isaac": "MUST",
+        "Julie": "",
+        "Organiser": "YES"
+      },
+      "learn": {
+        "Rich": "KNOW",
+        "Ashley": "KNOW",
+        "Ethan": "",
+        "Justin": "KNOW",
+        "Isaac": "KNOW",
+        "Julie": "",
+        "Organiser": ""
+      },
+      "inSet": true
+    },
+    {
+      "k": "intheend-linkinpark",
+      "section": "Alt & nu-metal",
+      "song": "In the End",
+      "artist": "Linkin Park",
+      "lead": "DUET",
+      "len": "3:36",
+      "energy": 4,
+      "tags": [],
+      "order": 0,
+      "force": "",
+      "keyboard": "ESSENTIAL",
+      "tuning": "",
+      "votes": {
+        "Rich": "NO",
+        "Ashley": "YES",
+        "Ethan": "",
+        "Justin": "MAYBE",
+        "Isaac": "MUST",
+        "Julie": "YES",
+        "Organiser": ""
+      },
+      "learn": {
+        "Rich": "",
+        "Ashley": "",
+        "Ethan": "",
+        "Justin": "",
+        "Isaac": "",
+        "Julie": "",
+        "Organiser": ""
+      },
+      "inSet": false
+    },
+    {
+      "k": "numb-linkinpark",
+      "section": "Alt & nu-metal",
+      "song": "Numb",
+      "artist": "Linkin Park",
+      "lead": "V2",
+      "len": "3:07",
+      "energy": 3,
+      "tags": [],
+      "order": 0,
+      "force": "",
+      "keyboard": "ESSENTIAL",
+      "tuning": "",
+      "votes": {
+        "Rich": "YES",
+        "Ashley": "YES",
+        "Ethan": "",
+        "Justin": "",
+        "Isaac": "YES",
+        "Julie": "YES",
+        "Organiser": ""
+      },
+      "learn": {
+        "Rich": "",
+        "Ashley": "",
+        "Ethan": "",
+        "Justin": "",
+        "Isaac": "",
+        "Julie": "",
+        "Organiser": ""
+      },
+      "inSet": false
+    },
+    {
+      "k": "faint-linkinpark",
+      "section": "Alt & nu-metal",
+      "song": "Faint",
+      "artist": "Linkin Park",
+      "lead": "V1",
+      "len": "2:42",
+      "energy": 5,
+      "tags": [
+        "heavy"
+      ],
+      "order": 0,
+      "force": "",
+      "keyboard": "ESSENTIAL",
+      "tuning": "",
+      "votes": {
+        "Rich": "NO",
+        "Ashley": "MAYBE",
+        "Ethan": "",
+        "Justin": "",
+        "Isaac": "YES",
+        "Julie": "YES",
+        "Organiser": ""
+      },
+      "learn": {
+        "Rich": "",
+        "Ashley": "",
+        "Ethan": "",
+        "Justin": "",
+        "Isaac": "",
+        "Julie": "",
+        "Organiser": ""
+      },
+      "inSet": false
+    },
+    {
+      "k": "whativedone-linkinpark",
+      "section": "Alt & nu-metal",
+      "song": "What I've Done",
+      "artist": "Linkin Park",
+      "lead": "V2",
+      "len": "3:25",
+      "energy": 3,
+      "tags": [],
+      "order": 0,
+      "force": "",
+      "keyboard": "ESSENTIAL",
+      "tuning": "Drop D",
+      "votes": {
+        "Rich": "MAYBE",
+        "Ashley": "MAYBE",
+        "Ethan": "",
+        "Justin": "",
+        "Isaac": "MUST",
+        "Julie": "YES",
+        "Organiser": ""
+      },
+      "learn": {
+        "Rich": "IN PROGRESS",
+        "Ashley": "IN PROGRESS",
+        "Ethan": "",
+        "Justin": "NOT STARTED",
+        "Isaac": "KNOW",
+        "Julie": "",
+        "Organiser": ""
+      },
+      "inSet": true
+    },
+    {
+      "k": "smellsliketeenspirit-nirvana",
+      "section": "Alt & nu-metal",
+      "song": "Smells Like Teen Spirit",
+      "artist": "Nirvana",
+      "lead": "V1",
+      "len": "5:01",
+      "energy": 4,
+      "tags": [],
+      "order": 0,
+      "force": "",
+      "keyboard": "NONE",
+      "tuning": "E standard",
+      "votes": {
+        "Rich": "YES",
+        "Ashley": "YES",
+        "Ethan": "",
+        "Justin": "",
+        "Isaac": "MUST",
+        "Julie": "YES",
+        "Organiser": ""
+      },
+      "learn": {
+        "Rich": "KNOW",
+        "Ashley": "KNOW",
+        "Ethan": "",
+        "Justin": "KNOW",
+        "Isaac": "KNOW",
+        "Julie": "",
+        "Organiser": ""
+      },
+      "inSet": true
+    },
+    {
+      "k": "comeasyouare-nirvana",
+      "section": "Alt & nu-metal",
+      "song": "Come as You Are",
+      "artist": "Nirvana",
+      "lead": "V1",
+      "len": "3:39",
+      "energy": 3,
+      "tags": [],
+      "order": 0,
+      "force": "",
+      "keyboard": "NONE",
+      "tuning": "",
+      "votes": {
+        "Rich": "MAYBE",
+        "Ashley": "MAYBE",
+        "Ethan": "",
+        "Justin": "MAYBE",
+        "Isaac": "YES",
+        "Julie": "YES",
+        "Organiser": ""
+      },
+      "learn": {
+        "Rich": "",
+        "Ashley": "",
+        "Ethan": "",
+        "Justin": "",
+        "Isaac": "",
+        "Julie": "",
+        "Organiser": ""
+      },
+      "inSet": false
+    },
+    {
+      "k": "zombie-thecranberries",
+      "section": "Alt & nu-metal",
+      "song": "Zombie",
+      "artist": "The Cranberries",
+      "lead": "V2",
+      "len": "5:06",
+      "energy": 3,
+      "tags": [],
+      "order": 0,
+      "force": "",
+      "keyboard": "NONE",
+      "tuning": "E standard",
+      "votes": {
+        "Rich": "MUST",
+        "Ashley": "MUST",
+        "Ethan": "",
+        "Justin": "MAYBE",
+        "Isaac": "YES",
+        "Julie": "MUST",
+        "Organiser": ""
+      },
+      "learn": {
+        "Rich": "KNOW",
+        "Ashley": "KNOW",
+        "Ethan": "KNOW",
+        "Justin": "KNOW",
+        "Isaac": "KNOW",
+        "Julie": "",
+        "Organiser": ""
+      },
+      "inSet": true
+    },
+    {
+      "k": "barracuda-heart",
+      "section": "Female-fronted",
+      "song": "Barracuda",
+      "artist": "Heart",
+      "lead": "V2",
+      "len": "4:20",
+      "energy": 4,
+      "tags": [],
+      "order": 0,
+      "force": "",
+      "keyboard": "NONE",
+      "tuning": "",
+      "votes": {
+        "Rich": "YES",
+        "Ashley": "NO",
+        "Ethan": "",
+        "Justin": "",
+        "Isaac": "YES",
+        "Julie": "YES",
+        "Organiser": ""
+      },
+      "learn": {
+        "Rich": "",
+        "Ashley": "",
+        "Ethan": "",
+        "Justin": "",
+        "Isaac": "",
+        "Julie": "",
+        "Organiser": ""
+      },
+      "inSet": false
+    },
+    {
+      "k": "alone-heart",
+      "section": "Female-fronted",
+      "song": "Alone",
+      "artist": "Heart",
+      "lead": "V2",
+      "len": "3:38",
+      "energy": 2,
+      "tags": [
+        "ballad"
+      ],
+      "order": 0,
+      "force": "",
+      "keyboard": "ESSENTIAL",
+      "tuning": "",
+      "votes": {
+        "Rich": "MAYBE",
+        "Ashley": "NO",
+        "Ethan": "",
+        "Justin": "",
+        "Isaac": "YES",
+        "Julie": "MAYBE",
+        "Organiser": ""
+      },
+      "learn": {
+        "Rich": "",
+        "Ashley": "",
+        "Ethan": "",
+        "Justin": "",
+        "Isaac": "",
+        "Julie": "",
+        "Organiser": ""
+      },
+      "inSet": false
+    },
+    {
+      "k": "hitmewithyourbestshot-patbenatar",
+      "section": "Female-fronted",
+      "song": "Hit Me With Your Best Shot",
+      "artist": "Pat Benatar",
+      "lead": "V2",
+      "len": "2:52",
+      "energy": 4,
+      "tags": [
+        "opener"
+      ],
+      "order": 0,
+      "force": "",
+      "keyboard": "ADDS",
+      "tuning": "E standard",
+      "votes": {
+        "Rich": "YES",
+        "Ashley": "MUST",
+        "Ethan": "",
+        "Justin": "",
+        "Isaac": "MUST",
+        "Julie": "YES",
+        "Organiser": ""
+      },
+      "learn": {
+        "Rich": "NOT STARTED",
+        "Ashley": "KNOW",
+        "Ethan": "",
+        "Justin": "NOT STARTED",
+        "Isaac": "KNOW",
+        "Julie": "",
+        "Organiser": ""
+      },
+      "inSet": true
+    },
+    {
+      "k": "iloverocknroll-joanjett",
+      "section": "Female-fronted",
+      "song": "I Love Rock 'n' Roll",
+      "artist": "Joan Jett",
+      "lead": "V2",
+      "len": "2:56",
+      "energy": 4,
+      "tags": [
+        "opener"
+      ],
+      "order": 0,
+      "force": "",
+      "keyboard": "NONE",
+      "tuning": "",
+      "votes": {
+        "Rich": "YES",
+        "Ashley": "MAYBE",
+        "Ethan": "",
+        "Justin": "",
+        "Isaac": "YES",
+        "Julie": "MAYBE",
+        "Organiser": ""
+      },
+      "learn": {
+        "Rich": "",
+        "Ashley": "",
+        "Ethan": "",
+        "Justin": "",
+        "Isaac": "",
+        "Julie": "",
+        "Organiser": ""
+      },
+      "inSet": false
+    },
+    {
+      "k": "bringmetolife-evanescence",
+      "section": "Female-fronted",
+      "song": "Bring Me to Life",
+      "artist": "Evanescence",
+      "lead": "DUET",
+      "len": "3:56",
+      "energy": 4,
+      "tags": [],
+      "order": 0,
+      "force": "",
+      "keyboard": "ESSENTIAL",
+      "tuning": "Drop D",
+      "votes": {
+        "Rich": "MUST",
+        "Ashley": "YES",
+        "Ethan": "",
+        "Justin": "",
+        "Isaac": "YES",
+        "Julie": "YES",
+        "Organiser": ""
+      },
+      "learn": {
+        "Rich": "IN PROGRESS",
+        "Ashley": "KNOW",
+        "Ethan": "KNOW",
+        "Justin": "IN PROGRESS",
+        "Isaac": "KNOW",
+        "Julie": "",
+        "Organiser": ""
+      },
+      "inSet": true
+    },
+    {
+      "k": "goingunder-evanescence",
+      "section": "Female-fronted",
+      "song": "Going Under",
+      "artist": "Evanescence",
+      "lead": "V2",
+      "len": "3:34",
+      "energy": 4,
+      "tags": [],
+      "order": 0,
+      "force": "",
+      "keyboard": "ADDS",
+      "tuning": "Drop D",
+      "votes": {
+        "Rich": "YES",
+        "Ashley": "MUST",
+        "Ethan": "",
+        "Justin": "",
+        "Isaac": "YES",
+        "Julie": "YES",
+        "Organiser": ""
+      },
+      "learn": {
+        "Rich": "",
+        "Ashley": "KNOW",
+        "Ethan": "",
+        "Justin": "IN PROGRESS",
+        "Isaac": "IN PROGRESS",
+        "Julie": "",
+        "Organiser": ""
+      },
+      "inSet": true
+    },
+    {
+      "k": "miserybusiness-paramore",
+      "section": "Female-fronted",
+      "song": "Misery Business",
+      "artist": "Paramore",
+      "lead": "V2",
+      "len": "3:31",
+      "energy": 4,
+      "tags": [],
+      "order": 0,
+      "force": "",
+      "keyboard": "NONE",
+      "tuning": "E standard",
+      "votes": {
+        "Rich": "YES",
+        "Ashley": "YES",
+        "Ethan": "",
+        "Justin": "",
+        "Isaac": "YES",
+        "Julie": "MUST",
+        "Organiser": ""
+      },
+      "learn": {
+        "Rich": "IN PROGRESS",
+        "Ashley": "KNOW",
+        "Ethan": "",
+        "Justin": "IN PROGRESS",
+        "Isaac": "IN PROGRESS",
+        "Julie": "",
+        "Organiser": ""
+      },
+      "inSet": true
+    },
+    {
+      "k": "stillintoyou-paramore",
+      "section": "Female-fronted",
+      "song": "Still Into You",
+      "artist": "Paramore",
+      "lead": "V2",
+      "len": "3:36",
+      "energy": 4,
+      "tags": [
+        "lift"
+      ],
+      "order": 0,
+      "force": "",
+      "keyboard": "ADDS",
+      "tuning": "E standard",
+      "votes": {
+        "Rich": "YES",
+        "Ashley": "MAYBE",
+        "Ethan": "",
+        "Justin": "YES",
+        "Isaac": "MUST",
+        "Julie": "YES",
+        "Organiser": ""
+      },
+      "learn": {
+        "Rich": "IN PROGRESS",
+        "Ashley": "KNOW",
+        "Ethan": "",
+        "Justin": "IN PROGRESS",
+        "Isaac": "KNOW",
+        "Julie": "",
+        "Organiser": ""
+      },
+      "inSet": true
+    },
+    {
+      "k": "whatsup-4nonblondes",
+      "section": "Female-fronted",
+      "song": "What's Up?",
+      "artist": "4 Non Blondes",
+      "lead": "V2",
+      "len": "4:51",
+      "energy": 3,
+      "tags": [],
+      "order": 0,
+      "force": "",
+      "keyboard": "ADDS",
+      "tuning": "",
+      "votes": {
+        "Rich": "YES",
+        "Ashley": "MAYBE",
+        "Ethan": "",
+        "Justin": "",
+        "Isaac": "YES",
+        "Julie": "MAYBE",
+        "Organiser": ""
+      },
+      "learn": {
+        "Rich": "",
+        "Ashley": "",
+        "Ethan": "",
+        "Justin": "",
+        "Isaac": "",
+        "Julie": "",
+        "Organiser": ""
+      },
+      "inSet": false
+    },
+    {
+      "k": "lovebitessodoi-halestorm",
+      "section": "Female-fronted",
+      "song": "Love Bites (So Do I)",
+      "artist": "Halestorm",
+      "lead": "V2",
+      "len": "3:50",
+      "energy": 4,
+      "tags": [
+        "heavy"
+      ],
+      "order": 0,
+      "force": "",
+      "keyboard": "NONE",
+      "tuning": "",
+      "votes": {
+        "Rich": "NO",
+        "Ashley": "MAYBE",
+        "Ethan": "",
+        "Justin": "",
+        "Isaac": "YES",
+        "Julie": "NO",
+        "Organiser": ""
+      },
+      "learn": {
+        "Rich": "",
+        "Ashley": "",
+        "Ethan": "",
+        "Justin": "",
+        "Isaac": "",
+        "Julie": "",
+        "Organiser": ""
+      },
+      "inSet": false
+    },
+    {
+      "k": "onewayoranother-blondie",
+      "section": "Female-fronted",
+      "song": "One Way or Another",
+      "artist": "Blondie",
+      "lead": "V2",
+      "len": "3:34",
+      "energy": 4,
+      "tags": [
+        "opener"
+      ],
+      "order": 0,
+      "force": "",
+      "keyboard": "NONE",
+      "tuning": "",
+      "votes": {
+        "Rich": "MAYBE",
+        "Ashley": "MAYBE",
+        "Ethan": "",
+        "Justin": "",
+        "Isaac": "YES",
+        "Julie": "MAYBE",
+        "Organiser": ""
+      },
+      "learn": {
+        "Rich": "",
+        "Ashley": "",
+        "Ethan": "",
+        "Justin": "",
+        "Isaac": "",
+        "Julie": "",
+        "Organiser": ""
+      },
+      "inSet": false
+    },
+    {
+      "k": "totaleclipseoftheheart-bonnietyler",
+      "section": "Female-fronted",
+      "song": "Total Eclipse of the Heart",
+      "artist": "Bonnie Tyler",
+      "lead": "V2",
+      "len": "5:35",
+      "energy": 2,
+      "tags": [
+        "ballad"
+      ],
+      "order": 0,
+      "force": "",
+      "keyboard": "ESSENTIAL",
+      "tuning": "",
+      "votes": {
+        "Rich": "NO",
+        "Ashley": "MUST",
+        "Ethan": "",
+        "Justin": "",
+        "Isaac": "YES",
+        "Julie": "YES",
+        "Organiser": ""
+      },
+      "learn": {
+        "Rich": "",
+        "Ashley": "",
+        "Ethan": "",
+        "Justin": "",
+        "Isaac": "",
+        "Julie": "",
+        "Organiser": ""
+      },
+      "inSet": false
+    },
+    {
+      "k": "myimmortal-evanescence",
+      "section": "Female-fronted",
+      "song": "My Immortal",
+      "artist": "Evanescence",
+      "lead": "V2",
+      "len": "4:23",
+      "energy": 1,
+      "tags": [
+        "ballad"
+      ],
+      "order": 0,
+      "force": "",
+      "keyboard": "ESSENTIAL",
+      "tuning": "",
+      "votes": {
+        "Rich": "YES",
+        "Ashley": "YES",
+        "Ethan": "",
+        "Justin": "",
+        "Isaac": "",
+        "Julie": "",
+        "Organiser": ""
+      },
+      "learn": {
+        "Rich": "",
+        "Ashley": "",
+        "Ethan": "",
+        "Justin": "",
+        "Isaac": "",
+        "Julie": "",
+        "Organiser": ""
+      },
+      "inSet": false
+    },
+    {
+      "k": "faithfully-journey",
+      "section": "Female-fronted",
+      "song": "Faithfully",
+      "artist": "Journey",
+      "lead": "V2",
+      "len": "4:27",
+      "energy": 1,
+      "tags": [
+        "ballad",
+        "dedication"
+      ],
+      "order": 0,
+      "force": "",
+      "keyboard": "ESSENTIAL",
+      "tuning": "E standard",
+      "votes": {
+        "Rich": "YES",
+        "Ashley": "YES",
+        "Ethan": "MUST",
+        "Justin": "",
+        "Isaac": "YES",
+        "Julie": "YES",
+        "Organiser": "MUST"
+      },
+      "learn": {
+        "Rich": "IN PROGRESS",
+        "Ashley": "IN PROGRESS",
+        "Ethan": "IN PROGRESS",
+        "Justin": "NOT STARTED",
+        "Isaac": "KNOW",
+        "Julie": "",
+        "Organiser": ""
+      },
+      "inSet": true
+    },
+    {
+      "k": "dreamon-aerosmith",
+      "section": "Arena & classic rock",
+      "song": "Dream On",
+      "artist": "Aerosmith",
+      "lead": "V1",
+      "len": "4:28",
+      "energy": 3,
+      "tags": [],
+      "order": 0,
+      "force": "",
+      "keyboard": "ESSENTIAL",
+      "tuning": "",
+      "votes": {
+        "Rich": "YES",
+        "Ashley": "MAYBE",
+        "Ethan": "",
+        "Justin": "",
+        "Isaac": "YES",
+        "Julie": "YES",
+        "Organiser": ""
+      },
+      "learn": {
+        "Rich": "",
+        "Ashley": "",
+        "Ethan": "",
+        "Justin": "",
+        "Isaac": "",
+        "Julie": "",
+        "Organiser": ""
+      },
+      "inSet": false
+    }
+  ]
+}

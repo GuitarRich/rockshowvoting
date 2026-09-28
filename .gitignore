@@ -13,3 +13,7 @@ bunsnroses-*.json
 *.iam.gserviceaccount.com.json
 service-account*.json
 .env*
+
+# Local tooling output
+.env.development.local
+scripts/out/
