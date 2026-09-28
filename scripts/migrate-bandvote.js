@@ -286,10 +286,14 @@ async function main() {
     const got = d.rows.filter((r) => r.votes[n]).length;
     if (got !== c) problems.push(`votes for ${n}: expected ${c}, app has ${got}`);
   }
-  const lyricKeys = out.library.Lyrics.filter((r) => String(r[3]).trim()).map((r) => r[0]);
+  // Every song Band Vote had words for must have the same words here.
+  const bvWords = Object.fromEntries(
+    source.lyricsRows.filter((r) => r[0] && String(r[3] || "").trim()).map((r) => [String(r[0]).trim(), String(r[3])])
+  );
+  const lyricKeys = Object.keys(bvWords);
   const { readLyrics } = await import("../api/_sheets.js");
   const ourLyrics = await readLyrics();
-  const missingWords = lyricKeys.filter((k) => !String(ourLyrics[k] || "").trim());
+  const missingWords = lyricKeys.filter((k) => String(ourLyrics[k] || "").trim() !== bvWords[k].replace(/\r\n?/g, "\n").trim());
   if (missingWords.length) problems.push(`lyrics missing: ${missingWords.join(", ")}`);
   const ours = d.rows.filter((r) => r.inSet).map((r) => r.k).sort();
   if (JSON.stringify(ours) !== JSON.stringify(bvSet.keys)) problems.push("the set differs from Band Vote's");
@@ -305,7 +309,8 @@ async function main() {
     `Verified ${new Date().toISOString()}`,
     `songs: ${d.rows.length}, set: ${d.set.count} (Band Vote: ${bvSet.keys.length})`,
     `votes: ${Object.entries(out.voteCounts).map(([n, c]) => `${n} ${c}`).join(", ")}`,
-    `lyrics with words: ${lyricKeys.length}`,
+    `lyrics with words: ${lyricKeys.length} in Band Vote, ${lyricKeys.length - missingWords.length} identical here`,
+    `tempos: ${source.tempoRows.length} in Band Vote; learning marks: ${Object.values(out.learnCounts).reduce((a, b) => a + b, 0)}`,
     problems.length ? "PROBLEMS:\n  " + problems.join("\n  ") : "All counts match.",
   ];
   fs.writeFileSync(path.join(OUT, "nov-migration-verify.txt"), lines.join("\n") + "\n");

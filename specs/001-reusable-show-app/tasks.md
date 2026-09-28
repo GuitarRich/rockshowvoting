@@ -80,7 +80,7 @@ Every story below depends on this phase.
   - Skip tabs that already start with `bak-`. If today's backup already exists, skip it.
   - Print the list.
   - Use the credentials in `.env.development.local` (loaded with `node --env-file`).
-- [ ] T008 Run `pnpm run env:pull`, then `pnpm backup` against the live sheet. **This is the first live write**, and it only duplicates tabs. Record the tab list in `scripts/out/backup-log.txt`.
+- [X] T008 Run `pnpm run env:pull`, then `pnpm backup` against the live sheet. **This is the first live write**, and it only duplicates tabs. Record the tab list in `scripts/out/backup-log.txt`.
 - [X] T009 Write `test/october.test.js`.
   - Load `test/fixtures/oct-sheet.json` into `fakeSheets` and call `api/data.js` with no `show` param.
   - Assert that every field present in `test/fixtures/oct-payload.json` is deep-equal in the new response. Extra fields are allowed.
@@ -231,8 +231,8 @@ Every story below depends on this phase.
     - Create the `Shows` row: `nov`, `nov·`, "Bun's & Roses", GigDate blank, `current`, `TRUE`.
     - Write the `nov·*` tabs. Upsert the Library, Lyrics and Tempos rows, and append the Tunings rows.
   - **`--verify`** reads back both sheets and exits non-zero on any mismatch (SC-008).
-- [ ] T033 Run `pnpm migrate:nov` as a dry run. **STOP. Show the owner `scripts/out/nov-migration-report.md` and wait for explicit approval.** Ask the owner for November's gig date and venue name, so they can go into `Shows.GigDate` and `nov·Settings.occasion`.
-- [ ] T034 After approval, run `pnpm backup`, then `pnpm migrate:nov -- --apply`, then `pnpm migrate:nov -- --verify`. Paste the verify output into `scripts/out/nov-migration-verify.txt`. Check the Band Vote sheet's tab row counts are unchanged.
+- [X] T033 Run `pnpm migrate:nov` as a dry run. **STOP. Show the owner `scripts/out/nov-migration-report.md` and wait for explicit approval.** Ask the owner for November's gig date and venue name, so they can go into `Shows.GigDate` and `nov·Settings.occasion`.
+- [X] T034 After approval, run `pnpm backup`, then `pnpm migrate:nov -- --apply`, then `pnpm migrate:nov -- --verify`. Paste the verify output into `scripts/out/nov-migration-verify.txt`. Check the Band Vote sheet's tab row counts are unchanged.
 
 **Checkpoint**:
 - October is unchanged (T009 green).
