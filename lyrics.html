@@ -1,0 +1,1000 @@
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Lyric book</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700&family=Barlow:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link href="./app.css" rel="stylesheet">
+
+<style>
+/* Screen: the app's stage. Print: a clean black-on-white book. */
+#lb{background:var(--stage);color:var(--cream);font-family:'Barlow',system-ui,sans-serif;
+  min-height:100vh;padding-bottom:var(--s6);font-size:16px;line-height:1.5}
+#lb .wrap{max-width:820px;margin:0 auto;padding:0 var(--s4)}
+/* The header is shared chrome, so it lines up with the other two pages rather
+   than with the book column — the logo shouldn't shift when you navigate. The
+   narrow column below is a reading measure for the words themselves. */
+#lb header .wrap{max-width:1240px}
+#lb .disp{font-family:'Barlow Condensed',sans-serif;text-transform:uppercase;letter-spacing:.04em;line-height:1}
+#lb .mono{font-family:'IBM Plex Mono',monospace}
+#lb .hide{display:none!important}
+#lb button{font-family:inherit;cursor:pointer;border:none;background:none;color:inherit}
+
+/* Same header as the vote and setlist pages: a full-bleed bar with the amber
+   line under it, not a panel boxed inside the reading column. */
+#lb header{border-bottom:1px solid var(--line);background:linear-gradient(180deg,var(--panel2),var(--panel));
+  padding:var(--s4) 0 var(--s3);margin-bottom:var(--s4);position:relative}
+#lb header:after{content:'';position:absolute;left:0;right:0;bottom:-1px;height:1px;
+  background:linear-gradient(90deg,transparent,var(--lamp),transparent);opacity:.5}
+#lb .plate{display:flex;align-items:center;gap:var(--s3)}
+#lb .lamp{width:17px;height:17px;border-radius:50%;flex:none;
+  background:radial-gradient(circle at 35% 30%,#FFD98A,var(--lamp) 55%,#8A5A0B);box-shadow:0 0 16px rgba(245,166,35,.7)}
+#lb h1{font-size:32px;font-weight:700;flex:1;line-height:1;font-family:'Barlow Condensed',sans-serif;
+  text-transform:uppercase;letter-spacing:.04em}
+#lb .status{font-size:11px;letter-spacing:.14em;text-transform:uppercase;font-weight:600;
+  font-family:'Barlow Condensed',sans-serif;padding:7px 12px;border:1px solid var(--line);border-radius:99px;
+  color:var(--dim);white-space:nowrap}
+#lb .status.ok{color:var(--ok);border-color:rgba(127,166,80,.45)}
+#lb .status.warn{color:var(--lamp);border-color:rgba(245,166,35,.45)}
+#lb h1 small{display:block;font-size:11px;letter-spacing:.28em;color:var(--dim);font-weight:600;margin-top:8px}
+#lb h1 small span{color:var(--lamp)}
+
+#lb nav{display:flex;gap:2px;margin-top:var(--s3);flex-wrap:wrap}
+#lb nav a{font-family:'Barlow Condensed',sans-serif;text-transform:uppercase;letter-spacing:.16em;
+  font-size:12px;font-weight:600;color:var(--dim);text-decoration:none;padding:9px 14px;border-radius:var(--r);
+  border:1px solid transparent;transition:color .12s,background .12s,border-color .12s}
+#lb nav a:hover{color:var(--cream);background:rgba(237,230,214,.05)}
+#lb nav a[aria-current="page"]{color:var(--lamp);border-color:rgba(245,166,35,.4);
+  background:rgba(245,166,35,.08)}
+
+#lb .bar{display:flex;gap:var(--s2);flex-wrap:wrap;align-items:center;margin-bottom:var(--s4)}
+#lb .btn{border:1px solid var(--line);border-radius:var(--r);padding:9px 15px;font-size:13px;font-weight:600;
+  background:var(--panel2);color:var(--cream)}
+#lb .btn:hover{border-color:var(--lamp);color:var(--lamp)}
+#lb .btn.go{background:var(--lamp);color:#1B1710;border-color:var(--lamp)}
+#lb .btn.go:hover{filter:brightness(1.08);color:#1B1710}
+#lb a.btn{text-decoration:none;display:inline-block}
+#lb .spacer{flex:1}
+#lb .note{font-size:14px;color:var(--dim);line-height:1.65;max-width:64ch}
+#lb .msg{border:1px solid rgba(245,166,35,.35);background:rgba(245,166,35,.07);border-radius:var(--r);
+  padding:var(--s3);margin-bottom:var(--s4);font-size:14px;line-height:1.6}
+#lb .msg b{color:var(--lamp)}
+#lb .msg.fail{border-color:rgba(228,87,46,.45);background:rgba(228,87,46,.08)}
+#lb .msg.fail b{color:var(--hot)}
+
+/* ---------- the book ---------- */
+#lb .cover{border:1px solid var(--line);border-radius:var(--r);background:var(--panel);
+  padding:var(--s4);margin-bottom:var(--s4)}
+#lb .cover h2{font-family:'Barlow Condensed',sans-serif;text-transform:uppercase;letter-spacing:.05em;
+  font-size:22px;margin-bottom:var(--s2)}
+#lb .toc{list-style:none;margin-top:var(--s3);columns:2;column-gap:var(--s4)}
+#lb .toc li{font-size:14px;padding:3px 0;break-inside:avoid;color:var(--dim)}
+#lb .toc li b{color:var(--cream);font-weight:500}
+#lb .toc .no{font-family:'IBM Plex Mono',monospace;color:var(--faint);margin-right:8px}
+
+#lb .song{border:1px solid var(--line);border-radius:var(--r);background:var(--panel);
+  padding:var(--s4);margin-bottom:var(--s3)}
+#lb .song h3{font-family:'Barlow Condensed',sans-serif;text-transform:uppercase;letter-spacing:.03em;
+  font-size:24px;line-height:1.1;font-weight:700}
+#lb .by{color:var(--dim);font-size:14px;margin-top:4px}
+#lb .meta{display:flex;gap:var(--s2);flex-wrap:wrap;margin-top:var(--s2);
+  padding-bottom:var(--s3);border-bottom:1px solid var(--line2)}
+#lb .tag{font-size:11px;letter-spacing:.1em;text-transform:uppercase;font-weight:600;
+  font-family:'Barlow Condensed',sans-serif;border:1px solid var(--line);border-radius:99px;padding:3px 10px;
+  color:var(--dim)}
+#lb .tag.tune{color:var(--lamp);border-color:rgba(245,166,35,.45)}
+#lb .no{font-family:'IBM Plex Mono',monospace;color:var(--lamp);font-size:13px}
+#lb .words{margin-top:var(--s3);font-size:15px;line-height:1.75}
+#lb .block{break-inside:avoid;page-break-inside:avoid;margin-bottom:1.1em}
+#lb .block:last-child{margin-bottom:0}
+/* A line of plain words wraps like prose. "anywhere" is the backstop: one
+   unbroken run — a pasted URL, a run-on someone typed without spaces — would
+   otherwise be wider than the phone and drag the whole page sideways with it. */
+#lb .ln{white-space:pre-wrap;overflow-wrap:anywhere}
+#lb .ln-gap{height:.6em}
+/* A chorded verse is a grid, not prose: a chord only means anything sitting
+   exactly over its syllable. The monospace face keeps that grid inside each
+   word; the row itself wraps word by word, so a long line runs down the screen
+   instead of off the side of it. Blocks with no chords keep the proportional
+   reading face. */
+#lb .block.chorded{font-family:'IBM Plex Mono',monospace;font-size:13.5px;line-height:1.3}
+#lb .block.chorded .ln{white-space:pre}
+/* Flex, not inline-block: there is no whitespace between the pieces to break
+   at — the spacing lives inside them — so the row needs a layout that can wrap
+   between boxes on its own. */
+#lb .ln-pairs{display:flex;flex-wrap:wrap;align-items:flex-end;white-space:normal}
+/* A piece is as wide as the wider of its two halves: a chord over a one-letter
+   syllable needs the room, or it sits on top of the chord after it. */
+#lb .cw{display:block;flex:0 0 auto;width:max-content;max-width:100%;white-space:pre}
+#lb .cw-c{display:block;color:var(--lamp);font-weight:500;line-height:1.35;min-height:1.35em}
+#lb .cw-c:empty:before{content:"\00a0"}
+/* pre-wrap rather than pre so one absurdly long run can still break instead of
+   pushing the page out; there are no internal spaces in a piece to collapse. */
+#lb .cw-t{display:block;white-space:pre-wrap;overflow-wrap:anywhere}
+/* A chord row belongs to the line under it, so the air goes above the pair,
+   not between the two halves of it — otherwise every chord looks equidistant
+   between the line above and the line below and you can't tell which it's for. */
+#lb .block.chorded .ln-pairs{margin-top:.75em}
+#lb .block.chorded .ln-pairs:first-child,
+#lb .block.chorded .ln-section + .ln-pairs{margin-top:0}
+#lb .ln-chord{color:var(--lamp);font-weight:500}
+/* The chip's padding is cancelled by an equal negative margin, so the box can
+   be seen without shifting the character it sits over — the chord row only
+   means anything while it stays in the monospace grid. */
+#lb .chip{font:inherit;color:inherit;padding:1px 3px;margin:-1px -3px;border-radius:3px;
+  background:rgba(245,166,35,.13);cursor:pointer;-webkit-tap-highlight-color:transparent}
+#lb .chip:hover,#lb .chip:focus-visible,#lb .chip[aria-expanded="true"]{background:rgba(245,166,35,.3);
+  outline:none;color:#FFD98A}
+
+#lb .pop{position:fixed;z-index:50;background:var(--panel2);border:1px solid var(--line);
+  border-radius:var(--r);box-shadow:0 10px 30px rgba(0,0,0,.55);padding:10px 12px 8px;
+  width:132px;text-align:center;pointer-events:none}
+#lb .pop .pname{font-family:'IBM Plex Mono',monospace;font-size:14px;font-weight:500;
+  color:var(--lamp);margin-bottom:6px}
+#lb .pop svg{display:block;margin:0 auto}
+#lb .pop .ptune{font-family:'Barlow Condensed',sans-serif;text-transform:uppercase;
+  letter-spacing:.12em;font-size:9px;color:var(--faint);margin-top:6px}
+#lb .pop .pnone{font-size:12px;color:var(--dim);padding:6px 0}
+
+/* ---------- the autoscroll deck ---------- */
+#lb .play{margin-left:auto}
+
+/* Back to the top. The book is one long scroll — seventeen songs of it — and
+   the contents live at the very top, so getting back there is the one move
+   worth a permanent button. It lifts clear of the scroll deck when that is up
+   rather than sitting under it. */
+#lb .totop{position:fixed;right:16px;bottom:16px;z-index:55;width:46px;height:46px;border-radius:50%;
+  background:var(--panel2);border:1px solid var(--line);color:var(--cream);font-size:19px;line-height:1;
+  box-shadow:0 8px 24px rgba(0,0,0,.55);display:flex;align-items:center;justify-content:center;
+  opacity:0;pointer-events:none;transform:translateY(8px);transition:opacity .16s,transform .16s,bottom .16s;
+  -webkit-tap-highlight-color:transparent}
+#lb .totop.show{opacity:1;pointer-events:auto;transform:none}
+#lb .totop:hover{border-color:var(--lamp);color:var(--lamp)}
+#lb .totop.lifted{bottom:86px}
+#lb .song.rolling{box-shadow:0 0 0 1px rgba(245,166,35,.45)}
+
+/* Fixed to the bottom so the controls stay under your thumb while the words
+   move — hunting for a pause button mid-song is the one thing this must not
+   make you do. */
+#lb .deck{position:fixed;left:50%;transform:translateX(-50%);bottom:14px;z-index:60;
+  display:flex;align-items:center;gap:var(--s2);padding:9px 12px;border-radius:99px;
+  background:var(--panel2);border:1px solid var(--line);
+  box-shadow:0 10px 34px rgba(0,0,0,.6);max-width:calc(100vw - 20px)}
+#lb .deck .dname{font-family:'Barlow Condensed',sans-serif;text-transform:uppercase;
+  letter-spacing:.1em;font-size:12px;font-weight:600;white-space:nowrap;overflow:hidden;
+  text-overflow:ellipsis;max-width:24ch}
+#lb .deck button{border:1px solid var(--line);border-radius:99px;background:var(--panel2);
+  color:var(--cream);font-size:13px;font-weight:600;padding:8px 13px;line-height:1;white-space:nowrap}
+#lb .deck button:hover{border-color:var(--lamp);color:var(--lamp)}
+#lb .deck .go{background:var(--lamp);color:#1B1710;border-color:var(--lamp)}
+#lb .deck .go:hover{color:#1B1710;filter:brightness(1.08)}
+#lb .deck .step{padding:8px 11px;font-family:'IBM Plex Mono',monospace}
+#lb .deck .rate{font-family:'IBM Plex Mono',monospace;font-size:12px;color:var(--lamp);
+  min-width:44px;text-align:center;cursor:pointer;-webkit-tap-highlight-color:transparent}
+#lb .deck .dbar{flex:1;min-width:60px;height:4px;border-radius:2px;background:var(--line);overflow:hidden}
+#lb .deck .dbar i{display:block;height:100%;width:0;background:var(--lamp)}
+#lb .deck .dleft{font-family:'IBM Plex Mono',monospace;font-size:12px;color:var(--dim);min-width:42px;
+  text-align:right}
+#lb .ln-section{font-family:'Barlow Condensed',sans-serif;text-transform:uppercase;
+  letter-spacing:.14em;font-size:12px;font-weight:600;color:var(--dim);margin-bottom:5px}
+#lb .missing{margin-top:var(--s3);font-size:14px;color:var(--dim);font-style:italic}
+
+#lb .edit{margin-top:var(--s3);padding-top:var(--s3);border-top:1px solid var(--line2)}
+#lb .edit textarea{width:100%;min-height:190px;resize:vertical;background:var(--stage);color:var(--cream);
+  border:1px solid var(--line);border-radius:var(--r);padding:var(--s3);font-family:'IBM Plex Mono',monospace;
+  font-size:13px;line-height:1.65}
+#lb .edit textarea:focus{outline:none;border-color:var(--lamp)}
+#lb .editbar{display:flex;gap:var(--s2);align-items:center;flex-wrap:wrap;margin-top:var(--s2)}
+#lb .editbar .hint{font-size:12px;color:var(--faint);margin-left:auto}
+#lb .small{font-size:12px;padding:7px 12px}
+#lb .src{font-size:12px;color:var(--dim);text-decoration:none;border-bottom:1px dotted var(--line)}
+#lb .src:hover{color:var(--lamp)}
+#lb .done{color:var(--ok)}
+
+@media (max-width:640px){
+  #lb .toc{columns:1}
+  #lb h1{font-size:26px}
+  #lb .wrap{padding:0 var(--s3)}
+
+  /* Four buttons of four different widths wrapped into a ragged block. An
+     even grid reads as one control bar; the primary action takes the top. */
+  #lb .bar{display:grid;grid-template-columns:1fr 1fr;gap:var(--s2)}
+  #lb .bar .btn{width:100%;text-align:center;padding:12px 10px}
+  #lb .bar #print{grid-column:1 / -1}
+  #lb .spacer{display:none}
+
+  /* Long tunings were breaking contents entries mid-line. The tuning gets its
+     own line, so every entry is title-then-tuning rather than ragged wrap. */
+  #lb .toc li{padding:7px 0;border-bottom:1px solid var(--line2);font-size:15px}
+  #lb .toc li:last-child{border-bottom:none}
+  #lb .toc .tune{display:block;font-size:11px;margin-top:3px;margin-left:26px;color:var(--faint)}
+
+  #lb .cover{padding:var(--s3)}
+  #lb .cover h2{font-size:18px}
+  #lb .song{padding:var(--s3)}
+  #lb .song h3{font-size:20px}
+  #lb .words{font-size:14px}
+  #lb .block.chorded{font-size:11.5px}
+  /* A finger has to land on the chip, so it gets real height on a phone
+     without taking any width — width is what holds the grid together. */
+  #lb .chip{padding:5px 3px;margin:-5px -3px}
+
+  /* On a phone the deck is a full-width bar: the song name and the time go on
+     top, the controls underneath where both thumbs can reach them. */
+  #lb .deck{left:8px;right:8px;bottom:8px;transform:none;max-width:none;border-radius:var(--r);
+    flex-wrap:wrap;row-gap:8px;padding:10px}
+  #lb .deck .dname{order:1;flex:1}
+  #lb .deck .dleft{order:2}
+  #lb .deck .dbar{order:3;flex-basis:100%;min-width:0}
+  #lb .deck .pp{order:4}
+  #lb .deck .step{order:5}
+  #lb .deck .rate{order:6}
+  #lb .deck .stop{order:8;margin-left:auto}
+  #lb .edit textarea{min-height:150px;font-size:12px}
+  /* The deck is a full-width bar down here, so the button clears it by more. */
+  #lb .totop{right:10px;bottom:10px;width:44px;height:44px}
+  #lb .totop.lifted{bottom:118px}
+}
+
+/* One song per sheet of paper, black on white, no app furniture. */
+@media print{
+  @page{margin:14mm 15mm}
+  #lb{background:#fff;color:#000;min-height:0;padding:0;font-size:11.5pt}
+  #lb .wrap,#lb header .wrap{max-width:none;padding:0}
+  #lb .noprint{display:none!important}
+  #lb header{background:none;border:none;padding:0;margin:0 0 8mm}
+  #lb header:after{display:none}
+  #lb .status{display:none}
+  #lb h1{color:#000;font-size:20pt}
+  #lb h1 small{color:#444}
+  #lb h1 small span{color:#000}
+  #lb .cover{border:none;background:none;padding:0;margin:0;
+    break-after:page;page-break-after:always}
+  #lb .toc li{color:#000}
+  #lb .toc li b,#lb .toc .no{color:#000}
+  #lb .song{border:none;background:none;padding:0;margin:0;
+    break-before:page;page-break-before:always;break-inside:auto}
+  #lb .song h3{font-size:17pt}
+  #lb .by,#lb .tag,#lb .missing{color:#333}
+  #lb .meta{border-bottom:1px solid #999}
+  #lb .tag.tune{color:#000;border-color:#666;font-weight:700}
+  #lb .no{color:#000}
+  #lb .words{font-size:11.5pt;line-height:1.6}
+  /* Amber prints as pale grey, so chords carry on the page by weight instead. */
+  #lb .block.chorded{font-size:9pt;line-height:1.45;overflow:visible}
+  #lb .ln-chord{color:#000;font-weight:700}
+  #lb .ln-section{color:#000}
+  #lb .chip{background:none;padding:0;margin:0;color:#000}
+  #lb .pop,#lb .deck,#lb .totop{display:none!important}
+  #lb .song.rolling{box-shadow:none}
+  #lb .edit,#lb .src{display:none!important}
+}
+</style>
+
+<div id="lb">
+  <header><div class="wrap">
+      <div class="plate">
+        <div class="lamp"></div>
+        <h1><span id="brand">Lyric book</span><small>Lyric book &middot; <span id="ver"></span> <span id="switch"></span></small></h1>
+        <div class="status" id="status">Checking</div>
+      </div>
+      <nav class="noprint" id="nav"></nav>
+  </div></header>
+
+  <div class="wrap">
+
+    <div id="gate" class="hide"></div>
+
+    <div id="main" class="hide">
+      <div class="bar noprint">
+        <button class="btn go" id="print">Save as PDF / Print</button>
+        <button class="btn" id="copy">Copy as text</button>
+        <button class="btn" id="seed">Add blank rows to the sheet</button>
+        <span class="spacer"></span>
+        <a class="btn" id="back" href="./results.html">Back to the setlist</a>
+      </div>
+      <div id="codebox" class="msg noprint hide">
+        <b>Enter the band code to save.</b> Reading needs nothing; saving words asks for the code once
+        and this device remembers it.
+        <div class="editbar"><input id="code" type="password" autocomplete="off" placeholder="Band code">
+        <button class="btn go small" id="codeok" type="button">Use this code</button></div>
+      </div>
+      <div id="msg" class="msg noprint hide"></div>
+      <div id="book"></div>
+      <p class="note noprint" style="margin-top:var(--s4)">
+        Paste each song's words into its box and hit <b>Save</b> — it writes straight to the
+        <b>Lyrics</b> tab of the band sheet, so everyone sees it — and any later show that plays
+        the same song gets the same words. You can type into that tab
+        directly instead if you'd rather. <b>Chords go in the same box:</b> paste an Ultimate
+        Guitar tab as-is and the chord lines are picked out and held over the words, or write
+        them inline as <span class="mono">[G]like this</span>. Hover or tap any chord to see how
+        it's fingered — in that song's tuning, not standard. <b>Scroll it</b> runs the words past
+        you over the song's own running time; nudge the speed with &minus; and + if the band plays
+        it faster than the record, and tap the number to go back to the song's pace. Print with
+        backgrounds off for a clean black-on-white book; each song starts on its own page.
+      </p>
+    </div>
+  </div>
+</div>
+
+<script type="module">
+import {
+  VERSION, mmss, lenSecs, lyricBlocks, searchLinks,
+  lyricLines, hasChords, chordParts, chordWords, scrollPlan, clampSpeed, advanceScroll,
+} from "./setlist.js";
+import { chordShape, stringsFor } from "./chords.js";
+import {
+  currentShowId, getData, getLyrics, saveLyric, addBlankLyricRows, bandCode, setBandCode,
+  navHtml, link, showSwitcher, wireSwitcher,
+} from "./store.js";
+
+const $ = (id) => document.getElementById(id);
+const esc = (s) => String(s == null ? "" : s).replace(/[&<>"]/g, (c) =>
+  ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+
+$("ver").textContent = VERSION;
+
+let LYRICS = {};
+let SHOW = "";
+let DATA = null;
+
+/* The lyric book reads the set the API worked out — the same songs, in the
+   same order, as the setlist page — rather than deciding for itself. */
+const tuningFor = (r) => r.tuning || "";
+const lyricsFor = (r) => String(LYRICS[r.k] == null ? "" : LYRICS[r.k]).replace(/\r\n?/g, "\n").trim();
+const editing = {};   // song key -> paste box is open
+let ok = null;        // null = still checking, true/false = last call's result
+let busy = false;
+
+/** Same three states the vote and setlist pages show, same wording. */
+function setStatus() {
+  const el = $("status");
+  if (busy) { el.textContent = "Saving"; el.className = "status"; return; }
+  if (ok === null) { el.textContent = "Checking"; el.className = "status"; return; }
+  el.textContent = ok ? "Saved" : "Not saving";
+  el.className = ok ? "status ok" : "status warn";
+}
+
+function say(html, fail) {
+  const el = $("msg");
+  el.className = "msg noprint" + (fail ? " fail" : "");
+  el.innerHTML = html;
+  el.classList.remove("hide");
+}
+
+/* The set, in running order, as the API serves it. */
+function buildSet() {
+  if (!DATA) return { ok: false, error: "The set has not loaded." };
+  if (DATA.set.blocked) {
+    return { ok: false, error: "Some songs have an unreadable length, so there is no set yet." };
+  }
+  const byK = new Map(DATA.rows.map((r) => [r.k, r]));
+  const ordered = (DATA.set.order || []).map((k) => byK.get(k)).filter(Boolean).map((r) => ({
+    k: r.k, name: r.song, song: r.song, artist: r.artist, dur: lenSecs(r.len),
+    year: r.year, tuning: r.tuning,
+  }));
+  return { ok: true, ordered };
+}
+
+/** Title line for one song: running number, name, and the tuning it's played in. */
+function heading(r, i) {
+  const tune = tuningFor(r);
+  return '<h3><span class="no">' + String(i + 1).padStart(2, "0") + '</span> ' + esc(r.name) +
+    (tune ? ' <span class="tag tune">' + esc(tune) + '</span>' : "") + '</h3>' +
+    '<div class="by">' + esc(r.artist) + '</div>';
+}
+
+/**
+ * One chord, as a tappable chip. Bar lines stay outside it: a riff written
+ * "|A5 |A5 | 8x" should offer the A5, not the bar glued to it.
+ */
+function chip(tok) {
+  const p = chordParts(tok);
+  if (!p.chord) return esc(tok);
+  return esc(p.lead) +
+    '<button class="chip" type="button" aria-expanded="false" data-chord="' +
+    esc(p.core) + '">' + esc(p.core) + '</button>' + esc(p.trail);
+}
+
+/**
+ * A chord row and the words under it, rendered as one wrappable row.
+ *
+ * Each piece is a word (or the part of one a chord lands inside) carrying its
+ * own chord above it, so the row re-flows down the screen on a phone instead of
+ * running off the right-hand edge. Within a piece the monospace spacing is kept
+ * exactly, which is what holds the chord over its syllable.
+ */
+function pairRow(chordLine, wordLine) {
+  return '<div class="ln ln-pairs">' + chordWords(chordLine, wordLine).map((seg) =>
+    '<span class="cw"><span class="cw-c">' + (seg.chord ? chip(seg.chord) : "") +
+    '</span><span class="cw-t">' + esc(seg.text) + '</span></span>').join("") + '</div>';
+}
+
+/**
+ * Words for one song, with chord rows kept above the syllables they belong to.
+ * Both formats the band is likely to paste land here: Ultimate Guitar's
+ * chords-on-their-own-line, and ChordPro's inline [G] brackets, which
+ * lyricLines() expands into the same shape.
+ */
+function renderWords(text) {
+  return '<div class="words">' + lyricBlocks(text).map((b) => {
+    const lines = lyricLines(b);
+    let html = "";
+    for (let i = 0; i < lines.length; i++) {
+      const l = lines[i];
+      if (l.type !== "chord") {
+        html += '<div class="ln ln-' + l.type + '">' + esc(l.text) + '</div>';
+        continue;
+      }
+      // A chord row owns the words on the line below it, so the two are laid
+      // out as one thing rather than as two rows that have to stay in step.
+      const next = lines[i + 1];
+      const words = next && next.type === "words" ? next.text : "";
+      if (next && next.type === "words") i++;
+      html += pairRow(l.text, words);
+    }
+    return '<div class="block' + (hasChords(lines) ? " chorded" : "") + '">' + html + '</div>';
+  }).join("") + '</div>';
+}
+
+function draw() {
+  const gen = buildSet();
+  const book = $("book");
+  book.innerHTML = "";
+
+  if (!gen.ok) { say("<b>No set to print.</b> " + esc(gen.error), true); return; }
+
+  const list = gen.ordered;
+  const run = list.reduce((a, r) => a + r.dur, 0);
+  const missing = list.filter((r) => !lyricsFor(r));
+
+  const cover = document.createElement("div");
+  cover.className = "cover";
+  cover.innerHTML = '<h2>The set — ' + list.length + ' songs &middot; ' + mmss(run) + '</h2>' +
+    '<ol class="toc">' + list.map((r, i) => {
+      const tune = tuningFor(r);
+      return '<li><span class="no">' + String(i + 1).padStart(2, "0") + '</span><b>' + esc(r.name) +
+        '</b> — ' + esc(r.artist) + (tune ? ' <span class="tune mono">[' + esc(tune) + ']</span>' : "") + '</li>';
+    }).join("") + '</ol>';
+  book.appendChild(cover);
+
+  list.forEach((r, i) => {
+    const words = lyricsFor(r);
+    const el = document.createElement("section");
+    el.className = "song";
+    // The diagrams are drawn against this song's strings, not standard tuning:
+    // half this set is in Drop D or Eb, where the standard shapes are wrong.
+    el.dataset.tuning = tuningFor(r) || "E standard";
+    el.dataset.dur = r.dur;
+    el.dataset.song = r.name;
+    el.innerHTML = heading(r, i) +
+      '<div class="meta"><span class="tag">' + mmss(r.dur) + '</span>' +
+      (r.year ? '<span class="tag">' + esc(r.year) + '</span>' : "") +
+      '<a class="src noprint" target="_blank" rel="noopener noreferrer" href="' +
+        esc(searchLinks(r).genius) + '">Look up the words</a>' +
+      '<a class="src noprint" target="_blank" rel="noopener noreferrer" href="' +
+        esc(searchLinks(r).ug) + '">Look up the chords</a>' +
+      '<button class="btn small play noprint" type="button">Scroll it</button></div>' +
+      (words ? renderWords(words) : '<p class="missing">No lyrics saved for this one yet.</p>');
+    el.appendChild(editor(r, words));
+    book.appendChild(el);
+  });
+
+  if (missing.length) {
+    say("<b>" + missing.length + " of " + list.length + " songs still need words.</b> Paste them into " +
+      "the box under each one: " + missing.map((r) => esc(r.name)).join(", ") + ".");
+  } else {
+    $("msg").classList.add("hide");
+  }
+}
+
+/**
+ * Paste box for one song. Saves straight to the sheet's Lyrics tab, so nobody
+ * has to open the spreadsheet — the words still only ever come from whoever
+ * types them in here.
+ */
+function editor(r, words) {
+  // A song that already has words collapses to a single Edit button, so the
+  // finished book stays readable.
+  if (words && !editing[r.k]) {
+    const holder = document.createElement("div");
+    holder.className = "edit noprint";
+    const bar = document.createElement("div");
+    bar.className = "editbar";
+    const btn = document.createElement("button");
+    btn.className = "btn small";
+    btn.textContent = "Edit lyrics";
+    btn.onclick = () => { editing[r.k] = true; draw(); };
+    const note = document.createElement("span");
+    note.className = "hint done";
+    note.textContent = "Saved in the sheet";
+    bar.appendChild(btn);
+    bar.appendChild(note);
+    holder.appendChild(bar);
+    return holder;
+  }
+
+  const wrap = document.createElement("div");
+  wrap.className = "edit noprint";
+
+  const ta = document.createElement("textarea");
+  ta.value = words || "";
+  ta.placeholder = "Paste the words for " + r.name + " here — chords too, if you have them.\n\n" +
+    "Leave a blank line between verses; the book keeps each one whole instead of splitting it\n" +
+    "across a page. Chords work either way round:\n\n" +
+    "  G           D          Em\n" +
+    "  Someone left the cake out in the rain\n\n" +
+    "or inline: [G]Someone left the [D]cake out in the [Em]rain";
+  ta.spellcheck = false;
+  ta.oninput = () => { editing[r.k] = true; };
+
+  const bar = document.createElement("div");
+  bar.className = "editbar";
+
+  const save = document.createElement("button");
+  save.className = "btn go small";
+  save.textContent = words ? "Save changes" : "Save lyrics";
+  save.onclick = async () => {
+    save.disabled = true;
+    save.textContent = "Saving";
+    busy = true;
+    setStatus();
+    try {
+      if (!(await haveCode())) throw new Error("Enter the band code above first.");
+      await saveLyric(SHOW, r.k, ta.value);
+      LYRICS[r.k] = ta.value;
+      delete editing[r.k];
+      ok = true;
+      draw();
+    } catch (e) {
+      save.disabled = false;
+      save.textContent = "Save lyrics";
+      ok = false;
+      say("<b>Couldn't save.</b> " + esc(e.message || e), true);
+    } finally {
+      busy = false;
+      setStatus();
+    }
+  };
+  bar.appendChild(save);
+
+  if (words) {
+    const hide = document.createElement("button");
+    hide.className = "btn small";
+    hide.textContent = "Done";
+    hide.onclick = () => { delete editing[r.k]; draw(); };
+    bar.appendChild(hide);
+  }
+
+  wrap.appendChild(ta);
+  wrap.appendChild(bar);
+  return wrap;
+}
+
+/* ---------- chord boxes ---------- */
+
+/**
+ * A chord diagram as SVG. Six strings across, five frets down, drawn against
+ * the nut when the shape sits in first position and labelled with a fret
+ * number when it doesn't.
+ */
+function diagram(shape) {
+  const N = shape.frets.length;
+  const ROWS = 5;
+  const GAP = 17, ROW = 16, L = 22, T = 22;
+  const W = L + (N - 1) * GAP + 14;
+  const H = T + ROWS * ROW + 16;
+  const x = (i) => L + i * GAP;
+  const y = (fret) => T + (fret - shape.baseFret + 0.5) * ROW;
+  const p = [];
+
+  // grid
+  for (let i = 0; i < N; i++) {
+    p.push('<line x1="' + x(i) + '" y1="' + T + '" x2="' + x(i) + '" y2="' + (T + ROWS * ROW) +
+      '" stroke="currentColor" stroke-width="1" opacity=".55"/>');
+  }
+  for (let f = 0; f <= ROWS; f++) {
+    p.push('<line x1="' + x(0) + '" y1="' + (T + f * ROW) + '" x2="' + x(N - 1) + '" y2="' +
+      (T + f * ROW) + '" stroke="currentColor" stroke-width="1" opacity=".55"/>');
+  }
+  if (shape.baseFret === 1) {
+    p.push('<rect x="' + (x(0) - 1) + '" y="' + (T - 4) + '" width="' + ((N - 1) * GAP + 2) +
+      '" height="4" fill="currentColor"/>');
+  } else {
+    p.push('<text x="' + (x(0) - 7) + '" y="' + (T + ROW * 0.7) + '" text-anchor="end" ' +
+      'font-size="10" fill="currentColor" opacity=".7">' + shape.baseFret + '</text>');
+  }
+
+  // open and muted strings, above the nut
+  shape.frets.forEach((f, i) => {
+    if (f > 0) return;
+    p.push('<text x="' + x(i) + '" y="' + (T - 7) + '" text-anchor="middle" font-size="10" ' +
+      'fill="currentColor" opacity=".75">' + (f === 0 ? "o" : "×") + '</text>');
+  });
+
+  if (shape.barre) {
+    const b = shape.barre;
+    p.push('<rect x="' + (x(b.from) - 5) + '" y="' + (y(b.fret) - 5) + '" width="' +
+      ((b.to - b.from) * GAP + 10) + '" height="10" rx="5" fill="currentColor"/>');
+  }
+  shape.frets.forEach((f, i) => {
+    if (f <= 0) return;
+    if (shape.barre && f === shape.barre.fret) return;   // already under the bar
+    p.push('<circle cx="' + x(i) + '" cy="' + y(f) + '" r="5" fill="currentColor"/>');
+  });
+
+  // finger numbers under the box
+  shape.fingers.forEach((n, i) => {
+    if (!n) return;
+    p.push('<text x="' + x(i) + '" y="' + (T + ROWS * ROW + 12) + '" text-anchor="middle" ' +
+      'font-size="10" fill="currentColor" opacity=".7">' + n + '</text>');
+  });
+
+  return '<svg viewBox="0 0 ' + W + ' ' + H + '" width="' + W + '" height="' + H +
+    '" role="img" aria-label="' + esc(shape.name) + ' chord shape">' + p.join("") + '</svg>';
+}
+
+/* Shapes are searched, not looked up, so each one is worked out once. */
+const shapeCache = new Map();
+function shapeFor(name, tuning) {
+  const key = tuning + "|" + name;
+  if (!shapeCache.has(key)) shapeCache.set(key, chordShape(name, stringsFor(tuning)));
+  return shapeCache.get(key);
+}
+
+const pop = document.createElement("div");
+pop.className = "pop hide";
+$("lb").appendChild(pop);
+let pinned = null;
+
+function hidePop() {
+  // Called on every scroll event, so it runs a few thousand times during an
+  // autoscroll: do nothing when there is nothing to put away.
+  if (!pinned && pop.classList.contains("hide")) return;
+  pop.classList.add("hide");
+  if (pinned) pinned.setAttribute("aria-expanded", "false");
+  pinned = null;
+}
+
+function showPop(chip) {
+  const name = chip.dataset.chord;
+  const song = chip.closest(".song");
+  const tuning = (song && song.dataset.tuning) || "E standard";
+  const shape = shapeFor(name, tuning);
+  pop.innerHTML = '<div class="pname">' + esc(name) + '</div>' +
+    (shape ? diagram(shape) : '<div class="pnone">No shape for this one.</div>') +
+    '<div class="ptune">' + esc(tuning) + '</div>';
+  pop.classList.remove("hide");
+
+  // Fixed position off the chip's own rectangle: the chord row scrolls
+  // sideways inside the block, which would clip anything positioned within it.
+  const r = chip.getBoundingClientRect();
+  const box = pop.getBoundingClientRect();
+  let left = r.left + r.width / 2 - box.width / 2;
+  left = Math.max(8, Math.min(left, window.innerWidth - box.width - 8));
+  const above = r.top - box.height - 8;
+  pop.style.left = left + "px";
+  pop.style.top = (above > 8 ? above : r.bottom + 8) + "px";
+}
+
+const canHover = window.matchMedia && window.matchMedia("(hover:hover)").matches;
+const book = $("book");
+
+book.addEventListener("click", (e) => {
+  const chip = e.target.closest(".chip");
+  if (!chip) return;
+  if (pinned === chip) { hidePop(); return; }
+  hidePop();
+  pinned = chip;
+  chip.setAttribute("aria-expanded", "true");
+  showPop(chip);
+});
+
+if (canHover) {
+  book.addEventListener("mouseover", (e) => {
+    const chip = e.target.closest(".chip");
+    if (!chip || pinned) return;
+    showPop(chip);
+  });
+  book.addEventListener("mouseout", (e) => {
+    if (pinned) return;
+    const chip = e.target.closest(".chip");
+    if (chip && !chip.contains(e.relatedTarget)) pop.classList.add("hide");
+  });
+}
+
+document.addEventListener("click", (e) => {
+  if (pinned && !e.target.closest(".chip")) hidePop();
+});
+document.addEventListener("keydown", (e) => { if (e.key === "Escape") hidePop(); });
+window.addEventListener("scroll", hidePop, true);
+window.addEventListener("resize", hidePop);
+
+/* ---------- autoscroll ---------- */
+
+/**
+ * Scrolls one song past the reader over the length of the song.
+ *
+ * The pace comes from the running time already in the catalogue, so a 5:13
+ * song takes 5:13 to go by. That is a starting point rather than a promise —
+ * nobody plays to the recording — so the speed override multiplies it live and
+ * dragging the page by hand doesn't fight the scroll: the run picks up from
+ * wherever you left it.
+ */
+const deck = document.createElement("div");
+deck.className = "deck hide noprint";
+deck.innerHTML =
+  '<div class="dname"></div>' +
+  '<div class="dleft"></div>' +
+  '<div class="dbar"><i></i></div>' +
+  '<button class="pp go" type="button">Pause</button>' +
+  '<button class="step" type="button" aria-label="Slower">&minus;</button>' +
+  '<span class="rate" role="button" tabindex="0" title="Back to the song’s own pace">1.0&times;</span>' +
+  '<button class="step" type="button" aria-label="Faster">+</button>' +
+  '<button class="stop" type="button">Stop</button>';
+$("lb").appendChild(deck);
+
+/* ---------- back to the top ---------- */
+const toTop = document.createElement("button");
+toTop.className = "totop noprint";
+toTop.type = "button";
+toTop.setAttribute("aria-label", "Back to the top of the book");
+toTop.innerHTML = "&uarr;";
+toTop.onclick = () => {
+  const from = window.scrollY;
+  const easy = !window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  window.scrollTo({ top: 0, behavior: easy ? "smooth" : "auto" });
+  // A browser that ignores the smooth request — an unfocused tab does — would
+  // otherwise leave the button looking broken. If nothing has moved by now,
+  // nothing is going to: jump.
+  setTimeout(() => {
+    if (Math.abs(window.scrollY - from) < 4) window.scrollTo(0, 0);
+  }, 250);
+};
+$("lb").appendChild(toTop);
+
+/* It appears once there is something to come back from, and rides above the
+   scroll deck whenever that is up. */
+function placeToTop() {
+  toTop.classList.toggle("show", window.scrollY > 400);
+  toTop.classList.toggle("lifted", !deck.classList.contains("hide"));
+}
+window.addEventListener("scroll", placeToTop, { passive: true });
+placeToTop();
+
+const dName = deck.querySelector(".dname");
+const dLeft = deck.querySelector(".dleft");
+const dFill = deck.querySelector(".dbar i");
+const dPP = deck.querySelector(".pp");
+const dRate = deck.querySelector(".rate");
+const [dSlower, dFaster] = deck.querySelectorAll(".step");
+const dStop = deck.querySelector(".stop");
+
+let roll = null;        // the run in progress
+let mult = 1;
+let wake = null;
+
+/* A phone that sleeps halfway through the second verse is no use on a stage. */
+async function keepAwake(on) {
+  try {
+    if (on) {
+      if (!wake && "wakeLock" in navigator) wake = await navigator.wakeLock.request("screen");
+    } else if (wake) {
+      await wake.release();
+      wake = null;
+    }
+  } catch (e) { /* unsupported or refused — the scroll works either way */ }
+}
+
+function showRate() { dRate.textContent = mult.toFixed(2).replace(/0$/, "") + "×"; }
+
+function stopRoll() {
+  if (roll) {
+    cancelAnimationFrame(roll.raf);
+    roll.song.classList.remove("rolling");
+  }
+  roll = null;
+  deck.classList.add("hide");
+  placeToTop();
+  keepAwake(false);
+}
+
+function setPaused(on) {
+  if (!roll) return;
+  roll.paused = on;
+  dPP.textContent = on ? "Play" : "Pause";
+  keepAwake(!on);
+  if (!on) {
+    roll.last = 0;
+    roll.raf = requestAnimationFrame(step);
+  } else {
+    cancelAnimationFrame(roll.raf);
+  }
+}
+
+function step(ts) {
+  if (!roll || roll.paused) return;
+  if (!roll.last) roll.last = ts;
+  const dt = Math.min(0.25, (ts - roll.last) / 1000);   // a backgrounded tab shouldn't lurch
+  roll.last = ts;
+
+  // If the page moved without us, the reader dragged it. Take their position
+  // and carry on from there rather than yanking them back.
+  if (Math.abs(window.scrollY - roll.applied) > 2) roll.pos = window.scrollY;
+
+  const next = advanceScroll(roll.plan, roll.pos, dt, mult);
+  roll.pos = next.pos;
+  window.scrollTo(0, roll.pos);
+  roll.applied = window.scrollY;
+  dFill.style.width = Math.round(next.progress * 100) + "%";
+  dLeft.textContent = mmss(Math.round(next.remaining));
+
+  if (next.done) { stopRoll(); return; }   // auto-stop at the end of the song
+  roll.raf = requestAnimationFrame(step);
+}
+
+function startRoll(song) {
+  stopRoll();
+  const rect = song.getBoundingClientRect();
+  const top = rect.top + window.scrollY;
+  const plan = scrollPlan(top, rect.height, window.innerHeight, Number(song.dataset.dur));
+
+  dName.textContent = song.dataset.song || "";
+  showRate();
+  deck.classList.remove("hide");
+  placeToTop();
+  song.classList.add("rolling");
+
+  if (!plan.pxPerSec) {
+    // The whole song is already on screen, so there is nothing to scroll.
+    dLeft.textContent = "—";
+    dFill.style.width = "100%";
+    window.scrollTo(0, plan.from);
+    roll = { song, plan, pos: plan.from, applied: plan.from, paused: true, last: 0, raf: 0 };
+    dPP.textContent = "Play";
+    return;
+  }
+
+  window.scrollTo(0, plan.from);
+  roll = { song, plan, pos: plan.from, applied: window.scrollY, paused: true, last: 0, raf: 0 };
+  dFill.style.width = "0%";
+  dLeft.textContent = mmss(Math.round(plan.distance / (plan.pxPerSec * mult)));
+  // A hidden tab gets no frames, so starting there would show "Pause" over a
+  // page that never moves. Wait for it to come back to the front.
+  setPaused(document.hidden);
+}
+
+book.addEventListener("click", (e) => {
+  const btn = e.target.closest(".play");
+  if (!btn) return;
+  const song = btn.closest(".song");
+  if (roll && roll.song === song) { stopRoll(); return; }
+  startRoll(song);
+});
+
+dPP.onclick = () => setPaused(!roll || !roll.paused);
+dStop.onclick = stopRoll;
+const nudge = (by) => { mult = clampSpeed(mult + by); showRate(); };
+dSlower.onclick = () => nudge(-0.1);
+dFaster.onclick = () => nudge(0.1);
+dRate.onclick = () => { mult = 1; showRate(); };
+dRate.onkeydown = (e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); dRate.click(); } };
+
+document.addEventListener("keydown", (e) => {
+  if (!roll) return;
+  const typing = /^(INPUT|TEXTAREA)$/.test(e.target.tagName);
+  if (typing) return;
+  if (e.key === " ") { e.preventDefault(); setPaused(!roll.paused); }
+  else if (e.key === "Escape") stopRoll();
+});
+
+/* A tab sent to the background stops getting frames; come back paused rather
+   than jumping forward. */
+document.addEventListener("visibilitychange", () => {
+  if (document.hidden && roll && !roll.paused) setPaused(true);
+});
+
+/* ---------- plain-text version, for pasting anywhere ---------- */
+$("copy").onclick = () => {
+  const gen = buildSet();
+  if (!gen.ok) return;
+  const brand = (DATA.show.bandName || DATA.show.name || "").toUpperCase();
+  let out = (brand ? brand + " — " : "") + "LYRIC BOOK (" + VERSION + ")\n\n";
+  gen.ordered.forEach((r, i) => {
+    const tune = tuningFor(r);
+    const words = lyricsFor(r);
+    out += String(i + 1).padStart(2, "0") + ". " + r.name + (tune ? "  [" + tune + "]" : "") +
+      "\n" + r.artist + "\n\n" + (words || "(no lyrics in the sheet yet)") + "\n\n\n";
+  });
+  const btn = $("copy");
+  const done = () => { btn.textContent = "Copied"; setTimeout(() => (btn.textContent = "Copy as text"), 1400); };
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(out).then(done).catch(() => {});
+  }
+};
+
+$("print").onclick = () => window.print();
+
+/* Give the band a labelled, empty row per song so there's somewhere to paste. */
+$("seed").onclick = async () => {
+  const gen = buildSet();
+  if (!gen.ok) return;
+  const btn = $("seed");
+  btn.disabled = true;
+  btn.textContent = "Adding";
+  try {
+    if (!(await haveCode())) throw new Error("Enter the band code above first.");
+    await addBlankLyricRows(SHOW);
+    ok = true;
+    draw();
+    say("<b>Sheet updated.</b> Every song in the set now has a row in the Lyrics tab — paste the words in there.");
+  } catch (e) {
+    ok = false;
+    say("<b>Couldn't reach the sheet.</b> " + esc(e.message || e), true);
+  } finally {
+    btn.disabled = false;
+    btn.textContent = "Add blank rows to the sheet";
+    setStatus();
+  }
+};
+
+/* ---------- band code ---------- */
+
+/**
+ * Reading the book needs nothing. Saving needs the band code on shows that
+ * ask for one; the box appears the first time it is wanted and the device
+ * remembers the answer.
+ */
+let codeWait = null;
+function haveCode() {
+  if (!DATA.show.requireBandCode || bandCode()) return Promise.resolve(true);
+  $("codebox").classList.remove("hide");
+  $("code").focus();
+  return new Promise((resolve) => { codeWait = resolve; });
+}
+$("codeok").onclick = () => {
+  const c = $("code").value.trim();
+  if (!c) return;
+  setBandCode(c);
+  $("codebox").classList.add("hide");
+  if (codeWait) { codeWait(true); codeWait = null; }
+};
+$("code").onkeydown = (e) => { if (e.key === "Enter") $("codeok").click(); };
+
+/* ---------- boot ---------- */
+async function boot() {
+  SHOW = await currentShowId();
+  $("nav").innerHTML = navHtml(SHOW, "lyrics.html");
+  $("back").href = link("results.html", SHOW);
+  $("main").classList.remove("hide");
+
+  let okSet = false;
+  try {
+    DATA = await getData(SHOW);
+    okSet = true;
+  } catch (e) {
+    say("<b>Couldn't load the set — " + esc(e.message || e) + ".</b>", true);
+    ok = false;
+    setStatus();
+    return;
+  }
+  const brand = DATA.show.bandName || DATA.show.name || "Lyric book";
+  $("brand").textContent = brand;
+  document.title = brand + " — Lyric book";
+  $("switch").innerHTML = await showSwitcher(SHOW);
+  wireSwitcher($("switch"));
+
+  let okLyrics = false;
+  try {
+    LYRICS = await getLyrics(SHOW);
+    okLyrics = true;
+  } catch (e) {
+    say("<b>Couldn't load the lyrics — " + esc(e.message || e) + ".</b>", true);
+  }
+  ok = okSet && okLyrics;
+  setStatus();
+
+  draw();
+}
+boot();
+</script>

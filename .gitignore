@@ -17,3 +17,4 @@ service-account*.json
 # Local tooling output
 .env.development.local
 scripts/out/
+.playwright-mcp/

@@ -4,6 +4,10 @@
 // Scoring. Single source of truth: the API and both pages read these, so
 // changing a number here changes everything. Kept identical to the Apps
 // Script version this replaced, so historic votes keep their exact weight.
+// Shown on every page. Continues Band Vote's numbering (it reached v32), since
+// this app now carries everything that one did.
+export const VERSION = "v33";
+
 export const WEIGHTS = { MUST: 6, YES: 2, MAYBE: 1, NO: -4 };
 
 // "X" is a marker on the pick-ONE locked sections, not a scored vote.

@@ -255,7 +255,7 @@ Every story below depends on this phase.
 
 ### Tests for User Story 5
 
-- [ ] T035 [P] [US5] Write `test/api.lyrics.test.js`. Assert:
+- [X] T035 [P] [US5] Write `test/api.lyrics.test.js`. Assert:
   - Saving with no band code for `nov` gets 401.
   - A save with the code upserts exactly one `Lyrics` row.
   - Text over 20,000 characters gets 400.
@@ -264,7 +264,7 @@ Every story below depends on this phase.
 
 ### Implementation for User Story 5
 
-- [ ] T036 [US5] Create `store.js`, adapted from BV:`store.js`. Keep only what the ported pages need:
+- [X] T036 [US5] Create `store.js`, adapted from BV:`store.js`. Keep only what the ported pages need:
   - `currentShowId()`: the `?show=` value, else `/api/shows`'s `defaultId`.
   - `getData(show)`: calls `/api/data`.
   - Band code handling:
@@ -278,7 +278,7 @@ Every story below depends on this phase.
     - `post(path, body)`, which adds `show` and `code` to every request.
   - The escape helper `esc`.
   - Wrap every `localStorage` access in `try`/`catch`.
-- [ ] T037 [US5] Create `lyrics.html`, ported from BV:`lyrics.html`.
+- [X] T037 [US5] Create `lyrics.html`, ported from BV:`lyrics.html`.
   - Adapt it to this app:
     - Use `store.js` and `/api/data` plus `/api/lyrics`, with songs from `data.rows` in `data.set.order`.
     - Header: `data.show.bandName || data.show.name`.
@@ -297,8 +297,8 @@ Every story below depends on this phase.
     - print CSS
     - copy as text
   - Replace the "Open the setlist first" gate with a name and band-code prompt that shows only when `requireBandCode` is on. Reading needs no code; saving does.
-- [ ] T038 [US5] Add a "Lyrics" link to the nav of `learn.html`, `availability.html`, `results.html` and `index.html`, keeping the current `?show` param. For October this only adds a link; nothing else changes.
-- [ ] T039 [US5] Add `lyrics.html` routes to the smoke checks in `quickstart.md` §1 and §4, if they aren't already listed. Test the page by hand on a phone-width viewport of 375px: chords over syllables, and no horizontal scrolling.
+- [X] T038 [US5] Add a "Lyrics" link to the nav of `learn.html`, `availability.html`, `results.html` and `index.html`, keeping the current `?show` param. For October this only adds a link; nothing else changes.
+- [X] T039 [US5] Add `lyrics.html` routes to the smoke checks in `quickstart.md` §1 and §4, if they aren't already listed. Test the page by hand on a phone-width viewport of 375px: chords over syllables, and no horizontal scrolling.
 
 **Checkpoint**:
 - November lyrics can be entered live.
@@ -417,7 +417,7 @@ Every story below depends on this phase.
 2. Tap in a new tempo and save it.
 3. Reload: the saved tempo is used, and it is labelled "from the sheet".
 
-- [ ] T050 [P] [US6] Write `test/api.tempos.test.js`. Check:
+- [X] T050 [P] [US6] Write `test/api.tempos.test.js`. Check:
   - Out-of-range BPM is rejected with 400.
   - Saving a tempo for `nov` without the code is rejected with 401.
   - After a save, `/api/data` reports `bpmSource:"set"`.
@@ -576,7 +576,7 @@ Every story below depends on this phase.
 2. On the Admin tab, "Run check" reports health and the tabs for each show.
 3. Importing a pasted BR2 code saves those votes.
 
-- [ ] T073 [US10] Write `dev-server.js`, adapted from BV:`dev-server.js`.
+- [X] T073 [US10] Write `dev-server.js`, adapted from BV:`dev-server.js`.
   - Serve the static files.
   - Mount the real `api/*.js` handlers on a `test/fakeSheets.js` client that has `setSheetsClient` applied. That means the dev server runs the real API code instead of a separate fake.
   - Seed it with `test/fixtures/oct-sheet.json`, plus a small `nov·` fixture made from `scripts/fixtures/bandvote-tracks-v32.json` and patterned votes.

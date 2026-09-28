@@ -510,3 +510,9 @@
 @media (max-width:640px){
   #sv .limitbar .note{margin-left:0;width:100%;text-align:left}
 }
+
+/* Show switcher in the page header: which show this page is looking at. */
+.showpick{font:inherit;font-size:12px;letter-spacing:.02em;text-transform:none;color:var(--cream);
+  background:var(--panel2);border:1px solid var(--line);border-radius:6px;padding:2px 6px;margin-left:6px}
+#codebox input{font:inherit;padding:8px 10px;border-radius:6px;border:1px solid var(--line);
+  background:var(--panel2);color:var(--cream);min-width:0;flex:1}
