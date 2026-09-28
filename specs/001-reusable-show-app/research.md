@@ -138,3 +138,12 @@ Phase 0 output. Every open question from Technical Context is resolved here.
   - Replacing October's engine would have moved its automatic running order while the show is live, which breaks the October-unchanged rule.
   - Both engines now live in one shared, tested module, and the server works the order out once (`set.order`). That keeps FR-018: every page agrees on the order.
 - **Selection tie-break**: follows the same approach. A `tieBreak` setting chooses `"energy"` (October) or `"shorter"` (Band Vote's `a.dur - b.dur`), so November's set comes out identical to Band Vote's.
+
+## R11. Amendment made during implementation: new ballot and setlist pages
+
+- **Decision**: October's `index.html` and `results.html` stay exactly as they are until its gig. Any show other than October is sent to two new pages:
+  - `vote.html`: Band Vote's one-song-at-a-time ballot, with a whole-list view, pick-one groups and locked songs.
+  - `setlist.html`: Band Vote's set, ranking and readiness panel, plus Rock Show's forced, locked and pick-one songs, the lock snapshot, tuning changes, role chips, the per-show warnings and the who-voted-what table.
+  - A link with no show named also goes to the new pages once the default show is no longer October.
+- **Rationale**: This keeps the October-unchanged rule literally true while November gets full Band Vote parity.
+- **After 24 Oct**: the new pages replace the old two, which retire in Phase 14.

@@ -1,0 +1,412 @@
+<!doctype html>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Setlist vote</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700&family=Barlow:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<link href="./app.css" rel="stylesheet">
+<style>
+  /* List view: every song at once, grouped by section, for jumping about. */
+  #sv .lv{display:flex;flex-direction:column;gap:6px;margin-top:var(--s3)}
+  #sv .lv h3{font-family:'Barlow Condensed',sans-serif;text-transform:uppercase;letter-spacing:.06em;
+    font-size:15px;color:var(--lamp);margin:var(--s4) 0 var(--s1)}
+  #sv .lrow{display:flex;align-items:center;gap:10px;padding:8px 10px;border:1px solid var(--line);
+    border-radius:8px;background:var(--panel)}
+  #sv .lrow .lt{flex:1;min-width:0}
+  #sv .lrow .lt b{display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  #sv .lrow .lt span{color:var(--muted,#9a927f);font-size:13px}
+  #sv .lrow .lb{display:flex;gap:4px;flex:none}
+  #sv .lrow .lb button{font:inherit;font-size:11px;font-weight:600;letter-spacing:.04em;padding:8px 8px;
+    border-radius:6px;border:1px solid var(--line);background:var(--panel2);color:inherit;cursor:pointer;min-width:44px}
+  #sv .lrow .lb button.on{background:var(--lamp);color:#1a1200;border-color:var(--lamp)}
+  #sv .lrow.locked{opacity:.75}
+  #sv .viewtoggle{display:flex;gap:6px;margin:var(--s3) 0}
+  #sv .viewtoggle button{font:inherit;font-size:13px;padding:6px 12px;border-radius:999px;border:1px solid var(--line);
+    background:none;color:inherit;cursor:pointer}
+  #sv .viewtoggle button.on{border-color:var(--lamp);color:var(--lamp)}
+  #sv .locknote{font-size:14px;color:var(--muted,#9a927f);margin:var(--s2) 0}
+  #sv #copyout{width:100%;min-height:160px;margin-top:8px;font-family:'IBM Plex Mono',monospace;font-size:12px;
+    background:var(--panel2);color:inherit;border:1px solid var(--line);border-radius:8px;padding:8px}
+  @media (max-width:560px){ #sv .lrow{flex-wrap:wrap} #sv .lrow .lb{width:100%} #sv .lrow .lb button{flex:1} }
+</style>
+
+<div id="sv" class="stage-page">
+  <header><div class="wrap">
+    <div class="plate">
+      <div class="lamp"></div>
+      <h1 class="disp"><span id="brand">Setlist vote</span><small>Setlist vote &middot; <span id="ver"></span> <span id="switch"></span></small></h1>
+      <div class="status" id="status">Checking</div>
+    </div>
+    <nav id="nav"></nav>
+  </div></header>
+
+  <div class="wrap stage">
+    <div id="banner" class="banner hide"></div>
+
+    <div id="gate" class="gate">
+      <div class="eyebrow">Step one</div>
+      <h2 class="disp">Who's voting?</h2>
+      <p class="note" id="gateNote"></p>
+      <div class="names" id="names"></div>
+      <input id="codeIn" class="hide" placeholder="Band code" type="password" autocomplete="off" style="margin-top:8px">
+      <button class="go disp" id="start">Start voting</button>
+      <p class="note" id="verNote" style="margin-top:11px"></p>
+      <div id="gateErr" class="err hide"></div>
+    </div>
+
+    <div id="vote" class="hide">
+      <div class="viewtoggle" role="tablist">
+        <button id="viewOne" class="on" type="button">One at a time</button>
+        <button id="viewList" type="button">Whole list</button>
+      </div>
+      <div class="bar"><i id="pbar" style="width:0"></i></div>
+      <div class="prog"><span id="pcount" class="mono"></span><span id="pleft" class="mono"></span></div>
+      <div id="locks" class="locknote hide"></div>
+
+      <div id="one" class="floor">
+        <div class="main">
+          <div class="deck">
+            <div class="track" id="tcard">
+              <div class="tnum mono"><span id="tnum"></span><b id="tvote"></b></div>
+              <div class="tname disp" id="tname"></div>
+              <div class="tart" id="tart"></div>
+              <div class="tmeta mono"><span id="tdur"></span><span id="tyear"></span><span id="tbpm"></span><span id="tera"></span><span id="ttune"></span></div>
+            </div>
+            <div class="pad">
+              <div class="votes" id="votes">
+                <button data-v="MUST"><b>Must play</b><span>Fight me on it</span></button>
+                <button data-v="YES"><b>Yes</b><span>Happy to play it</span></button>
+                <button data-v="MAYBE"><b>Maybe</b><span>If it fits</span></button>
+                <button data-v="NO"><b>Pass</b><span>Leave it off &mdash; outweighs two Yes votes</span></button>
+              </div>
+              <div class="votes hide" id="pickpad">
+                <button data-v="X"><b>Pick this one</b><span id="pickwhy"></span></button>
+              </div>
+              <div class="steps">
+                <button id="prev">&larr; Previous</button>
+                <button id="next">Skip &rarr;</button>
+              </div>
+            </div>
+          </div>
+          <div class="util">
+            <button id="jump">Next unscored</button>
+            <button id="clearv">Clear this vote</button>
+            <button id="copy">Copy my votes</button>
+          </div>
+          <textarea id="copyout" class="hide" readonly spellcheck="false"></textarea>
+        </div>
+        <aside class="rail">
+          <div class="railhead">Track list <b id="railDone"></b></div>
+          <div class="raillist" id="raillist"></div>
+        </aside>
+      </div>
+
+      <div id="list" class="lv hide"></div>
+    </div>
+  </div>
+</div>
+
+<script type="module">
+import { VERSION, CHANGES, mmss, lenSecs, esc } from "./setlist.js";
+import {
+  currentShowId, getData, post, bandCode, setBandCode, me, setMe, navHtml, showSwitcher, wireSwitcher, link,
+} from "./store.js";
+
+const $ = (id) => document.getElementById(id);
+const LABEL = { MUST: "Must play", YES: "Yes", MAYBE: "Maybe", NO: "Pass", X: "Picked" };
+let SHOW = "", DATA = null, ME = "";
+let SONGS = [];          // the ballot: every song that is up for a vote, in sheet order
+let MINE = {};           // this voter's votes, keyed by song key
+let idx = 0;
+let saving = 0, lastOk = null, lastErr = "";
+
+const isLocked = (r) => /^LOCKED/i.test(r.section || "") && !/pick ONE/i.test(r.section || "");
+const isPick = (r) => /pick ONE/i.test(r.section || "");
+
+/* ---------- status ---------- */
+function setStatus() {
+  const el = $("status");
+  if (saving) { el.textContent = "Saving"; el.className = "status"; return; }
+  if (lastOk === null) { el.textContent = "Checking"; el.className = "status"; return; }
+  if (lastOk) { el.textContent = "Saved"; el.className = "status ok"; $("banner").classList.add("hide"); return; }
+  el.textContent = /band code/i.test(lastErr) ? "Wrong code" : "Not saving";
+  el.className = "status warn";
+  $("banner").innerHTML = "<b>Not saving — " + esc(lastErr) + ".</b> Your votes are safe on this screen. " +
+    "Tap <b>Copy my votes</b> and send them to " + esc(DATA.show.owner || "the organiser") + " so nothing is lost.";
+  $("banner").classList.remove("hide");
+}
+function toast(html) {
+  $("banner").innerHTML = html;
+  $("banner").classList.remove("hide");
+  setTimeout(setStatus, 7000);
+}
+
+/* ---------- saving: one song at a time, straight to the sheet ---------- */
+async function send(votes) {
+  saving++;
+  setStatus();
+  try {
+    await post("/vote", SHOW, { voter: ME, votes, version: VERSION });
+    lastOk = true;
+  } catch (e) {
+    lastOk = false;
+    lastErr = e.message || String(e);
+    if (e.status === 401) backToGate("Wrong band code — type it again.");
+  } finally {
+    saving--;
+    setStatus();
+  }
+}
+
+function setVote(r, v) {
+  if (isPick(r)) {
+    // One song per pick-ONE group: choosing one clears the others.
+    const group = SONGS.filter((s) => isPick(s) && s.artist === r.artist);
+    const votes = {};
+    for (const s of group) {
+      const val = s.k === r.k && v === "X" ? "X" : "";
+      if (val) MINE[s.k] = val; else delete MINE[s.k];
+      votes[s.k] = val;
+    }
+    send(votes);
+    return;
+  }
+  if (v) MINE[r.k] = v; else delete MINE[r.k];
+  send({ [r.k]: v || "" });
+}
+
+/* ---------- gate ---------- */
+function gateNote() {
+  const s = DATA.settings;
+  const size = s.maxSongs ? "one set of " + s.maxSongs + " songs" :
+    s.budgetSeconds ? "one set of about " + Math.round(s.budgetSeconds / 60) + " minutes" : "one set";
+  const cap = s.maxPerArtist ? " At most " + s.maxPerArtist + " song" + (s.maxPerArtist > 1 ? "s" : "") +
+    " per artist makes the set." : "";
+  $("gateNote").innerHTML = SONGS.length + " songs to vote on, and " + size + " on the night. " +
+    "Score what you have an opinion on, skip the rest, change your mind whenever. " +
+    "Pass is a veto: it outweighs two Yes votes." + cap;
+}
+
+function drawNames() {
+  $("names").innerHTML = "";
+  DATA.voters.forEach((n) => {
+    const b = document.createElement("button");
+    b.textContent = n;
+    if (n === ME) b.classList.add("on");
+    b.onclick = () => {
+      ME = n;
+      [...$("names").children].forEach((x) => x.classList.toggle("on", x === b));
+      if (!$("codeIn").classList.contains("hide") && !$("codeIn").value) { $("codeIn").focus(); return; }
+      begin();
+    };
+    $("names").appendChild(b);
+  });
+}
+
+function backToGate(msg) {
+  $("vote").classList.add("hide");
+  $("gate").classList.remove("hide");
+  $("codeIn").classList.remove("hide");
+  $("codeIn").value = "";
+  $("gateErr").textContent = msg;
+  $("gateErr").classList.remove("hide");
+}
+
+async function begin() {
+  if (!ME) { $("gateErr").textContent = "Pick your name first."; $("gateErr").classList.remove("hide"); return; }
+  if (DATA.show.requireBandCode) {
+    const c = $("codeIn").value.trim() || bandCode();
+    if (!c) { $("gateErr").textContent = "Enter the band code, then tap Start."; $("gateErr").classList.remove("hide"); return; }
+    setBandCode(c);
+  }
+  setMe(ME);
+  $("gateErr").classList.add("hide");
+  MINE = {};
+  for (const r of DATA.rows) {
+    const v = r.votes && r.votes[ME];
+    if (v) MINE[r.k] = v;
+  }
+  $("gate").classList.add("hide");
+  $("vote").classList.remove("hide");
+  const found = SONGS.filter((s) => MINE[s.k]).length;
+  const u = firstUnscored();
+  idx = u < 0 ? 0 : u;
+  render();
+  if (found) toast("Picked up where you left off — <b>" + found + "</b> of " + SONGS.length + " already scored.");
+}
+$("start").onclick = begin;
+$("codeIn").addEventListener("keydown", (e) => { if (e.key === "Enter") begin(); });
+
+/* ---------- one at a time ---------- */
+const firstUnscored = () => SONGS.findIndex((s) => !MINE[s.k]);
+const nextUnscored = (f) => {
+  for (let i = f + 1; i < SONGS.length; i++) if (!MINE[SONGS[i].k]) return i;
+  for (let i = 0; i <= f; i++) if (!MINE[SONGS[i].k]) return i;
+  return -1;
+};
+
+function render() {
+  if (!SONGS.length) return;
+  if (idx >= SONGS.length) idx = SONGS.length - 1;
+  const t = SONGS[idx], v = MINE[t.k], N = SONGS.length;
+  const done = SONGS.filter((s) => MINE[s.k]).length;
+  $("tnum").textContent = "Track " + (idx + 1) + " of " + N;
+  $("tvote").textContent = v ? "Your vote: " + LABEL[v] : "Not scored";
+  $("tcard").classList.toggle("unscored", !v);
+  $("tname").innerHTML = esc(t.song) + (isPick(t) ? '<span class="tag">Pick one</span>' : "");
+  $("tart").textContent = t.artist;
+  $("tdur").textContent = lenSecs(t.len) ? mmss(lenSecs(t.len)) : t.len;
+  $("tyear").textContent = t.year || "";
+  $("tbpm").textContent = t.bpm ? t.bpm + " bpm" : "";
+  $("tera").textContent = t.era || (t.lead ? t.lead : "");
+  $("ttune").textContent = t.tuning || "";
+  $("pbar").style.width = (done / N * 100) + "%";
+  $("pcount").textContent = done + " / " + N + " scored";
+  $("pleft").textContent = (N - done) + " left";
+  $("votes").classList.toggle("hide", isPick(t));
+  $("pickpad").classList.toggle("hide", !isPick(t));
+  $("pickwhy").textContent = isPick(t) ? t.artist + " is in the set — which song?" : "";
+  document.querySelectorAll("#votes button, #pickpad button").forEach((b) => b.classList.toggle("on", b.dataset.v === v));
+  $("prev").disabled = idx === 0;
+  $("next").disabled = idx === N - 1;
+  $("next").textContent = (v ? "Next" : "Skip") + " →";
+  $("clearv").disabled = !v;
+  $("jump").disabled = firstUnscored() < 0;
+  drawRail(done, N);
+  if (!$("list").classList.contains("hide")) drawList();
+}
+
+function drawRail(done, N) {
+  const list = $("raillist");
+  $("railDone").textContent = done + "/" + N;
+  list.innerHTML = "";
+  SONGS.forEach((t, i) => {
+    const v = MINE[t.k];
+    const row = document.createElement("button");
+    row.className = "railrow" + (i === idx ? " on" : "");
+    const dot = { MUST: 3, YES: 2, MAYBE: 1, NO: 0, X: 3 }[v];
+    row.innerHTML = '<span class="n">' + String(i + 1).padStart(2, "0") + '</span>' +
+      '<span class="t">' + esc(t.song) + '<span class="a"> — ' + esc(t.artist) + '</span></span>' +
+      '<span class="v' + (v ? " v" + dot : "") + '"></span>';
+    row.title = t.song + " — " + t.artist + (v ? "  ·  " + LABEL[v] : "");
+    row.onclick = () => { idx = i; render(); };
+    list.appendChild(row);
+  });
+  const on = list.querySelector(".railrow.on");
+  if (on) on.scrollIntoView({ block: "nearest" });
+}
+
+document.querySelectorAll("#votes button, #pickpad button").forEach((b) => {
+  b.onclick = () => {
+    const t = SONGS[idx];
+    const v = b.dataset.v;
+    setVote(t, MINE[t.k] === v ? "" : v);
+    if (MINE[t.k] && idx < SONGS.length - 1) idx++;
+    render();
+  };
+});
+$("prev").onclick = () => { if (idx > 0) { idx--; render(); } };
+$("next").onclick = () => { if (idx < SONGS.length - 1) { idx++; render(); } };
+$("jump").onclick = () => { const n = nextUnscored(idx); if (n >= 0) { idx = n; render(); } };
+$("clearv").onclick = () => { setVote(SONGS[idx], ""); render(); };
+
+/* ---------- whole list ---------- */
+function drawList() {
+  const out = [];
+  let section = null;
+  SONGS.forEach((r, i) => {
+    if (r.section !== section) {
+      section = r.section;
+      if (section) out.push('<h3>' + esc(section) + '</h3>');
+    }
+    const v = MINE[r.k];
+    const btns = isPick(r) ? [["X", "Pick"]] : [["MUST", "Must"], ["YES", "Yes"], ["MAYBE", "Maybe"], ["NO", "Pass"]];
+    out.push('<div class="lrow" data-i="' + i + '"><div class="lt"><b>' + esc(r.song) + '</b><span>' + esc(r.artist) +
+      (r.len ? " · " + esc(r.len) : "") + (r.tuning ? " · " + esc(r.tuning) : "") + '</span></div><div class="lb">' +
+      btns.map(([val, lab]) => '<button type="button" data-v="' + val + '"' + (v === val ? ' class="on"' : "") + '>' + lab + '</button>').join("") +
+      '</div></div>');
+  });
+  $("list").innerHTML = out.join("");
+}
+$("list").addEventListener("click", (e) => {
+  const b = e.target.closest("button[data-v]");
+  if (!b) return;
+  const r = SONGS[Number(b.closest(".lrow").dataset.i)];
+  setVote(r, MINE[r.k] === b.dataset.v ? "" : b.dataset.v);
+  render();
+});
+function view(list) {
+  $("one").classList.toggle("hide", list);
+  $("list").classList.toggle("hide", !list);
+  $("viewOne").classList.toggle("on", !list);
+  $("viewList").classList.toggle("on", list);
+  try { localStorage.setItem("rs_view", list ? "list" : "one"); } catch (e) { /* optional */ }
+  if (list) drawList();
+}
+$("viewOne").onclick = () => view(false);
+$("viewList").onclick = () => view(true);
+
+/* ---------- copy my votes: the backup when saving is not working ---------- */
+$("copy").onclick = () => {
+  const groups = { MUST: [], YES: [], MAYBE: [], NO: [], X: [] };
+  for (const s of SONGS) if (MINE[s.k]) groups[MINE[s.k]].push(s.song + " — " + s.artist);
+  let txt = "SETLIST VOTE — " + (DATA.show.name || SHOW) + "\nVoter: " + ME + "\n";
+  for (const [k, list] of Object.entries(groups)) {
+    if (list.length) txt += "\n" + LABEL[k].toUpperCase() + " (" + list.length + ")\n" + list.map((x) => "  " + x).join("\n") + "\n";
+  }
+  const ta = $("copyout");
+  ta.value = txt;
+  ta.classList.remove("hide");
+  ta.select();
+  if (navigator.clipboard) navigator.clipboard.writeText(txt).then(() => { $("copy").textContent = "Copied"; }).catch(() => {});
+};
+
+/* ---------- boot ---------- */
+(async function boot() {
+  SHOW = await currentShowId();
+  $("nav").innerHTML = navHtml(SHOW, "vote.html");
+  $("ver").textContent = VERSION;
+  $("verNote").textContent = "Version " + VERSION + (CHANGES && CHANGES[VERSION] ? " — " + CHANGES[VERSION] : "");
+  try {
+    DATA = await getData(SHOW);
+  } catch (e) {
+    lastOk = false; lastErr = e.message || String(e);
+    $("gateNote").textContent = "Couldn't load the songs — " + lastErr + ".";
+    return;
+  }
+  const brand = DATA.show.bandName || DATA.show.name || "Setlist vote";
+  $("brand").textContent = brand;
+  document.title = brand + " — Setlist vote";
+  $("switch").innerHTML = await showSwitcher(SHOW);
+  wireSwitcher($("switch"));
+  SONGS = DATA.rows.filter((r) => !isLocked(r));
+  const locked = DATA.rows.filter(isLocked);
+  if (locked.length) {
+    $("locks").innerHTML = "<b>Already in the set, not up for a vote:</b> " +
+      locked.map((r) => esc(r.song) + " — " + esc(r.artist)).join(", ") + ".";
+    $("locks").classList.remove("hide");
+  }
+  if (DATA.show.status === "past") {
+    $("gateNote").textContent = "This show has finished. Its votes are kept, read-only, on the setlist page.";
+    $("start").classList.add("hide");
+    $("names").innerHTML = '<a class="btn" href="' + esc(link("setlist.html", SHOW)) + '">See the final set</a>';
+    return;
+  }
+  gateNote();
+  if (DATA.show.requireBandCode) {
+    $("codeIn").classList.remove("hide");
+    $("codeIn").value = bandCode();
+  }
+  const remembered = me();
+  if (remembered && DATA.voters.includes(remembered)) ME = remembered;
+  drawNames();
+  let saved = "one";
+  try { saved = localStorage.getItem("rs_view") || "one"; } catch (e) { /* optional */ }
+  lastOk = true;
+  setStatus();
+  if (saved === "list") view(true);
+  const who = DATA.voters.filter((n) => DATA.rows.some((r) => r.votes && r.votes[n]));
+  if (who.length) toast("Votes already on the sheet from: <b>" + who.map(esc).join(", ") + "</b>. Pick your name to carry on.");
+})();
+</script>

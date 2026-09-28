@@ -170,6 +170,43 @@
 <script src="config.js"></script>
 <script>
 const API = (window.SETLIST_API || '').trim();
+// ---- which show -----------------------------------------------------------
+// ?show= picks the show; a link with none opens whichever is next by gig date.
+// Saving on a show that asks for the band code sends it, asking once and then
+// remembering it on this device.
+const LINKED_SHOW = (new URLSearchParams(location.search).get('show') || '').trim().toLowerCase();
+let SHOW = LINKED_SHOW || 'oct';
+let SHOW_INFO = null;
+async function resolveShow(){
+  if(LINKED_SHOW) return;
+  try{ const d = await (await fetch(API + '/shows')).json(); if(d.ok && d.defaultId) SHOW = d.defaultId; }catch(ignore){}
+}
+function bandCode(){
+  let c = '';
+  try{ c = localStorage.getItem('rs_code') || ''; }catch(ignore){}
+  if(!c && SHOW_INFO && SHOW_INFO.requireBandCode){
+    c = (window.prompt('Band code — asked once, then this device remembers it') || '').trim();
+    try{ if(c) localStorage.setItem('rs_code', c); }catch(ignore){}
+  }
+  return c;
+}
+function forgetCode(){ try{ localStorage.removeItem('rs_code'); }catch(ignore){} }
+function showPage(d){
+  SHOW_INFO = d.show || null;
+  if(!SHOW_INFO) return;
+  const name = SHOW_INFO.name || '';
+  const h1 = document.querySelector('header h1');
+  if(h1 && h1.firstChild && h1.firstChild.nodeType === 3) h1.firstChild.nodeValue = name + ' \u2014 ';
+  document.title = name + ' \u2014 ' + (h1 && h1.querySelector('span') ? h1.querySelector('span').textContent : '');
+  const q = '?show=' + encodeURIComponent(SHOW);
+  const legacy = { 'index.html': 'vote.html', 'results.html': 'setlist.html' };
+  document.querySelectorAll('header .sub a[href$=".html"]').forEach(a => {
+    let page = a.getAttribute('href').split('?')[0];
+    if(SHOW !== 'oct' && legacy[page]) page = legacy[page];
+    a.setAttribute('href', page + q);
+  });
+}
+
 // The band, not the voters: this calendar exists to get five people in a room.
 let BAND = window.SETLIST_BAND || ["Rich","Ashley","Ethan","Justin","Isaac"];
 
@@ -360,9 +397,11 @@ async function pull(){
   if(!API){ note('config.js has no SETLIST_API path, so there is no backend to read.','err'); return; }
   note('Loading everyone’s days…');
   try{
-    const r = await fetch(API+'/data',{method:'GET'});
+    await resolveShow();
+    const r = await fetch(API+'/data?show='+encodeURIComponent(SHOW),{method:'GET'});
     const j = await r.json();
     if(!j.ok) throw new Error(j.error||'unknown error');
+    showPage(j.data);
     BAND = (j.data.band && j.data.band.length) ? j.data.band : BAND;
     AVAIL = j.data.availability || {};
     GIG = j.data.gigDate || '';
@@ -394,8 +433,9 @@ document.getElementById('save').addEventListener('click', async ()=>{
   try{
     const r = await fetch(API+'/availability',{method:'POST',
       headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({person:me, days:payload})});
+      body:JSON.stringify({show:SHOW, code:bandCode(), person:me, days:payload})});
     const j = await r.json();
+    if(r.status===401) forgetCode();
     if(!j.ok) throw new Error(j.error||'unknown error');
     if(j.data){
       AVAIL = j.data.availability || AVAIL;

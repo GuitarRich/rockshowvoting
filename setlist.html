@@ -1,0 +1,697 @@
+<!doctype html>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Setlist</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700&family=Barlow:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<link href="./app.css" rel="stylesheet">
+<style>
+  #sv .ownerbar{display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin:var(--s2) 0;font-size:14px}
+  #sv .ownerbar input{width:auto;flex:0 1 180px;margin:0}
+  #sv .warn{border:1px solid #b03a2e;background:rgba(176,58,46,.12);border-radius:8px;padding:10px 12px;margin:8px 0;font-size:14px}
+  #sv .note2{color:var(--muted,#9a927f);font-size:13px;margin:6px 0}
+  #sv .guitar{font-size:14px;margin:6px 0 10px}
+  #sv .tag.lock{border-color:var(--lamp);color:var(--lamp)}
+  #sv .tag.keys{border-color:#8b7fd4;color:#b9b0f0}
+  #sv .tag.role{border-color:#4fb477;color:#7fd3a0}
+  #sv .lockrow{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin:6px 0}
+  #sv table.who{width:100%;border-collapse:collapse;font-size:13px}
+  #sv table.who th,#sv table.who td{padding:6px 6px;border-bottom:1px solid var(--line);text-align:left;white-space:nowrap}
+  #sv table.who td.t{white-space:normal;min-width:160px}
+  #sv table.who tr.out td{opacity:.55}
+  #sv table.who .pill{display:inline-block;min-width:38px;text-align:center;border-radius:4px;padding:1px 4px;font-size:11px;font-weight:600}
+  #sv .pill.MUST{background:#e8a33d;color:#1a1200}#sv .pill.YES{background:#4fb477;color:#06200f}
+  #sv .pill.MAYBE{background:#3a3f4d;color:#dfe2ea}#sv .pill.NO{background:#b03a2e;color:#fff}
+  #sv .pill.X{background:#8b7fd4;color:#fff}
+  #sv .whowrap{overflow-x:auto}
+  #sv pre.diag{white-space:pre-wrap;font-size:12px}
+  #sv .note2 a{color:var(--lamp)}
+</style>
+
+<div id="sv">
+  <header><div class="wrap">
+    <div class="plate">
+      <div class="lamp"></div>
+      <h1 class="disp"><span id="brand">Setlist</span><small>Setlist &amp; standings &middot; <span id="ver"></span> <span id="switch"></span></small></h1>
+      <div class="status" id="status">Checking</div>
+    </div>
+    <nav id="nav"></nav>
+  </div></header>
+
+  <div class="wrap">
+    <div id="banner" class="banner hide"></div>
+
+    <div id="gate" class="gate hide">
+      <div class="eyebrow">Who are you?</div>
+      <h2 class="disp">Open the setlist</h2>
+      <p class="note">Your name marks which vote and learning status are yours. Anyone can read the set; changing it needs the owner code.</p>
+      <div class="names" id="names"></div>
+      <input id="codeIn" class="hide" placeholder="Band code" type="password" autocomplete="off" style="margin-top:8px">
+      <button class="go disp" id="start">Open the setlist</button>
+      <button class="btn" id="justLook" style="margin-top:8px">Just look</button>
+      <div id="gateErr" class="err hide"></div>
+    </div>
+
+    <div id="main" class="hide">
+      <div class="sub"><span id="whoami"></span></div>
+      <div class="ownerbar" id="ownerbar"></div>
+      <div class="voters mono" id="voters"></div>
+
+      <div class="tabs" role="tablist">
+        <button role="tab" id="tabSet" aria-selected="true">The set</button>
+        <button role="tab" id="tabPool" aria-selected="false">Ranking<span class="count" id="poolCount"></span></button>
+        <button role="tab" id="tabWho" aria-selected="false">Who voted what</button>
+        <button role="tab" id="tabTools" aria-selected="false">Tools</button>
+      </div>
+
+      <div class="tabpanel" id="panelSet">
+        <div class="split">
+          <div class="splitmain">
+            <div id="warnBox"></div>
+            <div id="setBox"></div>
+            <div class="actions">
+              <button class="btn" id="copySet">Copy setlist</button>
+              <a class="btn" id="toLyrics" href="./lyrics.html">Lyric book</a>
+            </div>
+          </div>
+          <aside class="splitside"><div id="crewBox"></div></aside>
+        </div>
+      </div>
+
+      <div class="tabpanel" id="panelPool" hidden>
+        <div class="merge nogap">
+          <h4 class="disp">Ranking &mdash; every song</h4>
+          <p class="note">Everything on the ballot, best first. Songs below the line missed the cut &mdash; the reason is tagged on the row.</p>
+          <div class="searchrow"><input id="poolFind" placeholder="Filter by song or artist" autocomplete="off"></div>
+          <div class="legend" id="poolLegend"></div>
+          <div id="poolList"></div>
+        </div>
+      </div>
+
+      <div class="tabpanel" id="panelWho" hidden>
+        <div class="merge nogap">
+          <h4 class="disp">Who voted what</h4>
+          <p class="note">Every vote, one column per voter. Songs in the set are bright; the rest are dimmed.</p>
+          <div class="whowrap" id="whoTable"></div>
+        </div>
+      </div>
+
+      <div class="tabpanel" id="panelTools" hidden>
+        <div class="merge">
+          <h4 class="disp">Copy all votes</h4>
+          <p class="note">Every song and every vote as a CSV, for a spreadsheet or a backup.</p>
+          <div class="actions"><button class="btn ghost" id="copyRaw">Copy all votes (CSV)</button></div>
+        </div>
+        <div class="merge">
+          <h4 class="disp">Storage check</h4>
+          <p class="note" id="diagNote">If something looks wrong, run this and send the output to the owner.</p>
+          <div class="actions">
+            <button class="btn ghost" id="runDiag">Run check</button>
+            <button class="btn ghost" id="copyDiag">Copy report</button>
+          </div>
+          <pre id="diagOut" class="diag"></pre>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script type="module">
+import {
+  VERSION, mmss, lenSecs, esc, searchLinks, moveKey, scoreRow, songMeta, readiness,
+} from "./setlist.js";
+import {
+  API, currentShowId, getData, post, bandCode, setBandCode, me, setMe, navHtml, link, showSwitcher, wireSwitcher,
+} from "./store.js";
+
+const $ = (id) => document.getElementById(id);
+const LABEL = { MUST: "Must play", YES: "Yes", MAYBE: "Maybe", NO: "Pass", X: "Picked" };
+const LEARN = [["NOT STARTED", "Not started"], ["IN PROGRESS", "Learning"], ["KNOW", "Know it"]];
+const CUT = { veto: ["neg", "veto"], cap: ["cap", "CAP"], room: ["count", "no room"], out: ["out", "held out"] };
+
+let SHOW = "", DATA = null, ME = "", OWNER_CODE = "";
+let openRow = null, poolFilter = "", saving = 0, lastOk = null, lastErr = "";
+
+const isLocked = (r) => /^LOCKED/i.test(r.section || "") && !/pick ONE/i.test(r.section || "");
+const isPick = (r) => /pick ONE/i.test(r.section || "");
+const inBand = () => DATA.band.includes(ME);
+const isVoter = () => DATA.voters.includes(ME);
+const score = (r) => scoreRow(r.votes, DATA.voters, DATA.weights);
+const secs = (r) => lenSecs(r.len);
+const gap = () => DATA.settings.gapSeconds || 0;
+
+/* ---------- status ---------- */
+function setStatus() {
+  const el = $("status");
+  if (saving) { el.textContent = "Saving"; el.className = "status"; return; }
+  if (lastOk === null) { el.textContent = "Checking"; el.className = "status"; return; }
+  el.textContent = lastOk ? "Saved" : "Not saving";
+  el.className = lastOk ? "status ok" : "status warn";
+  if (lastOk) $("banner").classList.add("hide");
+  else { $("banner").innerHTML = "<b>That didn't save — " + esc(lastErr) + ".</b>"; $("banner").classList.remove("hide"); }
+}
+
+/** Every write returns the fresh payload, so the page redraws from the truth. */
+async function write(path, body) {
+  saving++;
+  setStatus();
+  try {
+    const d = await post(path, SHOW, body);
+    if (d.data) DATA = d.data;
+    lastOk = true;
+    return d;
+  } catch (e) {
+    lastOk = false;
+    lastErr = e.message || String(e);
+    if (e.status === 403 && path === "/admin") { OWNER_CODE = ""; drawOwner(); }
+    return null;
+  } finally {
+    saving--;
+    setStatus();
+    draw();
+  }
+}
+const admin = (body) => write("/admin", { ownerCode: OWNER_CODE, ...body });
+const isOwner = () => !!OWNER_CODE;
+
+/* ---------- gate ---------- */
+function drawGate() {
+  $("names").innerHTML = "";
+  const people = [...new Set([...DATA.voters, ...DATA.band])];
+  people.forEach((n) => {
+    const b = document.createElement("button");
+    b.textContent = n;
+    b.onclick = () => { ME = n; begin(); };
+    $("names").appendChild(b);
+  });
+  if (DATA.show.requireBandCode) { $("codeIn").classList.remove("hide"); $("codeIn").value = bandCode(); }
+}
+function begin() {
+  if (DATA.show.requireBandCode && ME) {
+    const c = $("codeIn").value.trim() || bandCode();
+    if (!c) { $("gateErr").textContent = "Enter the band code too."; $("gateErr").classList.remove("hide"); return; }
+    setBandCode(c);
+  }
+  if (ME) setMe(ME);
+  $("gate").classList.add("hide");
+  $("main").classList.remove("hide");
+  draw();
+}
+$("start").onclick = () => { if (!ME) { $("gateErr").textContent = "Pick your name, or just look."; $("gateErr").classList.remove("hide"); return; } begin(); };
+$("justLook").onclick = () => { ME = ""; begin(); };
+
+/* ---------- owner ---------- */
+function drawOwner() {
+  const bar = $("ownerbar");
+  if (DATA.show.status === "past") { bar.innerHTML = '<span class="note2">This show has finished — everything here is read-only.</span>'; return; }
+  if (isOwner()) {
+    bar.innerHTML = '<span>Owner controls on.</span><button class="btn ghost" id="ownOff">Lock them again</button>';
+    $("ownOff").onclick = () => { OWNER_CODE = ""; draw(); };
+    return;
+  }
+  bar.innerHTML = '<input id="ownIn" type="password" placeholder="Owner code" autocomplete="off">' +
+    '<button class="btn ghost" id="ownOn">Unlock owner controls</button>' +
+    '<span class="note2">Changing the set is ' + esc(DATA.show.owner || "the owner") + '’s job.</span>';
+  const go = async () => {
+    const c = $("ownIn").value.trim();
+    if (!c) return;
+    OWNER_CODE = c;
+    const ok = await admin({});
+    if (!ok) { OWNER_CODE = ""; $("banner").innerHTML = "<b>Wrong owner code.</b>"; $("banner").classList.remove("hide"); }
+    draw();
+  };
+  $("ownOn").onclick = go;
+  $("ownIn").onkeydown = (e) => { if (e.key === "Enter") go(); };
+}
+
+/* ---------- tabs ---------- */
+const TABS = [["tabSet", "panelSet"], ["tabPool", "panelPool"], ["tabWho", "panelWho"], ["tabTools", "panelTools"]];
+function showTab(id) {
+  TABS.forEach(([t, p]) => { $(t).setAttribute("aria-selected", String(t === id)); $(p).hidden = t !== id; });
+  try { localStorage.setItem("rs_tab", id); } catch (e) { /* optional */ }
+}
+TABS.forEach(([t]) => { $(t).onclick = () => showTab(t); });
+
+/* ---------- the set, as the API worked it out ---------- */
+function ordered() {
+  const byK = new Map(DATA.rows.map((r) => [r.k, r]));
+  return (DATA.set.order || []).map((k) => byK.get(k)).filter(Boolean);
+}
+const savedOrder = () => DATA.set.orderMode === "saved";
+
+function setForce(r, st) {
+  const next = r.force === st ? "" : st;
+  admin({ force: [{ key: r.k, value: next }] });
+}
+function reorder(from, to) {
+  const keys = moveKey(ordered().map((r) => r.k), from, to);
+  admin({ order: keys.map((k, i) => ({ key: k, pos: i + 1 })) });
+}
+
+/* ---------- row pieces ---------- */
+function tags(r, i, n) {
+  let h = "";
+  if (isLocked(r)) h += '<span class="tag lock">locked</span>';
+  if (isPick(r)) h += '<span class="tag lock">pick one</span>';
+  if (r.force === "IN") h += '<span class="tag in">forced in</span>';
+  if (r.force === "OUT") h += '<span class="tag out">held out</span>';
+  if (!r.inSet && r.cut && CUT[r.cut] && r.cut !== "out") h += '<span class="tag ' + CUT[r.cut][0] + '">' + CUT[r.cut][1] + '</span>';
+  if (r.keyboard === "ESSENTIAL") h += '<span class="tag keys">KEYS</span>';
+  if (i !== undefined) {
+    const m = songMeta(r);
+    const role = i === 0 ? "OPENER" : i === n - 1 ? "CLOSER" : m.tags.includes("dedication") ? "DEDICATION" :
+      m.tags.includes("ballad") ? "BREATHER" : m.tags.includes("heavy") ? "PEAK" : "";
+    if (role) h += '<span class="tag role">' + role + '</span>';
+  }
+  if (r.tuning) h += '<span class="tag tune">' + esc(r.tuning) + '</span>';
+  return h;
+}
+function linkRow(r) {
+  const L = searchLinks(r);
+  return '<div class="links"><a href="' + esc(L.ug) + '" target="_blank" rel="noopener">Guitar</a>' +
+    '<a href="' + esc(L.songsterr) + '" target="_blank" rel="noopener">Bass</a>' +
+    '<a href="' + esc(L.musescore) + '" target="_blank" rel="noopener">Keys</a>' +
+    '<a href="' + esc(L.genius) + '" target="_blank" rel="noopener">Lyrics</a></div>';
+}
+function crewChips(r) {
+  return '<div class="crewchips">' + DATA.band.map((n) => {
+    const s = (r.learn && r.learn[n]) || "";
+    const cls = s === "KNOW" ? "k" : s === "IN PROGRESS" ? "p" : "";
+    const label = s ? s.toLowerCase() : "no reply";
+    return '<span class="chip ' + cls + (n === ME ? " me" : "") + '" title="' + esc(n) + " — " + label + '"><b></b>' + esc(n) + '</span>';
+  }).join("") + '</div>';
+}
+function learnButtons(r) {
+  const el = document.createElement("div");
+  el.className = "stat";
+  const mine = (r.learn && r.learn[ME]) || "";
+  LEARN.forEach(([v, t]) => {
+    const b = document.createElement("button");
+    b.textContent = t;
+    if (mine === v) b.classList.add("on");
+    b.onclick = (e) => { e.stopPropagation(); write("/learn", { person: ME, learn: { [r.k]: mine === v ? "" : v } }); };
+    el.appendChild(b);
+  });
+  return el;
+}
+function inOut(r) {
+  const el = document.createElement("div");
+  el.className = "inout";
+  [["IN", "In"], ["OUT", "Out"]].forEach(([st, t]) => {
+    const b = document.createElement("button");
+    b.textContent = t;
+    b.title = st === "IN" ? "Always in the set" : "Never in the set";
+    if (r.force === st) b.classList.add("on");
+    b.onclick = (e) => { e.stopPropagation(); setForce(r, st); };
+    el.appendChild(b);
+  });
+  return el;
+}
+function voteEditor(r) {
+  const ed = document.createElement("div");
+  ed.className = "editor";
+  ed.innerHTML = '<div class="lbl">Your vote — ' + esc(r.song) + '</div><div class="opts"></div>';
+  const mine = (r.votes && r.votes[ME]) || "";
+  const opts = isPick(r) ? ["X"] : ["MUST", "YES", "MAYBE", "NO"];
+  opts.forEach((v) => {
+    const b = document.createElement("button");
+    b.textContent = LABEL[v];
+    if (mine === v) b.classList.add("on");
+    b.onclick = (e) => {
+      e.stopPropagation();
+      const votes = { [r.k]: mine === v ? "" : v };
+      if (isPick(r) && mine !== v) {
+        DATA.rows.filter((x) => isPick(x) && x.artist === r.artist && x.k !== r.k).forEach((x) => { votes[x.k] = ""; });
+      }
+      write("/vote", { voter: ME, votes });
+    };
+    ed.querySelector(".opts").appendChild(b);
+  });
+  return ed;
+}
+
+/* ---------- warnings: flagged, never acted on ---------- */
+function warnings(list) {
+  const on = new Set(DATA.settings.warnings || []);
+  const out = [];
+  if (DATA.set.blocked) {
+    out.push("<b>Can't build a set — " + DATA.set.badLengths.length + " songs have no readable length.</b> " +
+      "Google Sheets often turns <code>3:23</code> into a time. Select the Length column, Format → Number → Plain text, " +
+      "and retype the values.");
+    return out;
+  }
+  if (on.has("waiting")) {
+    const missing = DATA.voters.filter((n) => !DATA.rows.some((r) => ["MUST", "YES", "NO", "X"].includes(r.votes[n])));
+    if (missing.length) out.push("Still waiting on: <b>" + missing.map(esc).join(", ") + "</b>. The set will move as they vote.");
+  }
+  const leads = list.map((r) => String(r.lead || "").toUpperCase());
+  if (on.has("vocalBalance") && leads.some(Boolean)) {
+    const v2 = leads.filter((l) => l === "V2").length, du = leads.filter((l) => l === "DUET").length;
+    if (v2 < 6) out.push("<b>Only " + v2 + " songs led by the second vocalist.</b> The vote decided that — worth a look before you lock it.");
+    if (v2 + du < 9) out.push("Only " + (v2 + du) + " songs give the main vocalist any rest.");
+  }
+  if (on.has("leadRun") && leads.some(Boolean)) {
+    let longest = 0, streak = 0, prev = "";
+    leads.forEach((l) => { streak = l && l === prev ? streak + 1 : 1; prev = l; if (l === "V1") longest = Math.max(longest, streak); });
+    if (longest > 3) out.push(longest + " songs in a row for the same voice.");
+  }
+  if (on.has("flatStretch") && list.length >= 4) {
+    const e = list.map((r) => songMeta(r).e);
+    for (let i = 3; i < e.length; i++) {
+      const avg = (e[i] + e[i - 1] + e[i - 2] + e[i - 3]) / 4;
+      if (avg < 3.0) { out.push("A flat stretch around songs " + (i - 2) + "–" + (i + 1) + " — if it survives, there are more slow songs than the set can absorb."); break; }
+    }
+  }
+  if (on.has("dedication") && list.length && !list.some((r) => songMeta(r).tags.some((t) => t === "ballad" || t === "dedication"))) {
+    out.push("No ballad or dedication in the set." + (DATA.show.occasion ? " For " + esc(DATA.show.occasion) + " you may want one." : ""));
+  }
+  return out;
+}
+function notes() {
+  if (!(DATA.settings.warnings || []).includes("cuts")) return "";
+  const c = { veto: 0, cap: 0, room: 0 };
+  DATA.rows.forEach((r) => { if (!r.inSet && c[r.cut] !== undefined) c[r.cut]++; });
+  return '<p class="note2">' + c.veto + " voted down · " + c.cap + " cut by the per-artist limit · " + c.room + " no room left.</p>";
+}
+
+/* ---------- draw ---------- */
+function limitControl() {
+  const box = document.createElement("div");
+  box.className = "limitbar";
+  const n = DATA.set.maxSongs;
+  box.innerHTML = '<span class="lbl">Songs in the set</span>';
+  if (!isOwner()) {
+    box.insertAdjacentHTML("beforeend", '<span class="val mono">' + (n || "by time") + '</span>' +
+      '<span class="note" style="margin:0">Set by ' + esc(DATA.show.owner || "the owner") + '</span>');
+    return box;
+  }
+  const apply = (v) => admin({ maxSongs: Math.max(0, Math.min(60, v)) });
+  const minus = document.createElement("button"); minus.textContent = "−"; minus.onclick = () => apply((n || DATA.set.count) - 1);
+  const input = document.createElement("input"); input.type = "number"; input.className = "val mono"; input.min = 0; input.max = 60;
+  input.value = n; input.onchange = () => apply(Math.round(Number(input.value) || 0));
+  const plus = document.createElement("button"); plus.textContent = "+"; plus.onclick = () => apply((n || DATA.set.count) + 1);
+  box.append(minus, input, plus);
+  box.insertAdjacentHTML("beforeend", '<span class="note" style="margin:0">0 lets the time budget decide. Forced-in songs count.</span>');
+  return box;
+}
+
+function drawSet() {
+  const box = $("setBox");
+  box.innerHTML = "";
+  const list = ordered();
+  const n = list.length;
+  const run = list.reduce((a, r) => a + secs(r) + gap(), 0);
+  const limit = DATA.set.maxSongs || n || 1;
+  const cap = DATA.settings.maxPerArtist;
+  const budget = DATA.settings.budgetSeconds;
+  const el = document.createElement("div");
+  el.className = "set";
+  el.innerHTML = '<div class="sethead"><h3>The set — ' + n + ' songs</h3><div class="clock mono">' + mmss(run) +
+    (budget && !DATA.set.maxSongs ? " of " + mmss(budget) : "") + '</div></div>' +
+    '<div class="meter"><i style="width:' + Math.min(n / limit * 100, 100) + '%"></i><div class="ticks">' +
+    '<span></span>'.repeat(Math.min(limit, 60)) + '</div></div>' +
+    '<div class="meterfoot"><span>0</span><span>' + (cap ? "max " + cap + " per artist" : "no per-artist limit") +
+    '</span><span>' + (DATA.set.maxSongs || "") + '</span></div>';
+  el.appendChild(limitControl());
+
+  const lock = document.createElement("div");
+  lock.className = "lockrow";
+  lock.innerHTML = DATA.set.locked
+    ? '<span><b>Set locked.</b> These songs stay put however people vote; In/Out still apply.</span>'
+    : '<span>The set follows the vote.</span>';
+  if (isOwner()) {
+    const b = document.createElement("button");
+    b.className = "btn ghost";
+    b.textContent = DATA.set.locked ? "Unlock & follow the vote" : "Lock this set";
+    b.onclick = () => admin({ lockSet: !DATA.set.locked });
+    lock.appendChild(b);
+  }
+  el.appendChild(lock);
+
+  const known = ME ? list.filter((r) => r.learn && r.learn[ME] === "KNOW").length : 0;
+  const bar = document.createElement("div");
+  bar.className = "orderbar " + (savedOrder() ? "saved" : "");
+  bar.innerHTML = '<span>Running order: <b>' + (savedOrder() ? "set by hand" : "automatic") + '</b></span>' +
+    (inBand() ? '<span style="margin-left:auto">You know <b>' + known + '</b> of ' + n + '</span>' : "");
+  if (isOwner()) {
+    if (savedOrder()) {
+      const b = document.createElement("button"); b.textContent = "Back to automatic";
+      b.onclick = () => admin({ clearOrder: true }); bar.appendChild(b);
+    }
+    if (DATA.rows.some((r) => r.force)) {
+      const b = document.createElement("button"); b.textContent = "Clear in/out";
+      b.onclick = () => admin({ force: DATA.rows.filter((r) => r.force).map((r) => ({ key: r.k, value: "" })) });
+      bar.appendChild(b);
+    }
+  }
+  el.appendChild(bar);
+
+  // Guitar changes: a blank tuning is standard.
+  const tune = list.map((r) => r.tuning || "E standard");
+  const changes = [];
+  tune.forEach((t, i) => { if (i && t !== tune[i - 1]) changes.push(i + 1); });
+  const g = document.createElement("p");
+  g.className = "guitar";
+  g.innerHTML = changes.length
+    ? "<b>" + changes.length + " tuning change" + (changes.length > 1 ? "s" : "") + "</b> — before song" +
+      (changes.length > 1 ? "s " : " ") + changes.join(", ") + "."
+    : "No tuning changes — one guitar the whole way.";
+  if (n) el.appendChild(g);
+
+  if (!n) {
+    el.insertAdjacentHTML("beforeend", '<div class="empty">No songs in the set yet.</div>');
+    box.appendChild(el);
+    return;
+  }
+  const body = document.createElement("div");
+  let dragFrom = -1;
+  list.forEach((r, k) => {
+    const row = document.createElement("div");
+    const open = openRow === r.k;
+    row.className = "row setrow" + (open ? " open" : "");
+    if (isOwner()) row.draggable = true;
+    const mine = (r.learn && r.learn[ME]) || "";
+    const dot = mine === "KNOW" ? "know-it" : mine === "IN PROGRESS" ? "in-progress" : "not-started";
+    row.innerHTML =
+      (isOwner() ? '<div class="handle" title="Drag to reorder">:::</div><div class="arrows">' +
+        '<button data-dir="-1" ' + (k === 0 ? "disabled" : "") + '>&#9650;</button>' +
+        '<button data-dir="1" ' + (k === n - 1 ? "disabled" : "") + '>&#9660;</button></div>' : "") +
+      '<div class="rk mono">' + String(k + 1).padStart(2, "0") + '</div>' +
+      '<div class="rt"><b>' + esc(r.song) + tags(r, k, n) + '</b>' +
+      '<span>' + esc(r.artist) + (r.lead ? " · " + esc(r.lead) : "") + " · " + esc(r.len) + (r.era ? " · " + esc(r.era) : "") + '</span>' +
+      (open ? linkRow(r) +
+        (inBand() ? '<div class="rowmeta"><span class="metalbl">You</span></div>' : "") +
+        '<div class="rowmeta"><span class="metalbl">Band</span>' + crewChips(r) + '</div>' +
+        (isOwner() ? '<div class="rowmeta own"><span class="metalbl">Set</span></div>' : "") : "") +
+      '</div>' +
+      (open || !inBand() ? "" : '<div class="rdot ' + dot + '"></div>') +
+      '<div class="rs mono">' + score(r).score + '</div>' +
+      '<div class="rchev">' + (open ? "&#9650;" : "&#9660;") + '</div>';
+    if (open) {
+      const metas = row.querySelectorAll(".rowmeta");
+      if (inBand()) metas[0].appendChild(learnButtons(r));
+      const own = row.querySelector(".rowmeta.own");
+      if (own) own.appendChild(inOut(r));
+    }
+    row.querySelectorAll(".arrows button").forEach((b) => {
+      b.onclick = (e) => { e.stopPropagation(); reorder(k, k + Number(b.dataset.dir)); };
+    });
+    row.ondragstart = (e) => { dragFrom = k; row.classList.add("dragging"); e.dataTransfer.effectAllowed = "move"; e.dataTransfer.setData("text/plain", r.k); };
+    row.ondragend = () => row.classList.remove("dragging");
+    row.ondragover = (e) => { e.preventDefault(); };
+    row.ondrop = (e) => { e.preventDefault(); if (dragFrom >= 0 && dragFrom !== k) reorder(dragFrom, k); dragFrom = -1; };
+    row.onclick = (e) => { if (e.target.closest("a,button,.handle")) return; openRow = open ? null : r.k; draw(); };
+    body.appendChild(row);
+    if (open && isVoter() && !isLocked(r) && DATA.show.status !== "past") body.appendChild(voteEditor(r));
+  });
+  el.appendChild(body);
+  box.appendChild(el);
+}
+
+function drawCrew() {
+  const box = $("crewBox");
+  box.innerHTML = "";
+  const list = ordered();
+  const n = list.length;
+  if (!n || !DATA.band.length) return;
+  const r = readiness(list, DATA.band);
+  const pct = Math.round((DATA.band.reduce((a, b) => a + r.per[b].know, 0) / (n * DATA.band.length)) * 100);
+  const el = document.createElement("div");
+  el.className = "crew";
+  el.innerHTML = '<div class="crewhead"><h3>Where the band is</h3><div class="sum">' + n + ' songs · <b>' + pct +
+    '%</b> band-ready · ' + r.allKnow + ' everyone knows</div></div>';
+  DATA.band.forEach((name) => {
+    const p = r.per[name];
+    const w = (v) => (v / n) * 100 + "%";
+    const row = document.createElement("div");
+    row.className = "crewrow" + (name === ME ? " you" : "");
+    row.innerHTML = '<div class="nm">' + esc(name) + (name === ME ? "<em>you</em>" : "") + '</div>' +
+      '<div class="crewbar" title="' + p.know + " know it · " + p.progress + " learning · " + p.notStarted + " not started · " + p.unanswered + ' no reply">' +
+      '<i class="k" style="width:' + w(p.know) + '"></i><i class="p" style="width:' + w(p.progress) + '"></i>' +
+      '<i class="n" style="width:' + w(p.notStarted) + '"></i></div>' +
+      '<div class="crewnum">' + p.know + '<small>/' + n + '</small></div>';
+    el.appendChild(row);
+  });
+  el.insertAdjacentHTML("beforeend", '<div class="statkey"><span><i class="k"></i>Know it</span><span><i class="p"></i>Learning</span><span><i class="n"></i>Not started</span></div>');
+  el.insertAdjacentHTML("beforeend", '<p class="note2"><a href="' + esc(link("learn.html", SHOW)) + '">Mark what you know →</a></p>');
+  box.appendChild(el);
+}
+
+const cellClass = { MUST: "v3", YES: "v2", MAYBE: "v1", NO: "v0", X: "v3" };
+const cellText = { MUST: "M", YES: "Y", MAYBE: "?", NO: "N", X: "X" };
+
+function drawPool() {
+  const who = DATA.voters;
+  $("poolLegend").innerHTML = who.map((n) => "<i>" + esc(n) + "</i>").join("") + '<i class="pad"></i>';
+  $("poolCount").textContent = DATA.rows.length;
+  const f = poolFilter.trim().toLowerCase();
+  const match = (r) => !f || (r.song + " " + r.artist).toLowerCase().includes(f);
+  const byScore = (a, b) => score(b).score - score(a).score || score(b).musts - score(a).musts;
+  const keep = DATA.rows.filter((r) => r.inSet && match(r)).sort(byScore);
+  const rest = DATA.rows.filter((r) => !r.inSet && match(r)).sort(byScore);
+  const list = $("poolList");
+  list.innerHTML = "";
+  const add = (r, k) => {
+    const row = document.createElement("div");
+    row.className = "row" + (r.inSet ? "" : " cut") + (openRow === r.k ? " open" : "");
+    const cells = who.map((n) => {
+      const v = r.votes[n];
+      return '<div class="cell ' + (v ? cellClass[v] : "none") + (n === ME ? " mine" : "") + '">' + (v ? cellText[v] : "·") + '</div>';
+    }).join("");
+    row.innerHTML = '<div class="rk mono">' + (k + 1) + '</div><div class="rt"><b>' + esc(r.song) + tags(r) + '</b><span>' +
+      esc(r.artist) + " · " + esc(r.len) + '</span></div><div class="grid">' + cells + '</div><div class="rs mono">' + score(r).score + '</div>';
+    if (isOwner()) row.insertBefore(inOut(r), row.querySelector(".grid"));
+    row.onclick = (e) => { if (e.target.closest("a,button")) return; openRow = openRow === r.k ? null : r.k; draw(); };
+    list.appendChild(row);
+    if (openRow === r.k && isVoter() && !isLocked(r) && DATA.show.status !== "past") list.appendChild(voteEditor(r));
+  };
+  keep.forEach((r, k) => add(r, k));
+  if (rest.length) {
+    const d = document.createElement("div");
+    d.className = "divider";
+    d.textContent = "below the line";
+    list.appendChild(d);
+    rest.forEach((r, k) => add(r, keep.length + k));
+  }
+  if (!keep.length && !rest.length) list.innerHTML = '<p class="empty">Nothing matches that filter.</p>';
+}
+$("poolFind").oninput = (e) => { poolFilter = e.target.value; drawPool(); };
+
+function drawWho() {
+  const who = DATA.voters;
+  const rows = DATA.rows.slice().sort((a, b) => score(b).score - score(a).score);
+  $("whoTable").innerHTML = '<table class="who"><thead><tr><th>#</th><th>Song</th><th>Artist</th><th>Lead</th>' +
+    who.map((n) => "<th>" + esc(n) + "</th>").join("") + '<th>Score</th><th>M</th></tr></thead><tbody>' +
+    rows.map((r, i) => '<tr class="' + (r.inSet ? "" : "out") + '"><td>' + (i + 1) + '</td><td class="t">' + esc(r.song) +
+      (isLocked(r) ? ' <span class="tag lock">locked</span>' : "") + '</td><td>' + esc(r.artist) + '</td><td>' + esc(r.lead || "") + '</td>' +
+      who.map((n) => { const v = r.votes[n]; return "<td>" + (v ? '<span class="pill ' + v + '">' + v + "</span>" : "") + "</td>"; }).join("") +
+      '<td>' + score(r).score + '</td><td>' + score(r).musts + '</td></tr>').join("") + '</tbody></table>';
+}
+
+function draw() {
+  if (!DATA) return;
+  const y = window.scrollY;
+  $("whoami").innerHTML = ME
+    ? "Signed in as <b>" + esc(ME) + "</b>" + (isOwner() ? " · owner controls on" : "")
+    : "Just looking" + (isOwner() ? " · owner controls on" : "");
+  const who = DATA.voters.filter((n) => DATA.rows.some((r) => r.votes[n]));
+  $("voters").innerHTML = who.length
+    ? "<b>Votes in:</b> " + who.map((n) => esc(n) + " " + DATA.rows.filter((r) => r.votes[n]).length + "/" + DATA.rows.length).join(" &nbsp;·&nbsp; ")
+    : "No votes recorded yet.";
+  const list = ordered();
+  $("warnBox").innerHTML = warnings(list).map((w) => '<div class="warn">' + w + "</div>").join("") + notes();
+  drawOwner();
+  drawSet();
+  drawCrew();
+  drawPool();
+  drawWho();
+  window.scrollTo(0, y);
+}
+
+/* ---------- copying ---------- */
+function put(text, btn) {
+  const done = () => { const o = btn.textContent; btn.textContent = "Copied"; setTimeout(() => (btn.textContent = o), 1400); };
+  if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(text).then(done).catch(() => {});
+}
+$("copySet").onclick = () => {
+  const list = ordered();
+  const run = list.reduce((a, r) => a + secs(r) + gap(), 0);
+  const brand = (DATA.show.bandName || DATA.show.name || "").toUpperCase();
+  let out = (brand ? brand + " — " : "") + "SETLIST (" + VERSION + ")\n\n" + list.length + " songs · " + mmss(run) + "\n\n";
+  let prev = "";
+  list.forEach((r, i) => {
+    const t = r.tuning || "E standard";
+    out += (i + 1) + ". " + r.song + " - " + r.artist + "  [" + [r.lead, r.len, r.tuning].filter(Boolean).join(", ") + "]" +
+      (i && t !== prev ? "  <- guitar change" : "") + "\n";
+    prev = t;
+  });
+  put(out, $("copySet"));
+};
+$("copyRaw").onclick = () => {
+  const who = DATA.voters;
+  const q = (s) => '"' + String(s == null ? "" : s).replace(/"/g, '""') + '"';
+  let csv = ["Song", "Artist", "Year", "Section", "Length", "In set", ...who, "Total", "Votes cast"].map(q).join(",") + "\n";
+  DATA.rows.forEach((r) => {
+    const v = who.map((n) => r.votes[n] || "");
+    csv += [r.song, r.artist, r.year, r.section, r.len, r.inSet ? "yes" : "", ...v, score(r).score, v.filter(Boolean).length].map(q).join(",") + "\n";
+  });
+  put(csv, $("copyRaw"));
+};
+
+/* ---------- storage check ---------- */
+$("runDiag").onclick = async () => {
+  const out = [];
+  out.push("app version: " + VERSION + "   show: " + SHOW + " (" + DATA.show.name + ")");
+  out.push("last result: " + (lastOk === false ? "FAILED - " + lastErr : "OK"));
+  out.push("who am I: " + (ME || "(just looking)") + "   owner controls: " + (isOwner() ? "on" : "off"));
+  out.push("songs: " + DATA.rows.length + "   in the set: " + DATA.set.count + (DATA.set.locked ? " (locked)" : "") +
+    "   order: " + DATA.set.orderMode);
+  out.push("votes: " + DATA.voters.map((n) => n + "=" + DATA.rows.filter((r) => r.votes[n]).length).join("  "));
+  out.push("learning: " + DATA.band.map((n) => n + "=" + DATA.rows.filter((r) => r.learn[n]).length).join("  "));
+  out.push("lyrics: " + DATA.rows.filter((r) => r.inSet && r.hasLyrics).length + "/" + DATA.set.count + " set songs have words");
+  try {
+    const h = await (await fetch(API + "/health", { cache: "no-store" })).json();
+    out.push("health: " + (h.ok ? "OK" : "FAILED - " + (h.error || "")));
+    if (h.sheetTitle) out.push("  sheet: " + h.sheetTitle);
+    if (h.env) out.push("  env set: " + Object.keys(h.env).filter((k) => h.env[k]).join(", "));
+    if (h.hint) out.push("  hint: " + h.hint);
+  } catch (e) { out.push("health check failed: " + (e.message || e)); }
+  $("diagOut").textContent = out.join("\n");
+};
+$("copyDiag").onclick = () => put($("diagOut").textContent || "(run the check first)", $("copyDiag"));
+
+/* ---------- boot ---------- */
+(async function boot() {
+  SHOW = await currentShowId();
+  $("nav").innerHTML = navHtml(SHOW, "setlist.html");
+  $("toLyrics").href = link("lyrics.html", SHOW);
+  $("ver").textContent = VERSION;
+  try {
+    DATA = await getData(SHOW);
+    lastOk = true;
+  } catch (e) {
+    lastOk = false; lastErr = e.message || String(e);
+    setStatus();
+    return;
+  }
+  const brand = DATA.show.bandName || DATA.show.name || "Setlist";
+  $("brand").textContent = brand;
+  document.title = brand + " — Setlist";
+  $("switch").innerHTML = await showSwitcher(SHOW);
+  wireSwitcher($("switch"));
+  setStatus();
+  let tab = "tabSet";
+  try { tab = localStorage.getItem("rs_tab") || "tabSet"; } catch (e) { /* optional */ }
+  showTab(TABS.some(([t]) => t === tab) ? tab : "tabSet");
+  const remembered = me();
+  if (remembered && (DATA.voters.includes(remembered) || DATA.band.includes(remembered)) &&
+      (!DATA.show.requireBandCode || bandCode())) {
+    ME = remembered;
+    begin();
+  } else {
+    drawGate();
+    $("gate").classList.remove("hide");
+  }
+})();
+</script>

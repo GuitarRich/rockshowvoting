@@ -99,6 +99,22 @@
     #save{padding:13px 14px;font-size:13px}
   }
 </style>
+<script>
+// October's ballot, kept exactly as it was until its gig. Any other show — or
+// no show named once October's gig has passed — goes to the page every show uses.
+(function () {
+  var target = "vote.html";
+  var q = new URLSearchParams(location.search).get("show");
+  if (q && q !== "oct") { location.replace(target + location.search); return; }
+  if (!q && window.fetch) {
+    fetch("/api/shows").then(function (r) { return r.json(); }).then(function (d) {
+      if (d && d.ok && d.defaultId && d.defaultId !== "oct") {
+        location.replace(target + "?show=" + encodeURIComponent(d.defaultId));
+      }
+    }).catch(function () {});
+  }
+})();
+</script>
 </head>
 <body>
 <div class="wrap">

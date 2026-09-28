@@ -316,7 +316,7 @@ Every story below depends on this phase.
 
 ### Tests for User Story 2
 
-- [ ] T040 [P] [US2] Add these tests to `test/api.shows.test.js`:
+- [X] T040 [P] [US2] Add these tests to `test/api.shows.test.js`:
   - A `nov` vote is only accepted from a name in `nov·Settings.voters`.
   - The name is stored under the list's spelling.
   - An empty string clears a vote.
@@ -324,7 +324,7 @@ Every story below depends on this phase.
 
 ### Implementation for User Story 2
 
-- [ ] T041 [US2] Add a one-at-a-time ballot view to `index.html`, ported from BV:`index.html`.
+- [X] T041 [US2] Add a one-at-a-time ballot view to `index.html`, ported from BV:`index.html`.
   - It is the default view when the show's `requireBandCode` is true (November). A "List view" toggle switches to the existing sectioned list.
   - The one-at-a-time view has:
     - a track card showing N of M, the current vote, title, artist, length, year, bpm, era and tuning;
@@ -335,13 +335,13 @@ Every story below depends on this phase.
     - a "picked up where you left off" message on return.
   - It saves each vote as `POST /api/vote {show, code, voter, votes: {[k]: value}}`.
   - LOCKED rows and pick-one groups are shown as they are in the list view.
-- [ ] T042 [US2] Make `index.html` show-aware.
+- [X] T042 [US2] Make `index.html` show-aware.
   - Replace the hardcoded title, subtitle and "Max two songs per band" text with `data.show.name`, `data.show.occasion` and `data.settings.maxPerArtist`.
   - Voter buttons come from `data.voters`.
   - The footer gauge uses `data.settings.budgetSeconds` and `gapSeconds`, or, when `set.maxSongs > 0`, shows "N of maxSongs songs".
   - Keep the offline `LOCKED`, `PICKS` and `SONGS` fallback arrays for `oct` only. They are removed in Phase 14 (T088).
   - Update `index.html`'s fallback `VOTERS` to replace CJ with Ethan.
-- [ ] T043 [US2] Add band-code entry to `index.html` using `store.js`.
+- [X] T043 [US2] Add band-code entry to `index.html` using `store.js`.
   - Prompt for the code only when `requireBandCode` is true. A wrong code sends you back to the gate with a message.
   - If saving fails, run the existing copy-my-votes fallback, and replace the "send it to Rich" text with `data.show.owner`.
 
@@ -363,7 +363,7 @@ Every story below depends on this phase.
 
 ### Tests for User Story 3
 
-- [ ] T044 [P] [US3] Write `test/selection.test.js`.
+- [X] T044 [P] [US3] Write `test/selection.test.js`.
   - Check the precedence: OUT > IN > lock > vote.
   - Check that songs with a negative total are excluded, the cap is applied with forced songs counting toward it, and the set stops at the count or the budget.
   - Check `blocked` and `badLengths` when a length is unreadable and `maxSongs` is 0.
@@ -372,19 +372,19 @@ Every story below depends on this phase.
 
 ### Implementation for User Story 3
 
-- [ ] T045 [US3] Make `results.html` read every show-specific value from `data`:
+- [X] T045 [US3] Make `results.html` read every show-specific value from `data`:
   - the title, the subtitle and the copy-text header;
   - the "90:00" and "90 minutes" text, from `settings.budgetSeconds`;
   - the "two per band" text, from `settings.maxPerArtist`;
   - the `TARGET`, `GAP` and `MAX_PER_ARTIST` defaults, from settings.
   - Show each warning only when its id is in `settings.warnings`. The ids are: `waiting`, `vocalBalance` (for V2/duet, V1 rest and longest V1 run), `flatStretch`, `leadRun`, `dedication` and `cuts`.
   - Replace the anniversary wording in the dedication warning with generic text plus `show.occasion`.
-- [ ] T046 [US3] Switch `results.html` to the shared engine: replace its inline `orderSet` and `META` with the `setlist.js` engine (T025). Use `data.set.order` as the automatic order, so the page and the API always agree (FR-018). Keep the `META` fallback only for `oct` rows with no Energy value, until Phase 14 (T088).
-- [ ] T047 [US3] Switch the owner key in `results.html` to the owner code.
+- [X] T046 [US3] Switch `results.html` to the shared engine: replace its inline `orderSet` and `META` with the `setlist.js` engine (T025). Use `data.set.order` as the automatic order, so the page and the API always agree (FR-018). Keep the `META` fallback only for `oct` rows with no Energy value, until Phase 14 (T088).
+- [X] T047 [US3] Switch the owner key in `results.html` to the owner code.
   - Replace the `prompt()` for the admin key with a small inline owner-code field.
   - Keep the code in memory only, and send it as `ownerCode`.
   - Use it for force, lock and unlock, maxSongs, save order and clear order.
-- [ ] T048 [US3] Port the Band Vote setlist UX into `results.html`:
+- [X] T048 [US3] Port the Band Vote setlist UX into `results.html`:
   - A "Songs in the set" −/+ stepper that writes `maxSongs` through `/api/admin`. It is shown to everyone; the owner code is asked for when it is clicked.
   - An In/Out control on each setlist row and on each Ranking row.
   - Expandable set rows with:
@@ -402,7 +402,7 @@ Every story below depends on this phase.
     - the KEYS chip
     - the "Who voted what" tab
     - the CSV and paste fallbacks
-- [ ] T049 [US3] Show cut reasons in the Full ranking of `results.html`, using `row.cut`: veto, CAP, no room, held out. Also show a "below the line" divider.
+- [X] T049 [US3] Show cut reasons in the Full ranking of `results.html`, using `row.cut`: veto, CAP, no room, held out. Also show a "below the line" divider.
 
 **Checkpoint**: The November set page has parity with Band Vote; October's set page gains features without losing any. Push.
 
@@ -422,7 +422,7 @@ Every story below depends on this phase.
   - Saving a tempo for `nov` without the code is rejected with 401.
   - After a save, `/api/data` reports `bpmSource:"set"`.
   - A blank BPM falls back to `Library.Bpm` with source `"est"`.
-- [ ] T051 [US6] Create `click.html`, ported from BV:`click.html` onto `store.js` and `data.rows`. Keep everything:
+- [X] T051 [US6] Create `click.html`, ported from BV:`click.html` onto `store.js` and `data.rows`. Keep everything:
   - the set and every-song lists
   - the full-screen lamp
   - audio-clock scheduling
@@ -434,7 +434,7 @@ Every story below depends on this phase.
   - the wall-clock fallback when audio is blocked
   - wake lock, and stopping when the tab is hidden
   Get the header branding from `data.show`.
-- [ ] T052 [US6] Add a "Click" link to the nav of all pages, keeping the `?show` param.
+- [X] T052 [US6] Add a "Click" link to the nav of all pages, keeping the `?show` param.
 
 ---
 
@@ -447,16 +447,16 @@ Every story below depends on this phase.
 2. The chart, the chips on each song and the set-only counter update.
 3. The readiness panel on the set page matches.
 
-- [ ] T053 [P] [US4] Add these tests to `test/api.shows.test.js`:
+- [X] T053 [P] [US4] Add these tests to `test/api.shows.test.js`:
   - `nov` learn accepts only `nov·Settings.band` names.
   - The code is required.
   - Only the saving player's row changes.
-- [ ] T054 [US4] Make `learn.html` show-aware.
+- [X] T054 [US4] Make `learn.html` show-aware.
   - Read `?show` through `store.js`.
   - Use `data.show.name` for the title and `data.band` for the name buttons, and drop the hardcoded fallback BAND list.
   - Send the band code when it is required.
   - Keep every existing feature: the chart, the stage grouping, the unique initials, the filters, the keyboard badge and the set-only counter.
-- [ ] T055 [US4] Make sure `learn.html` and the readiness panel in `results.html` (T048) use the same counting function. Add a shared `readiness(rows, band)` to `setlist.js`, with a test in `test/engine.test.js`.
+- [X] T055 [US4] Make sure `learn.html` and the readiness panel in `results.html` (T048) use the same counting function. Add a shared `readiness(rows, band)` to `setlist.js`, with a test in `test/engine.test.js`.
 
 ---
 
@@ -555,13 +555,13 @@ Every story below depends on this phase.
 2. The range ends at November's gig date.
 3. October's calendar is unaffected.
 
-- [ ] T071 [US9] Make `availability.html` show-aware.
+- [X] T071 [US9] Make `availability.html` show-aware.
   - Use `store.js` to get `?show`.
   - Get the title from `data.show.name` and the range end from `data.show.gigDate`.
   - Players come from `data.band`; drop the hardcoded fallback BAND.
   - Send the band code when it is required.
   - Keep the colours, the best-days card and the tooltips.
-- [ ] T072 [P] [US9] Add these tests to `test/api.shows.test.js`:
+- [X] T072 [P] [US9] Add these tests to `test/api.shows.test.js`:
   - Availability saves for `nov` go to `nov·Availability` only.
   - Invalid day keys are skipped.
 

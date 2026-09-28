@@ -8,6 +8,12 @@
 // this app now carries everything that one did.
 export const VERSION = "v33";
 
+/** What changed, newest first. Shown on the ballot. */
+export const CHANGES = {
+  v33: "One app for every show — October and Bun's & Roses side by side, each with its own songs, voters and set. " +
+    "Lyrics, tempos and tunings belong to the song, so they carry over when a song comes back.",
+};
+
 export const WEIGHTS = { MUST: 6, YES: 2, MAYBE: 1, NO: -4 };
 
 // "X" is a marker on the pick-ONE locked sections, not a scored vote.

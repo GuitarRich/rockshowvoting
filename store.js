@@ -109,22 +109,34 @@ export const saveTempo = (show, key, bpm, beats) => post("/tempos", show, { key,
 
 /** A link to another page of the same show. */
 export function link(page, show) {
-  return "./" + page + (show ? "?show=" + encodeURIComponent(show) : "");
+  return "./" + pageFor(page, show) + (show ? "?show=" + encodeURIComponent(show) : "");
 }
 
 export const PAGES = [
-  ["index.html", "Vote"],
-  ["results.html", "Setlist"],
+  ["vote.html", "Vote"],
+  ["setlist.html", "Setlist"],
   ["learn.html", "Learn"],
   ["lyrics.html", "Lyrics"],
+  ["click.html", "Click"],
   ["availability.html", "Rehearsals"],
 ];
 
+/**
+ * October keeps its original ballot and results pages until its gig; every
+ * other show uses the new ones.
+ */
+const LEGACY = { "vote.html": "index.html", "setlist.html": "results.html" };
+export function pageFor(page, show) {
+  return show === "oct" && LEGACY[page] ? LEGACY[page] : page;
+}
+
 /** The nav every page carries, with the current page marked. */
 export function navHtml(show, current) {
-  return PAGES.map(([page, label]) =>
-    '<a href="' + esc(link(page, show)) + '"' + (page === current ? ' aria-current="page"' : "") + ">" +
-      esc(label) + "</a>").join("");
+  return PAGES.map(([page, label]) => {
+    const real = pageFor(page, show);
+    return '<a href="' + esc(link(real, show)) + '"' +
+      (page === current || real === current ? ' aria-current="page"' : "") + ">" + esc(label) + "</a>";
+  }).join("");
 }
 
 /**
