@@ -1,9 +1,10 @@
-import { readAll, writeAvailability, readBody } from "./_sheets.js";
-import { availabilityValue, isDayKey, BAND } from "../setlist.js";
-import { buildPayload, ok, fail, methodGuard } from "./_payload.js";
+import { readAll, writeAvailability, readBody, resolveShow } from "./_sheets.js";
+import { availabilityValue, isDayKey } from "../setlist.js";
+import { requireBand, requireWritable } from "./_auth.js";
+import { buildPayload, onList, ok, fail, methodGuard, guarded, showParam } from "./_payload.js";
 
 /**
- * Save one person's availability. Body: {person, days:{'2026-10-03':'YES'}}.
+ * Save one person's availability. Body: {show, code, person, days:{'2026-10-03':'YES'}}.
  *
  * An empty string removes the day, taking it back to "hasn't said" — which the
  * calendar shows differently from NO, because an unanswered day is somebody to
@@ -11,17 +12,21 @@ import { buildPayload, ok, fail, methodGuard } from "./_payload.js";
  */
 export default async function handler(req, res) {
   if (methodGuard(req, res, "POST")) return;
-  try {
+  return guarded(res, async () => {
     const body = await readBody(req);
+    const show = await resolveShow(showParam(req, body));
+    requireWritable(show);
+    requireBand(show, body);
+
     const person = String(body.person || body.name || "").trim();
     if (!person) return fail(res, 400, "No name supplied.");
-    const known = BAND.find((n) => n.toLowerCase() === person.toLowerCase());
+    const state = await readAll(show);
+    const known = onList(state.settings.band, person);
     if (!known) {
       return fail(res, 400,
-        `"${person}" is not in the band. If that is wrong, add the name to BAND in setlist.js.`);
+        `"${person}" is not in the band. If that is wrong, add the name to "band" on the show's Settings tab.`);
     }
 
-    const state = await readAll();
     const days = { ...((state.availability[known] || {}).days || {}) };
 
     let written = 0;
@@ -38,9 +43,7 @@ export default async function handler(req, res) {
       written++;
     }
 
-    await writeAvailability({ name: known, days, ts: Date.now(), version: body.version });
-    return ok(res, { person: known, written, data: buildPayload(await readAll()) });
-  } catch (e) {
-    return fail(res, 500, e.message);
-  }
+    await writeAvailability(show, { name: known, days, ts: Date.now(), version: body.version });
+    return ok(res, { person: known, written, data: buildPayload(await readAll(show)) });
+  });
 }

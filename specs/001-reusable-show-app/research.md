@@ -128,3 +128,13 @@ Phase 0 output. Every open question from Technical Context is resolved here.
   - Before any write to the live sheet, the migration and backup scripts take a **backup**: they duplicate every existing tab into `bak-2026MMDD·<Tab>`, which is hidden, and they log the list.
   - Phase 1 changes to the October code path must pass the October regression tests (payload parity checked against a captured fixture of today's `/api/data`) before they are pushed.
 - **Rationale**: October is live and there is no staging environment. The backups and the parity tests are the safety net.
+
+## R8a. Amendment made during implementation: two ordering engines
+
+- **Decision**: Keep **both** engines in `setlist.js`, and choose one per show with the `orderEngine` setting:
+  - `"pacing"` is Rock Show's `orderSet`, copied over verbatim along with its `META` fallback map. It is the default, so October's automatic order doesn't change.
+  - `"curve"` is Band Vote's seed-and-repair engine. November uses it.
+- **Rationale**:
+  - Replacing October's engine would have moved its automatic running order while the show is live, which breaks the October-unchanged rule.
+  - Both engines now live in one shared, tested module, and the server works the order out once (`set.order`). That keeps FR-018: every page agrees on the order.
+- **Selection tie-break**: follows the same approach. A `tieBreak` setting chooses `"energy"` (October) or `"shorter"` (Band Vote's `a.dur - b.dur`), so November's set comes out identical to Band Vote's.

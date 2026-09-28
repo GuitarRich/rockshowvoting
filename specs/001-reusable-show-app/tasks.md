@@ -36,7 +36,7 @@ description: "Task list for the Reusable Show App (Band Vote parity + Rock Show 
 
 **Purpose**: Tooling, tests, and a dev server that doesn't touch the live sheet.
 
-- [ ] T001 Update `package.json`:
+- [X] T001 Update `package.json`:
   - Add `"packageManager": "pnpm@10.14.0"`.
   - Add these scripts:
     - `"test": "node --test test/"`
@@ -47,9 +47,9 @@ description: "Task list for the Reusable Show App (Band Vote parity + Rock Show 
     - `"migrate:nov": "node scripts/migrate-bandvote.js"`
   - Keep the `googleapis` dependency.
   - Run `pnpm install`.
-- [ ] T002 [P] Create the directories `test/`, `test/fixtures/`, `scripts/` and `scripts/fixtures/`. Add `test/fixtures/.gitkeep`.
-- [ ] T003 [P] Extend `.gitignore` with `.env.development.local` and `scripts/out/`. Check that the service-account JSON pattern `bunsnroses-*.json` is already covered.
-- [ ] T004 Create `test/fakeSheets.js`, an in-memory Google Sheets v4 client that can be passed to `setSheetsClient()` from `api/_sheets.js`.
+- [X] T002 [P] Create the directories `test/`, `test/fixtures/`, `scripts/` and `scripts/fixtures/`. Add `test/fixtures/.gitkeep`.
+- [X] T003 [P] Extend `.gitignore` with `.env.development.local` and `scripts/out/`. Check that the service-account JSON pattern `bunsnroses-*.json` is already covered.
+- [X] T004 Create `test/fakeSheets.js`, an in-memory Google Sheets v4 client that can be passed to `setSheetsClient()` from `api/_sheets.js`.
   - Support the calls `api/_sheets.js` makes:
     - `spreadsheets.get` (sheet titles)
     - `spreadsheets.batchUpdate` (addSheet, duplicateSheet, updateSheetProperties)
@@ -57,7 +57,7 @@ description: "Task list for the Reusable Show App (Band Vote parity + Rock Show 
   - Return displayed values as strings, the way Sheets does.
   - Add an option `timeCells: true` that turns `m:ss` values into `3:23:00 AM` strings, so the unreadable-length path gets tested.
   - Export `makeFakeSheets(initialTabs)` and `snapshot()`.
-- [ ] T005 [P] Create `test/helpers.js`, which calls API handlers directly. Export `call(handler, {method, query, body})`, which fakes `req` and `res` and returns `{status, json, headers}`. Set `process.env.SHEET_ID = "test"` and the fake secrets `BAND_SECRET="band"` and `OWNER_SECRET="owner"`.
+- [X] T005 [P] Create `test/helpers.js`, which calls API handlers directly. Export `call(handler, {method, query, body})`, which fakes `req` and `res` and returns `{status, json, headers}`. Set `process.env.SHEET_ID = "test"` and the fake secrets `BAND_SECRET="band"` and `OWNER_SECRET="owner"`.
 
 ---
 
@@ -74,43 +74,43 @@ Every story below depends on this phase.
 
 ### October safety net
 
-- [ ] T006 Write `scripts/capture-oct-payload.js`, which GETs `https://<prod-domain>/api/data` (the URL comes from argv) and writes `test/fixtures/oct-payload.json`. Also write `test/fixtures/oct-sheet.json`, rebuilt from that payload as raw tab rows for `fakeSheets` (tabs: Songs, Votes, Learning, Availability, Tunings, Settings). Ask the owner for the production URL, or read it from `.vercel/project.json` and `vercel ls`, then run the script once.
-- [ ] T007 [P] Write `scripts/backup-sheet.js`.
+- [X] T006 Write `scripts/capture-oct-payload.js`, which GETs `https://<prod-domain>/api/data` (the URL comes from argv) and writes `test/fixtures/oct-payload.json`. Also write `test/fixtures/oct-sheet.json`, rebuilt from that payload as raw tab rows for `fakeSheets` (tabs: Songs, Votes, Learning, Availability, Tunings, Settings). Ask the owner for the production URL, or read it from `.vercel/project.json` and `vercel ls`, then run the script once.
+- [X] T007 [P] Write `scripts/backup-sheet.js`.
   - For every tab in `SHEET_ID`, call `duplicateSheet` into a hidden tab named `bak-YYYYMMDD·<Tab>`.
   - Skip tabs that already start with `bak-`. If today's backup already exists, skip it.
   - Print the list.
   - Use the credentials in `.env.development.local` (loaded with `node --env-file`).
 - [ ] T008 Run `pnpm env`, then `pnpm backup` against the live sheet. **This is the first live write**, and it only duplicates tabs. Record the tab list in `scripts/out/backup-log.txt`.
-- [ ] T009 Write `test/october.test.js`.
+- [X] T009 Write `test/october.test.js`.
   - Load `test/fixtures/oct-sheet.json` into `fakeSheets` and call `api/data.js` with no `show` param.
   - Assert that every field present in `test/fixtures/oct-payload.json` is deep-equal in the new response. Extra fields are allowed.
   - Also call `api/vote.js` with no `show` and no `code` for voter "Rich", and assert 200. This checks October still needs no band code.
-- [ ] T010 Run `pnpm test`. T009 must pass against the **unchanged** code before any refactor starts. This is the baseline.
+- [X] T010 Run `pnpm test`. T009 must pass against the **unchanged** code before any refactor starts. This is the baseline.
 
 ### Shows registry and prefixed tabs
 
-- [ ] T011 In `api/_sheets.js`, add the Shows registry.
+- [X] T011 In `api/_sheets.js`, add the Shows registry.
   - Add `SHOWS_TAB = "Shows"` with the headers `Id, Prefix, Name, GigDate, Status, RequireBandCode`.
   - `ensureShows()` creates the tab if it is missing and seeds the row `oct, "", October Anniversary Show, <Settings.gigDate>, current, FALSE`.
   - Export `readShows()`, which returns `[{id, prefix, name, gigDate, status, requireBandCode}]`.
   - Export `resolveShow(id)`. With no `id` it returns `oct`. An unknown `id` throws an error with `status = 404`.
   - Export `defaultShowId(shows, today)`, following the rule in data-model.md "Shows".
-- [ ] T012 Refactor `api/_sheets.js` so every show-scoped tab constant (`Songs, Votes, Learning, Availability, Settings, Grid`) is resolved through `tab(show, name) => show.prefix + name`.
+- [X] T012 Refactor `api/_sheets.js` so every show-scoped tab constant (`Songs, Votes, Learning, Availability, Settings, Grid`) is resolved through `tab(show, name) => show.prefix + name`.
   - Change `ensureTabs(show)`, `readAll(show)`, `writeVoter(show, …)`, `writeLearner(show, …)`, `writeAvailability(show, …)`, `writeSettings(show, …)`, `writeSongs(show, …)` and `writeGrid(show, …)` to take `show` as the first argument.
   - `Tunings` stays unprefixed.
   - Update all callers in `api/*.js` to pass `await resolveShow(req.query.show || body.show)`.
   - Run T009. It must still pass.
-- [ ] T013 In `api/_sheets.js`, extend the Songs headers to the right with `Year, Era`. This only adds columns: `ensureTabs` must append the missing headers and never rewrite existing ones. Read them into `row.year` and `row.era`, and default both to `""`.
-- [ ] T014 In `api/_sheets.js`, add the per-show settings keys from data-model.md "Show Settings":
+- [X] T013 In `api/_sheets.js`, extend the Songs headers to the right with `Year, Era`. This only adds columns: `ensureTabs` must append the missing headers and never rewrite existing ones. Read them into `row.year` and `row.era`, and default both to `""`.
+- [X] T014 In `api/_sheets.js`, add the per-show settings keys from data-model.md "Show Settings":
   - The keys are `showName, occasion, bandName, voters, band, owner, budgetSeconds, gapSeconds, maxPerArtist, warnings, leads, eras`.
   - Parse JSON values safely; invalid JSON falls back to the default.
   - The defaults come from the current constants in `setlist.js` (`VOTERS`, `BAND`, `MAX_PER_ARTIST`) and in `api/_selection.js` (`TARGET`, `GAP`), so October's behaviour doesn't change.
   - `readAll(show)` returns `state.settings` with every key filled in.
-- [ ] T015 In `api/_selection.js`, change `selectSet(rows, roster, opts)` to take `opts.budgetSeconds`, `opts.gapSeconds` and `opts.maxPerArtist`. When one is missing, use today's constant. Update `api/_payload.js` to pass the values from `state.settings`.
-- [ ] T016 In `api/_payload.js`, `rosterOf()` and the band filtering read `state.settings.voters` and `state.settings.band` instead of the `VOTERS` and `BAND` imports.
+- [X] T015 In `api/_selection.js`, change `selectSet(rows, roster, opts)` to take `opts.budgetSeconds`, `opts.gapSeconds` and `opts.maxPerArtist`. When one is missing, use today's constant. Update `api/_payload.js` to pass the values from `state.settings`.
+- [X] T016 In `api/_payload.js`, `rosterOf()` and the band filtering read `state.settings.voters` and `state.settings.band` instead of the `VOTERS` and `BAND` imports.
   - Change `api/vote.js`, `api/learn.js` and `api/availability.js` so name checks use the show's lists.
   - Update the error text so it says to add the name in the show's Settings tab.
-- [ ] T017 [P] Write `test/api.shows.test.js`, using fakeSheets with `Shows` rows for `oct` (prefix "") and `nov` (prefix `nov·`). Assert:
+- [X] T017 [P] Write `test/api.shows.test.js`, using fakeSheets with `Shows` rows for `oct` (prefix "") and `nov` (prefix `nov·`). Assert:
   - With no `show`, `data.js` reads the unprefixed tabs.
   - `show=nov` reads the `nov·Songs` and `nov·Votes` tabs.
   - A vote for `nov` writes only to `nov·Votes`.
@@ -119,17 +119,17 @@ Every story below depends on this phase.
 
 ### Codes and read-only past shows
 
-- [ ] T018 Create `api/_auth.js` with the following exports. They check the rules in contracts/api.md "Codes".
+- [X] T018 Create `api/_auth.js` with the following exports. They check the rules in contracts/api.md "Codes".
   - `requireBand(show, body)`:
     - If `show.requireBandCode`, then `body.code` must equal `process.env.BAND_SECRET` once quotes and whitespace are stripped. Otherwise the error has status 401 and the message "Wrong band code.".
     - If `BAND_SECRET` is unset and the show requires a code, the error has status 500 and the message "BAND_SECRET is not set.".
   - `requireOwner(body)`: `body.ownerCode ?? body.key` must equal `OWNER_SECRET || APP_SECRET`. Otherwise the error has status 403 and the message "Wrong owner code.".
   - `requireWritable(show)`: if `show.status === "past"`, the error has status 409.
-- [ ] T019 Wire `api/_auth.js` into every POST handler:
+- [X] T019 Wire `api/_auth.js` into every POST handler:
   - `api/vote.js`, `api/learn.js` and `api/availability.js` call requireWritable and requireBand.
   - `api/admin.js` calls requireWritable and requireOwner. Replace its inline `APP_SECRET` check, and keep accepting `key` so October's admin page still works.
   - Use `fail(res, e.status || 500, e.message)`.
-- [ ] T020 [P] Write `test/api.auth.test.js`. Assert:
+- [X] T020 [P] Write `test/api.auth.test.js`. Assert:
   - An `oct` vote with no code gets 200.
   - A `nov` vote with no code gets 401; with `code:"band"` it gets 200.
   - Admin with `key:"owner"` gets 200; with `ownerCode:"owner"` gets 200; with the wrong code gets 403.
@@ -138,7 +138,7 @@ Every story below depends on this phase.
 
 ### Library tabs
 
-- [ ] T021 In `api/_sheets.js`, add the library tabs, all unprefixed and keyed by `songKey`:
+- [X] T021 In `api/_sheets.js`, add the library tabs, all unprefixed and keyed by `songKey`:
   - `LYRICS_TAB = "Lyrics"`, with headers `Key, Song, Artist, Lyrics`
   - `TEMPOS_TAB = "Tempos"`, with headers `Key, Song, Artist, BPM, BeatsPerBar`
   - `LIBRARY_TAB = "Library"`, with headers `Key, Song, Artist, Length, Year, Era, Bpm, Energy, Tags, Lead, Keyboard`
@@ -152,7 +152,7 @@ Every story below depends on this phase.
     - `readLibrary()`
     - `upsertLibrary(rows)`, which only appends or updates the rows it is given
   - Follow BV:`api/_sheets.js` for the lyrics and tempos read and write logic. Match the blank rules in data-model.md "Library song content".
-- [ ] T022 In `api/_payload.js`, add these to each row:
+- [X] T022 In `api/_payload.js`, add these to each row:
   - `bpm`, `beats` and `bpmSource`:
     - `"set"` when there is a Tempos row with a BPM;
     - `"est"` when only `Library.Bpm` has one;
@@ -161,12 +161,12 @@ Every story below depends on this phase.
   - `cut`, with one of the values `veto | cap | room | out | null`, taken from `selectSet`'s reasons. Extend `api/_selection.js` to return a `cut` map.
   - At the top level, add `show: {id, name, occasion, bandName, owner, gigDate, status, requireBandCode}` and `settings: {…}`.
   - Also add `set.order`, the list of song keys in running order. It uses the saved Order, or else the automatic order from the shared engine (T025).
-- [ ] T023 [P] Create `api/lyrics.js`.
+- [X] T023 [P] Create `api/lyrics.js`.
   - GET `?show=&all=` returns `{lyrics: {key: text}}` for the songs in the set, or for every ballot song when `all=1`.
   - POST `{show, code, key, lyrics}` calls requireWritable and requireBand, resolves the key with `keyResolver`, then calls `writeLyric`.
   - POST `{addBlankRows: true}` calls `addBlankLyricRows` for the songs in the set.
   - Use the `ok`/`fail`/`methodGuard` envelope. GET and POST are both allowed, so branch on the method.
-- [ ] T024 [P] Create `api/tempos.js`, which accepts POST only with the body `{show, code, key, bpm, beats}`.
+- [X] T024 [P] Create `api/tempos.js`, which accepts POST only with the body `{show, code, key, bpm, beats}`.
   - Check the codes with requireBand.
   - Validate `bpm` as an integer from 30 to 300, and `beats` as an integer from 2 to 7.
   - Save with `writeTempo`.
@@ -174,7 +174,7 @@ Every story below depends on this phase.
 
 ### Shared engine (ported from Band Vote)
 
-- [ ] T025 Merge the following BV:`setlist.js` functions into `setlist.js`, and export them. Keep every existing export unchanged.
+- [X] T025 Merge the following BV:`setlist.js` functions into `setlist.js`, and export them. Keep every existing export unchanged.
   - Ordering:
     - Port `targetEnergy`, `seedOrder`, `orderCost`, `repairOrder`, `orderSet`, `applySavedOrder`, `moveKey`, `isSlow`, `tagsOf` and `energyOf`.
     - Extend them with Rock Show's tags `heavy`, `lift` and `dip`, following the tag windows in the rock show `results.html` `orderSet`, and add the rule "same artist adjacent +10".
@@ -183,8 +183,8 @@ Every story below depends on this phase.
   - Tempo and autoscroll: the autoscroll maths, and the tempo, tap and beat-scheduling helpers (`normBpm`, `normBeats`, tap averaging).
   - Tunings: the tuning-name normalising.
   - Rock Show uses string votes (MUST, YES, MAYBE, NO), and its `setlist.js` already defines `voteWeight`. Keep that one; don't import BV's numeric vote functions.
-- [ ] T026 [P] Copy BV:`chords.js` to `chords.js` unchanged. Check that it only imports what `setlist.js` now exports.
-- [ ] T027 Port the non-vote tests from BV:`setlist.test.js` into `test/engine.test.js`:
+- [X] T026 [P] Copy BV:`chords.js` to `chords.js` unchanged. Check that it only imports what `setlist.js` now exports.
+- [X] T027 Port the non-vote tests from BV:`setlist.test.js` into `test/engine.test.js`:
   - ordering, saved order, `moveKey`
   - `parseLen`, era
   - tunings, lyrics, escaping
@@ -192,7 +192,7 @@ Every story below depends on this phase.
   - autoscroll, tempo, tap and beat scheduling
   - phone chord wrapping
   Adapt the imports and add cases for `heavy`, `lift`, `dip` and the same-artist penalty. Every test must pass.
-- [ ] T028 [P] Copy BV:`app.css` to `app.css`. Then:
+- [X] T028 [P] Copy BV:`app.css` to `app.css`. Then:
   - Take the "Bun's & Roses" wording out of its comments.
   - Add the CSS custom properties that the October pages use inline (`--all`, `--one`, `--few` and the vote colours), so later pages can share them.
 

@@ -1,12 +1,11 @@
-import { readAll } from "./_sheets.js";
-import { buildPayload, ok, fail, methodGuard } from "./_payload.js";
+import { readAll, resolveShow } from "./_sheets.js";
+import { buildPayload, ok, methodGuard, guarded, showParam } from "./_payload.js";
 
-/** Everything every page needs, in one call. */
+/** Everything every page needs, in one call. `?show=` picks the show. */
 export default async function handler(req, res) {
   if (methodGuard(req, res, "GET")) return;
-  try {
-    return ok(res, { data: buildPayload(await readAll()) });
-  } catch (e) {
-    return fail(res, 500, e.message);
-  }
+  return guarded(res, async () => {
+    const show = await resolveShow(showParam(req));
+    return ok(res, { data: buildPayload(await readAll(show)) });
+  });
 }

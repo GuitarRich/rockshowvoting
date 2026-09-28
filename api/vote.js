@@ -1,25 +1,32 @@
-import { readAll, writeVoter, writeGrid, readBody } from "./_sheets.js";
-import { isVoteValue, VOTERS } from "../setlist.js";
-import { buildPayload, keyResolver, ok, fail, methodGuard } from "./_payload.js";
+import { readAll, writeVoter, writeGrid, readBody, resolveShow } from "./_sheets.js";
+import { isVoteValue } from "../setlist.js";
+import { requireBand, requireWritable } from "./_auth.js";
+import {
+  buildPayload, keyResolver, onList, ok, fail, methodGuard, guarded, showParam,
+} from "./_payload.js";
 
 /**
- * Save one person's votes. Body: {voter, votes:{'Song|Artist':'MUST', ...}}.
+ * Save one person's votes. Body: {show, code, voter, votes:{'Song|Artist':'MUST', ...}}.
  * An empty string clears a vote — the page sends every song it knows about,
  * so a cleared button has to travel as a value rather than an absence.
  */
 export default async function handler(req, res) {
   if (methodGuard(req, res, "POST")) return;
-  try {
+  return guarded(res, async () => {
     const body = await readBody(req);
+    const show = await resolveShow(showParam(req, body));
+    requireWritable(show);
+    requireBand(show, body);
+
     const voter = String(body.voter || body.name || "").trim();
     if (!voter) return fail(res, 400, "No voter name supplied.");
-    const known = VOTERS.find((n) => n.toLowerCase() === voter.toLowerCase());
+    const state = await readAll(show);
+    const known = onList(state.settings.voters, voter);
     if (!known) {
       return fail(res, 400,
-        `"${voter}" is not on the voting list. If that is wrong, add the name to VOTERS in setlist.js.`);
+        `"${voter}" is not on the voting list. If that is wrong, add the name to "voters" on the show's Settings tab.`);
     }
 
-    const state = await readAll();
     const resolve = keyResolver(state.songs);
     const votes = { ...((state.voters[known] || {}).votes || {}) };
 
@@ -41,17 +48,15 @@ export default async function handler(req, res) {
       written++;
     }
 
-    await writeVoter({ name: known, votes, ts: Date.now(), version: body.version });
-    const fresh = await readAll();
+    await writeVoter(show, { name: known, votes, ts: Date.now(), version: body.version });
+    const fresh = await readAll(show);
     // The Grid tab is derived and disposable, so a formatting failure must
     // never fail a vote that has already been saved.
     try {
-      await writeGrid(fresh.songs, fresh.voters, fresh.tunings, fresh.learners);
+      await writeGrid(show, fresh);
     } catch (e) {
       console.error("grid rewrite failed:", e.message);
     }
     return ok(res, { voter: known, written, data: buildPayload(fresh) });
-  } catch (e) {
-    return fail(res, 500, e.message);
-  }
+  });
 }
