@@ -4,6 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>October Anniversary Show — Who Can Make It</title>
+<link href="./app.css" rel="stylesheet">
 <style>
   :root{
     --bg:#0d0e12; --panel:#16181f; --panel2:#1d2029; --line:#2a2e3a;
@@ -108,14 +109,11 @@
 </style>
 </head>
 <body>
+<header class="apphdr" data-page="availability.html" data-title="Rehearsals" data-status="none"></header>
+<script type="module" src="./header.js"></script>
 <div class="wrap">
 
-<header>
-  <h1>October Anniversary Show — <span>Who Can Make It</span></h1>
-  <p class="sub">Rehearsal availability up to the gig &middot;
-    <a href="vote.html">the ballot</a> &middot; <a href="setlist.html">results</a> &middot;
-    <a href="learn.html">who knows what</a> &middot; <a href="lyrics.html">lyric book</a></p>
-</header>
+<p class="sub" style="margin:0 0 22px">Rehearsal availability, from today up to the gig.</p>
 
 <div class="card" id="summary" hidden>
   <h2>Best days to rehearse</h2>
@@ -194,17 +192,7 @@ function forgetCode(){ try{ localStorage.removeItem('rs_code'); }catch(ignore){}
 function showPage(d){
   SHOW_INFO = d.show || null;
   if(!SHOW_INFO) return;
-  const name = SHOW_INFO.name || '';
-  const h1 = document.querySelector('header h1');
-  if(h1 && h1.firstChild && h1.firstChild.nodeType === 3) h1.firstChild.nodeValue = name + ' \u2014 ';
-  document.title = name + ' \u2014 ' + (h1 && h1.querySelector('span') ? h1.querySelector('span').textContent : '');
-  const q = '?show=' + encodeURIComponent(SHOW);
-  const legacy = { 'index.html': 'vote.html', 'results.html': 'setlist.html' };
-  document.querySelectorAll('header .sub a[href$=".html"]').forEach(a => {
-    let page = a.getAttribute('href').split('?')[0];
-    if(legacy[page]) page = legacy[page];
-    a.setAttribute('href', page + q);
-  });
+  // The shared header (header.js) shows the show's name and the nav.
 }
 
 // The band, not the voters: this calendar exists to get five people in a room.

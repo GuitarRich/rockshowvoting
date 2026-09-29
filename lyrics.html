@@ -14,7 +14,6 @@
 /* The header is shared chrome, so it lines up with the other two pages rather
    than with the book column — the logo shouldn't shift when you navigate. The
    narrow column below is a reading measure for the words themselves. */
-#lb header .wrap{max-width:1240px}
 #lb .disp{font-family:var(--sans);text-transform:uppercase;letter-spacing:.04em;line-height:1}
 #lb .mono{font-family:'IBM Plex Mono',monospace}
 #lb .hide{display:none!important}
@@ -22,30 +21,6 @@
 
 /* Same header as the vote and setlist pages: a full-bleed bar with the amber
    line under it, not a panel boxed inside the reading column. */
-#lb header{border-bottom:1px solid var(--line);background:linear-gradient(180deg,var(--panel2),var(--panel));
-  padding:var(--s4) 0 var(--s3);margin-bottom:var(--s4);position:relative}
-#lb header:after{content:'';position:absolute;left:0;right:0;bottom:-1px;height:1px;
-  background:linear-gradient(90deg,transparent,var(--lamp),transparent);opacity:.5}
-#lb .plate{display:flex;align-items:center;gap:var(--s3)}
-#lb .lamp{width:17px;height:17px;border-radius:50%;flex:none;
-  background:radial-gradient(circle at 35% 30%,#FFD98A,var(--lamp) 55%,#8A5A0B);box-shadow:0 0 16px rgba(245,166,35,.7)}
-#lb h1{font-size:32px;font-weight:700;flex:1;line-height:1;font-family:var(--sans);
-  text-transform:uppercase;letter-spacing:.04em}
-#lb .status{font-size:11px;letter-spacing:.14em;text-transform:uppercase;font-weight:600;
-  font-family:var(--sans);padding:7px 12px;border:1px solid var(--line);border-radius:99px;
-  color:var(--dim);white-space:nowrap}
-#lb .status.ok{color:var(--ok);border-color:rgba(127,166,80,.45)}
-#lb .status.warn{color:var(--lamp);border-color:rgba(245,166,35,.45)}
-#lb h1 small{display:block;font-size:11px;letter-spacing:.28em;color:var(--dim);font-weight:600;margin-top:8px}
-#lb h1 small span{color:var(--lamp)}
-
-#lb nav{display:flex;gap:2px;margin-top:var(--s3);flex-wrap:wrap}
-#lb nav a{font-family:var(--sans);text-transform:uppercase;letter-spacing:.16em;
-  font-size:12px;font-weight:600;color:var(--dim);text-decoration:none;padding:9px 14px;border-radius:var(--r);
-  border:1px solid transparent;transition:color .12s,background .12s,border-color .12s}
-#lb nav a:hover{color:var(--cream);background:rgba(237,230,214,.05)}
-#lb nav a[aria-current="page"]{color:var(--lamp);border-color:rgba(245,166,35,.4);
-  background:rgba(245,166,35,.08)}
 
 #lb .bar{display:flex;gap:var(--s2);flex-wrap:wrap;align-items:center;margin-bottom:var(--s4)}
 #lb .btn{border:1px solid var(--line);border-radius:var(--r);padding:9px 15px;font-size:13px;font-weight:600;
@@ -193,7 +168,6 @@
 
 @media (max-width:640px){
   #lb .toc{columns:1}
-  #lb h1{font-size:26px}
   #lb .wrap{padding:0 var(--s3)}
 
   /* Four buttons of four different widths wrapped into a ragged block. An
@@ -242,12 +216,6 @@
   #lb{background:#fff;color:#000;min-height:0;padding:0;font-size:11.5pt}
   #lb .wrap,#lb header .wrap{max-width:none;padding:0}
   #lb .noprint{display:none!important}
-  #lb header{background:none;border:none;padding:0;margin:0 0 8mm}
-  #lb header:after{display:none}
-  #lb .status{display:none}
-  #lb h1{color:#000;font-size:20pt}
-  #lb h1 small{color:#444}
-  #lb h1 small span{color:#000}
   #lb .cover{border:none;background:none;padding:0;margin:0;
     break-after:page;page-break-after:always}
   #lb .toc li{color:#000}
@@ -272,14 +240,7 @@
 </style>
 
 <div id="lb">
-  <header><div class="wrap">
-      <div class="plate">
-        <div class="lamp"></div>
-        <h1><span id="brand">Lyric book</span><small>Lyric book &middot; <span id="ver"></span> <span id="switch"></span></small></h1>
-        <div class="status" id="status">Checking</div>
-      </div>
-      <nav class="noprint" id="nav"></nav>
-  </div></header>
+  <header class="apphdr" data-page="lyrics.html" data-title="Lyric book"></header>
 
   <div class="wrap">
 
@@ -318,6 +279,7 @@
 </div>
 
 <script type="module">
+import "./header.js";
 import {
   VERSION, mmss, lenSecs, lyricBlocks, searchLinks,
   lyricLines, hasChords, chordParts, chordWords, scrollPlan, clampSpeed, advanceScroll,

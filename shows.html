@@ -30,14 +30,7 @@
 </style>
 
 <div id="sv">
-  <header><div class="wrap">
-    <div class="plate">
-      <div class="lamp"></div>
-      <h1 class="disp">Shows<small>Admin &middot; <span id="ver"></span></small></h1>
-      <div class="status" id="status">Locked</div>
-    </div>
-    <nav id="nav"></nav>
-  </div></header>
+  <header class="apphdr" data-page="shows.html" data-title="Shows"></header>
 
   <div class="wrap">
     <div class="card" id="gate">
@@ -78,6 +71,7 @@
 </div>
 
 <script type="module">
+import "./header.js";
 import { VERSION } from "./setlist.js";
 import { API, esc, navHtml, link, currentShowId } from "./store.js";
 

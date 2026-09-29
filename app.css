@@ -10,7 +10,9 @@
   --s1:6px;--s2:10px;--s3:16px;--s4:24px;--s5:36px;--s6:52px;
   --r:8px;
 }
-*{box-sizing:border-box;margin:0;padding:0}
+html,body{margin:0;padding:0}
+*{box-sizing:border-box}
+:where(#sv,#lb,#ck),:where(#sv,#lb,#ck) *{margin:0;padding:0}
 
 #sv{background:var(--stage);color:var(--cream);font-family:var(--sans);
   min-height:100vh;padding:0 0 var(--s6);-webkit-font-smoothing:antialiased;font-size:16px;line-height:1.5}
@@ -22,18 +24,6 @@
 #sv .hide{display:none!important}
 #sv .note{font-size:14px;color:var(--dim);line-height:1.65;max-width:64ch}
 #sv b{font-weight:600}
-
-/* ---------- header ---------- */
-#sv header{border-bottom:1px solid var(--line);background:linear-gradient(180deg,var(--panel2),var(--panel));
-  padding:var(--s4) 0 var(--s3);margin-bottom:var(--s5);position:relative}
-#sv header:after{content:'';position:absolute;left:0;right:0;bottom:-1px;height:1px;
-  background:linear-gradient(90deg,transparent,var(--lamp),transparent);opacity:.5}
-#sv .plate{display:flex;align-items:center;gap:var(--s3)}
-#sv .lamp{width:17px;height:17px;border-radius:50%;flex:none;
-  background:radial-gradient(circle at 35% 30%,#ffd98a,var(--lamp) 55%,#7a5a22);box-shadow:0 0 14px rgba(232,163,61,.6)}
-#sv h1{font-size:32px;font-weight:700;flex:1;line-height:1}
-#sv h1 small{display:block;font-size:11px;letter-spacing:.28em;color:var(--dim);font-weight:600;margin-top:8px}
-#sv h1 small span{color:var(--lamp)}
 
 /* Wide screens put the readiness panel beside the set rather than above it,
    so the set itself starts at the top of the page. */
@@ -57,25 +47,6 @@
 #sv .tabs .count{color:var(--faint);font-size:11px;margin-left:6px}
 #sv .tabs button[aria-selected="true"] .count{color:var(--lamp);opacity:.7}
 #sv .tabpanel[hidden]{display:none}
-
-/* ---------- nav: the same three places on every page ---------- */
-#sv nav{display:flex;gap:2px;margin-top:var(--s3);flex-wrap:wrap}
-#sv nav a{font-family:var(--sans);text-transform:uppercase;letter-spacing:.16em;
-  font-size:12px;font-weight:600;color:var(--dim);text-decoration:none;padding:9px 14px;border-radius:var(--r);
-  border:1px solid transparent;transition:color .12s,background .12s,border-color .12s}
-#sv nav a:hover{color:var(--cream);background:rgba(233,234,240,.05)}
-/* The page you're on is stated, not just implied by what isn't clickable. */
-#sv nav a[aria-current="page"]{color:var(--lamp);border-color:rgba(232,163,61,.4);
-  background:rgba(232,163,61,.08)}
-@media (max-width:560px){
-  #sv nav a{padding:8px 10px;letter-spacing:.1em}
-}
-
-#sv .status{font-size:11px;letter-spacing:.14em;text-transform:uppercase;font-weight:600;
-  font-family:var(--sans);padding:7px 12px;border:1px solid var(--line);border-radius:99px;
-  color:var(--dim);white-space:nowrap}
-#sv .status.ok{color:var(--ok);border-color:rgba(127,166,80,.45)}
-#sv .status.warn{color:var(--lamp);border-color:rgba(232,163,61,.45)}
 
 #sv .banner{border:1px solid rgba(232,163,61,.35);background:rgba(232,163,61,.07);border-radius:var(--r);
   padding:var(--s3) var(--s3);margin-bottom:var(--s4);font-size:14px;line-height:1.6}
@@ -454,7 +425,6 @@
 /* ---------- narrow screens ---------- */
 @media (max-width:640px){
   #sv .wrap{padding:0 var(--s3)}
-  #sv h1{font-size:26px}
   #sv .tname{font-size:27px}
   #sv .votes{grid-template-columns:1fr}
   #sv .actions{grid-template-columns:1fr}
@@ -512,8 +482,59 @@
   #sv .limitbar .note{margin-left:0;width:100%;text-align:left}
 }
 
-/* Show switcher in the page header: which show this page is looking at. */
-select.showpick{width:auto!important;display:inline-block!important;max-width:60vw;height:auto!important;font:inherit;font-size:12px;letter-spacing:.02em;text-transform:none;color:var(--cream);
-  background:var(--panel2);border:1px solid var(--line);border-radius:6px;padding:2px 6px;margin-left:6px}
 #codebox input{font:inherit;padding:8px 10px;border-radius:6px;border:1px solid var(--line);
   background:var(--panel2);color:var(--cream);min-width:0;flex:1}
+
+/* ===========================================================================
+   The header every page shares: band or show name, which page this is, the
+   show switcher, a save status and the nav. One definition, so no page can
+   drift — learn, rehearsals, click and the rest all render it through
+   header.js or the same markup.
+   =========================================================================== */
+header.apphdr{display:block;position:relative;margin:0 0 var(--s5);padding:var(--s4) 0 var(--s3);
+  border-bottom:1px solid var(--line);background:linear-gradient(180deg,var(--panel2),var(--panel));
+  font-family:var(--sans);color:var(--cream);text-align:left;line-height:1.5;-webkit-font-smoothing:antialiased}
+header.apphdr *{box-sizing:border-box;margin:0;padding:0}
+header.apphdr:after{content:'';position:absolute;left:0;right:0;bottom:-1px;height:1px;
+  background:linear-gradient(90deg,transparent,var(--lamp),transparent);opacity:.5}
+header.apphdr .wrap{max-width:1240px;margin:0 auto;padding:0 var(--s4)}
+header.apphdr .plate{display:flex;align-items:center;gap:var(--s3)}
+header.apphdr .lamp{width:17px;height:17px;border-radius:50%;flex:none;
+  background:radial-gradient(circle at 35% 30%,#ffd98a,var(--lamp) 55%,#7a5a22);box-shadow:0 0 14px rgba(232,163,61,.6)}
+header.apphdr h1{flex:1;min-width:0;font-family:var(--sans);font-size:32px;font-weight:700;line-height:1.1;
+  letter-spacing:-.01em;text-transform:none;color:var(--cream)}
+header.apphdr h1 small{display:flex;flex-wrap:wrap;align-items:center;gap:6px 10px;margin-top:8px;
+  font-size:11px;letter-spacing:.28em;text-transform:uppercase;color:var(--dim);font-weight:600}
+header.apphdr h1 span{color:inherit}
+header.apphdr h1 small .v{color:var(--lamp)}
+header.apphdr .status{font-size:11px;letter-spacing:.14em;text-transform:uppercase;font-weight:600;
+  padding:7px 12px;border:1px solid var(--line);border-radius:99px;color:var(--dim);white-space:nowrap}
+header.apphdr .status.ok{color:var(--ok);border-color:rgba(79,180,119,.45)}
+header.apphdr .status.warn{color:var(--lamp);border-color:rgba(232,163,61,.45)}
+header.apphdr nav{display:flex;flex-wrap:wrap;gap:2px;margin-top:var(--s3)}
+header.apphdr nav a{font-family:var(--sans);font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
+  color:var(--dim);text-decoration:none;padding:9px 14px;border-radius:var(--r);border:1px solid transparent;
+  transition:color .12s,background .12s,border-color .12s}
+header.apphdr nav a:hover{color:var(--cream);background:rgba(233,234,240,.05)}
+/* The page you're on is stated, not just implied by what isn't clickable. */
+header.apphdr nav a[aria-current="page"]{color:var(--lamp);border-color:rgba(232,163,61,.4);background:rgba(232,163,61,.08)}
+/* The show switcher: the same size on every page. */
+header.apphdr select.showpick,#sv header.apphdr select.showpick{display:inline-block;width:auto;min-width:220px;max-width:100%;
+  margin:0;padding:9px 34px 9px 14px;font-family:var(--sans);font-size:15px;font-weight:600;letter-spacing:0;text-transform:none;
+  color:var(--cream);background-color:var(--panel);border:1px solid var(--line);border-radius:var(--r);height:auto;
+  -webkit-appearance:none;appearance:none;cursor:pointer;
+  background-image:linear-gradient(45deg,transparent 50%,var(--dim) 50%),linear-gradient(135deg,var(--dim) 50%,transparent 50%);
+  background-position:calc(100% - 18px) 55%,calc(100% - 13px) 55%;background-size:5px 5px;background-repeat:no-repeat}
+header.apphdr select.showpick:focus{outline:none;border-color:var(--lamp)}
+@media print{header.apphdr{display:none}}
+@media (max-width:560px){
+  header.apphdr .wrap{padding:0 var(--s3)}
+  header.apphdr h1{font-size:26px}
+  header.apphdr nav a{padding:8px 10px;letter-spacing:.1em}
+  header.apphdr select.showpick,#sv header.apphdr select.showpick{min-width:0;width:100%}
+}
+/* Page wrappers set their own reading width; the header keeps the full one. */
+#sv header.apphdr .wrap,#lb header.apphdr .wrap,#ck header.apphdr .wrap{max-width:1240px;margin:0 auto;padding:0 var(--s4)}
+@media (max-width:560px){
+  #sv header.apphdr .wrap,#lb header.apphdr .wrap,#ck header.apphdr .wrap{padding:0 var(--s3)}
+}
