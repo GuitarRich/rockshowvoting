@@ -642,7 +642,7 @@ Every story below depends on this phase.
 - [ ] T085 Run `pnpm backup`, then `normalise-library.js` as a dry run. **STOP for owner approval**, then run `--apply`. Re-run the parity against the T082 fixtures on the live data.
 - [ ] T086 Remove the song-detail override path from `api/_payload.js` and `api/_sheets.js`. Show `Songs` now holds only `Key, Section, Order, Force`, and the song details come from `Library`.
 - [ ] T087 [P] Remove the `TUNING_SEEDS` seeding from `setlist.js` and `api/_sheets.js` (`syncTunings`). Keep the `Tunings` rows already in the sheet.
-- [ ] T088 [P] Remove the `META` map from `results.html` and the offline `LOCKED`, `PICKS` and `SONGS` arrays from `index.html`, now that all songs are curated in `Library`.
+- [X] T088 [P] (Done early on 2026-09-29, when October moved to the new pages. `META` stays in `setlist.js` until T086, because October's uncurated rows still use it.) Remove the `META` map from `results.html` and the offline `LOCKED`, `PICKS` and `SONGS` arrays from `index.html`, now that all songs are curated in `Library`.
 - [ ] T089 Set `RequireBandCode=TRUE` for `oct` (or mark it `past`, as the owner chooses), by editing the `Shows` row through `/api/shows`.
 - [ ] T090 Tell the owner that the Band Vote deployment can be retired. Suggest adding a redirect page in BV that points to this app's `?show=nov` URL. Do not change the BV repo or sheet without explicit approval.
 - [ ] T091 [P] Update `api/_sheets.js`: `ensureTabs` no longer adds the Year and Era columns to show `Songs` tabs. Delete the dead code.

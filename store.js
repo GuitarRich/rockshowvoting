@@ -121,13 +121,9 @@ export const PAGES = [
   ["availability.html", "Rehearsals"],
 ];
 
-/**
- * October keeps its original ballot and results pages until its gig; every
- * other show uses the new ones.
- */
-const LEGACY = { "vote.html": "index.html", "setlist.html": "results.html" };
-export function pageFor(page, show) {
-  return show === "oct" && LEGACY[page] ? LEGACY[page] : page;
+/** Kept so older links still resolve: every show now uses the same pages. */
+export function pageFor(page) {
+  return page;
 }
 
 /** The nav every page carries, with the current page marked. */

@@ -113,7 +113,7 @@
 <header>
   <h1>October Anniversary Show — <span>Who Can Make It</span></h1>
   <p class="sub">Rehearsal availability up to the gig &middot;
-    <a href="index.html">the ballot</a> &middot; <a href="results.html">results</a> &middot;
+    <a href="vote.html">the ballot</a> &middot; <a href="setlist.html">results</a> &middot;
     <a href="learn.html">who knows what</a> &middot; <a href="lyrics.html">lyric book</a></p>
 </header>
 
@@ -202,7 +202,7 @@ function showPage(d){
   const legacy = { 'index.html': 'vote.html', 'results.html': 'setlist.html' };
   document.querySelectorAll('header .sub a[href$=".html"]').forEach(a => {
     let page = a.getAttribute('href').split('?')[0];
-    if(SHOW !== 'oct' && legacy[page]) page = legacy[page];
+    if(legacy[page]) page = legacy[page];
     a.setAttribute('href', page + q);
   });
 }

@@ -132,7 +132,7 @@
       <div class="bar">
         <button class="btn on" id="scope" aria-pressed="true">The set</button>
         <span class="spacer"></span>
-        <a class="btn" id="back" href="./results.html">Back to the setlist</a>
+        <a class="btn" id="back" href="./setlist.html">Back to the setlist</a>
       </div>
       <div id="codebox" class="msg hide">
         <b>Enter the band code to save a tempo.</b> The click itself needs nothing; saving asks once
@@ -629,7 +629,7 @@ $("codeok").onclick = () => {
 async function boot() {
   SHOW = await currentShowId();
   $("nav").innerHTML = navHtml(SHOW, "click.html");
-  $("back").href = link("results.html", SHOW);
+  $("back").href = link("setlist.html", SHOW);
   $("main").classList.remove("hide");
   try {
     DATA = await getData(SHOW);

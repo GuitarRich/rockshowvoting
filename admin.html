@@ -72,7 +72,7 @@
 <header>
   <h1><span id="showName">Setlist Vote</span> — <span>Admin</span></h1>
   <p class="sub">Edit the song list and the show's settings. Changes write to the Google Sheet and every page picks them up on next load &middot;
-    <a href="index.html" data-page="vote.html">ballot</a> &middot; <a href="results.html" data-page="setlist.html">results</a>
+    <a href="vote.html" data-page="vote.html">ballot</a> &middot; <a href="setlist.html" data-page="setlist.html">results</a>
     &middot; <span id="showPick"></span></p>
 </header>
 
@@ -215,7 +215,7 @@ async function loadShows(){
   const sel = document.getElementById('showSel');
   if(sel) sel.onchange = ()=>{ location.search = '?show='+encodeURIComponent(sel.value); };
   document.querySelectorAll('header .sub a[data-page]').forEach(a=>{
-    a.href = (SHOW==='oct' ? a.getAttribute('href').split('?')[0] : a.dataset.page) + '?show=' + encodeURIComponent(SHOW);
+    a.href = a.dataset.page + '?show=' + encodeURIComponent(SHOW);
   });
   document.getElementById('nFrom').innerHTML = '<option value="">— start empty —</option>' +
     SHOWS.map(x=>'<option value="'+esc(x.id)+'">'+esc(x.name)+'</option>').join('');

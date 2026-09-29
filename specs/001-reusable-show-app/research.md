@@ -147,3 +147,10 @@ Phase 0 output. Every open question from Technical Context is resolved here.
   - A link with no show named also goes to the new pages once the default show is no longer October.
 - **Rationale**: This keeps the October-unchanged rule literally true while November gets full Band Vote parity.
 - **After 24 Oct**: the new pages replace the old two, which retire in Phase 14.
+
+## R12. Amendment (2026-09-29): October moved onto the new pages early
+
+At the owner's request, October now uses `vote.html` and `setlist.html` like every other show.
+- `index.html` and `results.html` are now redirects that keep `?show=`.
+- October's data, set and automatic running order are unchanged. The server works out the order with October's own `pacing` engine and its `META` fallback.
+- October's offline copy/paste and CSV fallbacks from the old results page are gone. Pooling and the CSV export on the setlist page's Tools tab replace them.

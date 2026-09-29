@@ -291,7 +291,7 @@
         <button class="btn" id="copy">Copy as text</button>
         <button class="btn" id="seed">Add blank rows to the sheet</button>
         <span class="spacer"></span>
-        <a class="btn" id="back" href="./results.html">Back to the setlist</a>
+        <a class="btn" id="back" href="./setlist.html">Back to the setlist</a>
       </div>
       <div id="codebox" class="msg noprint hide">
         <b>Enter the band code to save.</b> Reading needs nothing; saving words asks for the code once
@@ -965,7 +965,7 @@ $("code").onkeydown = (e) => { if (e.key === "Enter") $("codeok").click(); };
 async function boot() {
   SHOW = await currentShowId();
   $("nav").innerHTML = navHtml(SHOW, "lyrics.html");
-  $("back").href = link("results.html", SHOW);
+  $("back").href = link("setlist.html", SHOW);
   $("main").classList.remove("hide");
 
   let okSet = false;

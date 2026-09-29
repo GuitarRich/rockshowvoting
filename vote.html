@@ -260,7 +260,7 @@ function render() {
   $("tdur").textContent = lenSecs(t.len) ? mmss(lenSecs(t.len)) : t.len;
   $("tyear").textContent = t.year || "";
   $("tbpm").textContent = t.bpm ? t.bpm + " bpm" : "";
-  $("tera").textContent = t.era || (t.lead ? t.lead : "");
+  $("tera").textContent = [t.era, t.lead ? "Lead " + t.lead : ""].filter(Boolean).join(" · ");
   $("ttune").textContent = t.tuning || "";
   $("pbar").style.width = (done / N * 100) + "%";
   $("pcount").textContent = done + " / " + N + " scored";
@@ -315,8 +315,13 @@ $("clearv").onclick = () => { setVote(SONGS[idx], ""); render(); };
 /* ---------- whole list ---------- */
 function drawList() {
   const out = [];
+  // Grouped by section in the order sections first appear, so a song added
+  // later under an existing section joins it rather than starting a second one.
+  const order = [];
+  SONGS.forEach((r) => { if (!order.includes(r.section)) order.push(r.section); });
+  const idxs = order.flatMap((sec) => SONGS.map((r, i) => [r, i]).filter(([r]) => r.section === sec));
   let section = null;
-  SONGS.forEach((r, i) => {
+  idxs.forEach(([r, i]) => {
     if (r.section !== section) {
       section = r.section;
       if (section) out.push('<h3>' + esc(section) + '</h3>');
@@ -324,7 +329,7 @@ function drawList() {
     const v = MINE[r.k];
     const btns = isPick(r) ? [["X", "Pick"]] : [["MUST", "Must"], ["YES", "Yes"], ["MAYBE", "Maybe"], ["NO", "Pass"]];
     out.push('<div class="lrow" data-i="' + i + '"><div class="lt"><b>' + esc(r.song) + '</b><span>' + esc(r.artist) +
-      (r.len ? " · " + esc(r.len) : "") + (r.tuning ? " · " + esc(r.tuning) : "") + '</span></div><div class="lb">' +
+      (r.lead ? " · " + esc(r.lead) : "") + (r.len ? " · " + esc(r.len) : "") + (r.tuning ? " · " + esc(r.tuning) : "") + '</span></div><div class="lb">' +
       btns.map(([val, lab]) => '<button type="button" data-v="' + val + '"' + (v === val ? ' class="on"' : "") + '>' + lab + '</button>').join("") +
       '</div></div>');
   });
