@@ -27,6 +27,60 @@
   #sv .whowrap{overflow-x:auto}
   #sv pre.diag{white-space:pre-wrap;font-size:12px}
   #sv .note2 a{color:var(--lamp)}
+
+  /* ----- Learn tab: who knows what ----- */
+  #sv .lcard{border:1px solid var(--line);background:var(--panel);border-radius:12px;padding:20px;margin:0 0 18px}
+  #sv .lcard h4{font-size:13px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:var(--lamp);margin:0 0 12px}
+  #sv .hero{display:flex;align-items:baseline;gap:12px;flex-wrap:wrap}
+  #sv .hero b{font-size:56px;line-height:1;font-weight:800}
+  #sv .hero span{color:var(--dim)}
+  #sv .herosub{color:var(--dim);margin:8px 0 14px;font-size:15px}
+  #sv .herosub b{color:var(--cream)}
+  #sv .lbars{display:grid;grid-template-columns:auto 1fr auto;gap:8px 12px;align-items:center}
+  #sv .lbars .nm{font-size:14px;color:var(--dim);white-space:nowrap}
+  #sv .lbars .nm.me{color:var(--cream);font-weight:600}
+  #sv .lbars .ltrack{display:flex;height:12px;border-radius:99px;background:var(--panel2);overflow:hidden;gap:2px}
+  #sv .lbars .ltrack i{display:block;height:100%}
+  #sv .lbars .cnt{font-size:13px;color:var(--dim);white-space:nowrap;font-variant-numeric:tabular-nums}
+  #sv .lbars .cnt b{color:var(--cream)}
+  #sv i.know,#sv .lchip.know{background:var(--ok)} #sv i.wip,#sv .lchip.wip{background:var(--lamp)}
+  #sv i.ns,#sv .lchip.ns{background:#4a4f5e}
+  #sv .llegend{display:flex;flex-wrap:wrap;gap:14px;margin-top:14px;font-size:13px;color:var(--dim)}
+  #sv .llegend span{display:inline-flex;align-items:center;gap:6px}
+  #sv .llegend i{width:11px;height:11px;border-radius:3px;display:inline-block}
+  #sv .llegend i.unsaid{border:1px solid var(--line)}
+  #sv .lfilters{display:flex;flex-wrap:wrap;gap:6px;margin:0 0 6px}
+  #sv .lfilters button{font-size:13px;font-weight:600;padding:8px 14px;border-radius:99px;border:1px solid var(--line);color:var(--dim)}
+  #sv .lfilters button.on{border-color:var(--lamp);color:var(--lamp)}
+  #sv .lnote{font-size:13px;color:var(--dim);margin:0 0 14px}
+  #sv .lrow{display:flex;align-items:center;gap:12px;padding:10px 12px;border-radius:10px;border:1px solid transparent}
+  #sv .lrow:nth-child(odd){background:rgba(255,255,255,.02)}
+  #sv .lrow.know{border-color:rgba(79,180,119,.45);background:rgba(79,180,119,.07)}
+  #sv .lrow.wip{border-color:rgba(232,163,61,.4);background:rgba(232,163,61,.06)}
+  #sv .lrow .no{font-family:'IBM Plex Mono',monospace;font-size:12px;color:var(--faint);width:22px;flex:none}
+  #sv .lrow .lt{flex:1;min-width:0}
+  #sv .lrow .lt b{font-weight:600}
+  #sv .lrow .lt .by{display:block;font-size:13px;color:var(--dim)}
+  #sv .lbadge{display:inline-block;font-size:10.5px;font-weight:700;letter-spacing:.05em;padding:2px 6px;border-radius:4px;margin-left:6px;vertical-align:1px}
+  #sv .lbadge.kb{background:rgba(139,127,212,.22);color:#b9b0f0}
+  #sv .lbadge.kbadds{border:1px solid var(--line);color:var(--dim)}
+  #sv .lbadge.lock{background:rgba(232,163,61,.16);color:var(--lamp)}
+  #sv .lband{display:flex;flex-wrap:wrap;gap:4px 10px;margin-top:6px;font-size:12px;color:var(--faint)}
+  #sv .lband .grp{display:inline-flex;align-items:center;gap:3px}
+  #sv .lchip{display:inline-flex;align-items:center;justify-content:center;min-width:20px;height:20px;padding:0 4px;
+    border-radius:5px;font-size:11px;font-weight:700;color:#0d0e12;border:1px solid transparent}
+  #sv .lchip.unsaid{background:transparent;border-color:var(--line);color:var(--dim)}
+  #sv .lchip.me{outline:2px solid var(--cream);outline-offset:1px}
+  #sv .allset{color:var(--ok);font-size:12px}
+  #sv .lopts{display:flex;gap:4px;flex:none}
+  #sv .lopts button{font-size:12px;font-weight:600;line-height:1.15;padding:8px 10px;border-radius:8px;border:1px solid var(--line);
+    color:var(--dim);min-width:74px;text-align:center}
+  #sv .lopts button.on.none{border-color:#6b7182;color:var(--cream);background:rgba(107,113,130,.2)}
+  #sv .lopts button.on.wip{border-color:var(--lamp);color:var(--lamp);background:rgba(232,163,61,.1)}
+  #sv .lopts button.on.know{border-color:var(--ok);color:var(--ok);background:rgba(79,180,119,.1)}
+  #sv .lcount{margin:14px 0 0;font-size:14px;color:var(--dim)}
+  #sv .lcount b{color:var(--cream)}
+  @media (max-width:640px){ #sv .lrow{flex-wrap:wrap} #sv .lopts{width:100%} #sv .lopts button{flex:1;min-width:0} }
 </style>
 
 <div id="sv">
@@ -53,23 +107,38 @@
 
       <div class="tabs" role="tablist">
         <button role="tab" id="tabSet" aria-selected="true">The set</button>
+        <button role="tab" id="tabLearn" aria-selected="false">Learn</button>
         <button role="tab" id="tabPool" aria-selected="false">Ranking<span class="count" id="poolCount"></span></button>
         <button role="tab" id="tabWho" aria-selected="false">Who voted what</button>
         <button role="tab" id="tabTools" aria-selected="false">Tools</button>
       </div>
 
       <div class="tabpanel" id="panelSet">
-        <div class="split">
-          <div class="splitmain">
-            <div id="warnBox"></div>
-            <div id="setBox"></div>
-            <div class="actions">
-              <button class="btn" id="copySet">Copy setlist</button>
-              <a class="btn" id="toLyrics" href="./lyrics.html">Lyric book</a>
-            </div>
-          </div>
-          <aside class="splitside"><div id="crewBox"></div></aside>
+        <div id="warnBox"></div>
+        <div id="setBox"></div>
+        <div class="actions">
+          <button class="btn" id="copySet">Copy setlist</button>
+          <a class="btn" id="toLyrics" href="./lyrics.html">Lyric book</a>
         </div>
+      </div>
+
+      <div class="tabpanel" id="panelLearn" hidden>
+        <div class="lcard">
+          <h4>Where the band is up to</h4>
+          <div class="hero"><b id="heroNum">0</b><span id="heroLabel"></span></div>
+          <p class="herosub" id="heroSub"></p>
+          <div class="lbars" id="lbars"></div>
+          <div class="llegend"><span><i class="know"></i>Knows it</span><span><i class="wip"></i>Learning it</span>
+            <span><i class="ns"></i>Not started</span><span><i class="unsaid"></i>Hasn’t said</span></div>
+        </div>
+        <div class="lfilters" id="lfilters">
+          <button data-f="set" class="on">In the set</button>
+          <button data-f="todo">In the set, mine not done</button>
+          <button data-f="all">Every song on the ballot</button>
+        </div>
+        <p class="lnote" id="lnote"></p>
+        <div id="lrows"></div>
+        <p class="lcount" id="lcount"></p>
       </div>
 
       <div class="tabpanel" id="panelPool" hidden>
@@ -128,7 +197,7 @@
 <script type="module">
 import "./header.js";
 import {
-  VERSION, mmss, lenSecs, esc, searchLinks, moveKey, scoreRow, songMeta, readiness,
+  VERSION, mmss, lenSecs, esc, searchLinks, moveKey, scoreRow, songMeta,
 } from "./setlist.js";
 import { mkCode, rdCode, readVotesCSV } from "./codes.js";
 import {
@@ -236,12 +305,19 @@ function drawOwner() {
 }
 
 /* ---------- tabs ---------- */
-const TABS = [["tabSet", "panelSet"], ["tabPool", "panelPool"], ["tabWho", "panelWho"], ["tabTools", "panelTools"]];
+const TABS = [["tabSet", "panelSet"], ["tabLearn", "panelLearn"], ["tabPool", "panelPool"], ["tabWho", "panelWho"], ["tabTools", "panelTools"]];
 function showTab(id) {
   TABS.forEach(([t, p]) => { $(t).setAttribute("aria-selected", String(t === id)); $(p).hidden = t !== id; });
   try { localStorage.setItem("rs_tab", id); } catch (e) { /* optional */ }
 }
 TABS.forEach(([t]) => { $(t).onclick = () => showTab(t); });
+document.addEventListener("click", (e) => {
+  const a = e.target.closest("[data-go]");
+  if (!a) return;
+  e.preventDefault();
+  showTab(a.dataset.go);
+  window.scrollTo(0, 0);
+});
 
 /* ---------- the set, as the API worked it out ---------- */
 function ordered() {
@@ -443,7 +519,7 @@ function drawSet() {
   const bar = document.createElement("div");
   bar.className = "orderbar " + (savedOrder() ? "saved" : "");
   bar.innerHTML = '<span>Running order: <b>' + (savedOrder() ? "set by hand" : "automatic") + '</b></span>' +
-    (inBand() ? '<span style="margin-left:auto">You know <b>' + known + '</b> of ' + n + '</span>' : "");
+    (inBand() ? '<span style="margin-left:auto">You know <b>' + known + '</b> of ' + n + ' · <a href="#learn" data-go="tabLearn" style="color:var(--lamp)">mark songs</a></span>' : "");
   if (isOwner()) {
     if (savedOrder()) {
       const b = document.createElement("button"); b.textContent = "Back to automatic";
@@ -519,34 +595,118 @@ function drawSet() {
   box.appendChild(el);
 }
 
-function drawCrew() {
-  const box = $("crewBox");
-  box.innerHTML = "";
-  const list = ordered();
-  const n = list.length;
-  if (!n || !DATA.band.length) return;
-  const r = readiness(list, DATA.band);
-  const pct = Math.round((DATA.band.reduce((a, b) => a + r.per[b].know, 0) / (n * DATA.band.length)) * 100);
-  const el = document.createElement("div");
-  el.className = "crew";
-  el.innerHTML = '<div class="crewhead"><h3>Where the band is</h3><div class="sum">' + n + ' songs · <b>' + pct +
-    '%</b> band-ready · ' + r.allKnow + ' everyone knows</div></div>';
-  DATA.band.forEach((name) => {
-    const p = r.per[name];
-    const w = (v) => (v / n) * 100 + "%";
-    const row = document.createElement("div");
-    row.className = "crewrow" + (name === ME ? " you" : "");
-    row.innerHTML = '<div class="nm">' + esc(name) + (name === ME ? "<em>you</em>" : "") + '</div>' +
-      '<div class="crewbar" title="' + p.know + " know it · " + p.progress + " learning · " + p.notStarted + " not started · " + p.unanswered + ' no reply">' +
-      '<i class="k" style="width:' + w(p.know) + '"></i><i class="p" style="width:' + w(p.progress) + '"></i>' +
-      '<i class="n" style="width:' + w(p.notStarted) + '"></i></div>' +
-      '<div class="crewnum">' + p.know + '<small>/' + n + '</small></div>';
-    el.appendChild(row);
+/* ---------- the Learn tab: who knows what ----------
+   Practice status is its own axis, apart from the vote: a song you'd love to
+   play and have never played is MUST + NOT STARTED. Blank means "hasn't
+   said", which is not "not started" — one is a chase, the other a plan. */
+let learnFilter = "set";
+const LSTATES = [["NOT STARTED", "none", "Not<br>started"], ["IN PROGRESS", "wip", "In<br>progress"], ["KNOW", "know", "Know<br>it"]];
+const lcls = (v) => (v === "KNOW" ? "know" : v === "IN PROGRESS" ? "wip" : v === "NOT STARTED" ? "ns" : "unsaid");
+
+/** The shortest initials that stay unique, so a Justin and a Julie never share a chip. */
+function initials(names) {
+  const out = {};
+  names.forEach((n) => {
+    let len = 1;
+    while (len < n.length && names.some((o) => o !== n && o.slice(0, len).toLowerCase() === n.slice(0, len).toLowerCase())) len++;
+    out[n] = n.slice(0, len).toUpperCase();
   });
-  el.insertAdjacentHTML("beforeend", '<div class="statkey"><span><i class="k"></i>Know it</span><span><i class="p"></i>Learning</span><span><i class="n"></i>Not started</span></div>');
-  el.insertAdjacentHTML("beforeend", '<p class="note2"><a href="' + esc(link("learn.html", SHOW)) + '">Mark what you know →</a></p>');
-  box.appendChild(el);
+  return out;
 }
+
+function drawLearn() {
+  const band = DATA.band;
+  const set = ordered();
+  const total = set.length;
+  const st = (r, n) => (r.learn && r.learn[n]) || "";
+  const allKnow = set.filter((r) => band.length && band.every((n) => st(r, n) === "KNOW")).length;
+  const untouched = set.filter((r) => band.every((n) => !st(r, n))).length;
+  const silent = band.filter((n) => !set.some((r) => st(r, n)));
+  $("heroNum").textContent = allKnow;
+  $("heroLabel").textContent = "song" + (allKnow === 1 ? "" : "s") + " the whole band knows, of " + total + " in the set";
+  // A low number usually means people haven't answered, not that the band
+  // can't play anything — so say which it is.
+  $("heroSub").innerHTML = silent.length
+    ? "Nothing yet from <b>" + silent.map(esc).join("</b>, <b>") + "</b> — the figure above counts only songs <em>everyone</em> has marked as known."
+    : untouched ? "<b>" + untouched + "</b> song" + (untouched === 1 ? "" : "s") + " nobody has touched yet."
+    : "Every song in the set has somebody working on it.";
+  $("lbars").innerHTML = total ? band.map((n) => {
+    const c = (v) => set.filter((r) => st(r, n) === v).length;
+    const k = c("KNOW"), w = c("IN PROGRESS"), s = c("NOT STARTED");
+    const seg = (cls, v, label) => v ? '<i class="' + cls + '" style="width:' + (v / total * 100) + '%" title="' + esc(n) + ": " + v + " " + label + '"></i>' : "";
+    return '<span class="nm' + (n === ME ? " me" : "") + '">' + esc(n) + "</span>" +
+      '<span class="ltrack">' + seg("know", k, "known") + seg("wip", w, "in progress") + seg("ns", s, "not started") + "</span>" +
+      '<span class="cnt"><b>' + k + "</b>/" + total + (k + w + s === 0 ? " · not said" : "") + "</span>";
+  }).join("") : "";
+
+  // Which songs to list.
+  const canMark = inBand() && DATA.show.status !== "past";
+  document.querySelectorAll("#lfilters button").forEach((b) => {
+    b.classList.toggle("on", b.dataset.f === learnFilter);
+    b.disabled = b.dataset.f === "todo" && !inBand();
+  });
+  let rows;
+  if (learnFilter === "all" || !total) rows = DATA.rows;
+  else if (learnFilter === "todo") rows = set.filter((r) => st(r, ME) !== "KNOW");
+  else rows = set;
+  const numbered = learnFilter !== "all" && total;
+  $("lnote").innerHTML = (!total ? "There's no set yet, so this is every song on the ballot. "
+    : learnFilter === "all" ? "Every song on the ballot — mark anything you already know, in the set or not. "
+    : DATA.set.locked ? "The set is <b>locked</b>, so this list won't move. "
+    : "The set still follows the vote, so this list can move. ") +
+    (canMark ? "Tap to mark; tap again to clear. It saves straight away."
+      : !ME ? "Pick your name (above the tabs) to mark songs."
+      : !inBand() ? "Only the players mark songs — " + esc(ME) + " votes but isn't in the band."
+      : "This show has finished; nothing can change.");
+
+  const ini = initials(band);
+  $("lrows").innerHTML = rows.map((r, i) => {
+    const mine = st(r, ME);
+    const groups = [["KNOW", "knows it"], ["IN PROGRESS", "learning"], ["NOT STARTED", "not started"], ["", "no reply"]]
+      .map(([v, label]) => {
+        const who = band.filter((n) => st(r, n) === v);
+        return who.length ? '<span class="grp">' + who.map((n) => '<span class="lchip ' + lcls(v) + (n === ME ? " me" : "") + '" title="' + esc(n) + " — " + label + '">' + esc(ini[n]) + "</span>").join("") + '<span style="margin-left:4px">' + label + "</span></span>" : "";
+      }).join("");
+    const everyone = band.length && band.every((n) => st(r, n) === "KNOW");
+    const kb = r.keyboard === "ESSENTIAL" ? '<span class="lbadge kb">KEYS ESSENTIAL</span>'
+      : r.keyboard === "ADDS" ? '<span class="lbadge kbadds">KEYS ADD</span>' : r.keyboard === "NONE" ? '<span class="lbadge kbadds">no keys</span>' : "";
+    return '<div class="lrow ' + (mine === "KNOW" ? "know" : mine === "IN PROGRESS" ? "wip" : "") + '" data-k="' + esc(r.k) + '">' +
+      '<span class="no">' + (numbered ? String(i + 1).padStart(2, "0") : "") + "</span>" +
+      '<div class="lt"><b>' + esc(r.song) + "</b>" + (r.lead ? '<span class="lbadge kbadds">' + esc(r.lead) + "</span>" : "") +
+        (isLocked(r) ? '<span class="lbadge lock">LOCKED</span>' : "") + kb +
+        '<span class="by">' + esc(r.artist) + (r.len ? " · " + esc(r.len) : "") + (r.tuning ? " · " + esc(r.tuning) : "") + "</span>" +
+        '<div class="lband">' + (everyone ? '<span class="allset">✓ the whole band knows this one</span>' : groups) + "</div></div>" +
+      (canMark ? '<div class="lopts">' + LSTATES.map(([v, cls, label]) =>
+        '<button type="button" data-v="' + v + '" class="' + cls + (mine === v ? " on" : "") + '">' + label + "</button>").join("") + "</div>" : "") +
+      "</div>";
+  }).join("") || '<p class="empty">Nothing here — every song in the set is marked as known by you.</p>';
+
+  // The counter is always about the set, whichever list is on screen:
+  // marking songs outside it must not make anyone look ready.
+  if (inBand() && total) {
+    const c = (v) => set.filter((r) => st(r, ME) === v).length;
+    const k = c("KNOW"), w = c("IN PROGRESS"), s = c("NOT STARTED");
+    $("lcount").innerHTML = "You: <b>" + k + "</b> of <b>" + total + "</b> known · <b>" + w + "</b> in progress · <b>" + s +
+      "</b> not started · <b>" + (total - k - w - s) + "</b> unanswered";
+  } else $("lcount").textContent = "";
+}
+$("lfilters").addEventListener("click", (e) => {
+  const b = e.target.closest("button[data-f]");
+  if (!b || b.disabled) return;
+  learnFilter = b.dataset.f;
+  drawLearn();
+});
+$("lrows").addEventListener("click", (e) => {
+  const b = e.target.closest("button[data-v]");
+  if (!b) return;
+  const k = b.closest(".lrow").dataset.k;
+  const r = DATA.rows.find((x) => x.k === k);
+  const cur = (r.learn && r.learn[ME]) || "";
+  const next = cur === b.dataset.v ? "" : b.dataset.v;
+  r.learn = { ...(r.learn || {}), [ME]: next };   // show it now; the save redraws from the sheet
+  drawLearn();
+  write("/learn", { person: ME, learn: { [k]: next } });
+});
 
 const cellClass = { MUST: "v3", YES: "v2", MAYBE: "v1", NO: "v0", X: "v3" };
 const cellText = { MUST: "M", YES: "Y", MAYBE: "?", NO: "N", X: "X" };
@@ -613,7 +773,7 @@ function draw() {
   $("warnBox").innerHTML = warnings(list).map((w) => '<div class="warn">' + w + "</div>").join("") + notes();
   drawOwner();
   drawSet();
-  drawCrew();
+  drawLearn();
   drawPool();
   drawWho();
   window.scrollTo(0, y);
@@ -749,6 +909,8 @@ $("copyDiag").onclick = () => put($("diagOut").textContent || "(run the check fi
   setStatus();
   let tab = "tabSet";
   try { tab = localStorage.getItem("rs_tab") || "tabSet"; } catch (e) { /* optional */ }
+  // learn.html used to be its own page; its links now land here, on this tab.
+  if (location.hash === "#learn") tab = "tabLearn";
   showTab(TABS.some(([t]) => t === tab) ? tab : "tabSet");
   const remembered = me();
   if (remembered && (DATA.voters.includes(remembered) || DATA.band.includes(remembered)) &&

@@ -1,7 +1,7 @@
 /**
  * The header every page shares. A page declares
  *
- *   <header class="apphdr" data-page="learn.html" data-title="Who knows what"></header>
+ *   <header class="apphdr" data-page="availability.html" data-title="Rehearsals"></header>
  *
  * and imports this module. The markup is written straight away (so a page's
  * own script can find #nav, #brand, #switch and #status as soon as it runs),

@@ -115,7 +115,6 @@ export function link(page, show) {
 export const PAGES = [
   ["vote.html", "Vote"],
   ["setlist.html", "Setlist"],
-  ["learn.html", "Learn"],
   ["lyrics.html", "Lyrics"],
   ["click.html", "Click"],
   ["availability.html", "Rehearsals"],
