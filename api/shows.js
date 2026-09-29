@@ -1,6 +1,6 @@
 import {
   readShows, defaultShowId, appendShow, updateShow, ensureTabs, readAll, writeSongs,
-  writeSettings, readBody, SETTING_KEYS,
+  writeSettings, readBody, readShowSettings, SETTING_KEYS,
 } from "./_sheets.js";
 import { requireOwner } from "./_auth.js";
 import { ok, fail, methodGuard, guarded } from "./_payload.js";
@@ -25,7 +25,16 @@ export default async function handler(req, res) {
   return guarded(res, async () => {
     if (req.method === "GET") {
       const shows = await readShows();
-      return ok(res, { shows: shows.map(pub), defaultId: defaultShowId(shows) });
+      const out = shows.map(pub);
+      // ?detail=1 also says whether each show has its own band code — never
+      // the code itself.
+      if (/^(1|true)$/i.test(String((req.query && req.query.detail) || ""))) {
+        for (const s of out) {
+          const st = await readShowSettings(shows.find((x) => x.id === s.id));
+          s.hasOwnBandCode = !!String(st.bandCode || "").trim();
+        }
+      }
+      return ok(res, { shows: out, defaultId: defaultShowId(shows) });
     }
     const body = await readBody(req);
     requireOwner(body);
@@ -55,9 +64,14 @@ export default async function handler(req, res) {
         // were decisions about the old show, so they start clear.
         await writeSongs(show, src.songs.map((s) => ({ ...s, order: 0, force: "" })));
         for (const k of SETTING_KEYS) {
-          if (["locked", "lockedKeys", "gigDate", "showName"].includes(k)) continue;
+          if (["locked", "lockedKeys", "gigDate", "showName", "bandCode"].includes(k)) continue;
           if (src.settings[k] !== undefined) settings[k] = src.settings[k];
         }
+      }
+      const code = String(c.bandCode || "").trim();
+      if (code) {
+        if (code.length < 4) return fail(res, 400, "Make the band code at least 4 characters.");
+        settings.bandCode = code;
       }
       await writeSettings(show, settings);
       return ok(res, { show: pub(show) });
@@ -84,6 +98,12 @@ export default async function handler(req, res) {
       const mirror = {};
       if (patch.name !== undefined) mirror.showName = patch.name;
       if (patch.gigDate !== undefined) mirror.gigDate = patch.gigDate;
+      // A band code of its own for this show; "" goes back to the shared one.
+      if (u.bandCode !== undefined) {
+        const code = String(u.bandCode || "").trim();
+        if (code && code.length < 4) return fail(res, 400, "Make the band code at least 4 characters.");
+        mirror.bandCode = code;
+      }
       if (Object.keys(mirror).length) await writeSettings(next, mirror);
       return ok(res, { show: pub(next) });
     }

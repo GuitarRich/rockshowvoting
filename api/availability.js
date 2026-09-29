@@ -16,11 +16,11 @@ export default async function handler(req, res) {
     const body = await readBody(req);
     const show = await resolveShow(showParam(req, body));
     requireWritable(show);
-    requireBand(show, body);
 
     const person = String(body.person || body.name || "").trim();
     if (!person) return fail(res, 400, "No name supplied.");
     const state = await readAll(show);
+    requireBand(show, body, state.settings);
     const known = onList(state.settings.band, person);
     if (!known) {
       return fail(res, 400,

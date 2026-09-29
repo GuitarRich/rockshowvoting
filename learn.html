@@ -232,14 +232,14 @@ async function resolveShow(){
 }
 function bandCode(){
   let c = '';
-  try{ c = localStorage.getItem('rs_code') || ''; }catch(ignore){}
+  try{ c = localStorage.getItem('rs_code_'+SHOW) || ''; }catch(ignore){}
   if(!c && SHOW_INFO && SHOW_INFO.requireBandCode){
-    c = (window.prompt('Band code — asked once, then this device remembers it') || '').trim();
-    try{ if(c) localStorage.setItem('rs_code', c); }catch(ignore){}
+    c = (window.prompt('Band code for '+((SHOW_INFO&&SHOW_INFO.name)||'this show')+' — asked once, then this device remembers it') || '').trim();
+    try{ if(c) localStorage.setItem('rs_code_'+SHOW, c); }catch(ignore){}
   }
   return c;
 }
-function forgetCode(){ try{ localStorage.removeItem('rs_code'); }catch(ignore){} }
+function forgetCode(){ try{ localStorage.removeItem('rs_code_'+SHOW); }catch(ignore){} }
 function showPage(d){
   SHOW_INFO = d.show || null;
   if(!SHOW_INFO) return;

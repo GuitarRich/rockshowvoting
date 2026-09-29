@@ -18,11 +18,11 @@ export default async function handler(req, res) {
     const body = await readBody(req);
     const show = await resolveShow(showParam(req, body));
     requireWritable(show);
-    requireBand(show, body);
 
     const person = String(body.person || body.name || body.voter || "").trim();
     if (!person) return fail(res, 400, "No name supplied.");
     const state = await readAll(show);
+    requireBand(show, body, state.settings);
     // Only the band practises: voting on the setlist does not put you on stage.
     const known = onList(state.settings.band, person);
     if (!known) {

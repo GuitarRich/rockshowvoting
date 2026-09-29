@@ -16,7 +16,6 @@ export default async function handler(req, res) {
     const body = await readBody(req);
     const show = await resolveShow(showParam(req, body));
     requireWritable(show);
-    requireBand(show, body);
     // Pooling writes someone else's ballot from a pasted code or CSV. That is
     // the owner's job, so it needs the owner code as well.
     if (body.pool) requireOwner(body);
@@ -24,6 +23,7 @@ export default async function handler(req, res) {
     const voter = String(body.voter || body.name || "").trim();
     if (!voter) return fail(res, 400, "No voter name supplied.");
     const state = await readAll(show);
+    requireBand(show, body, state.settings);
     const known = onList(state.settings.voters, voter);
     if (!known) {
       return fail(res, 400,

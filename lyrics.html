@@ -909,7 +909,7 @@ $("seed").onclick = async () => {
  */
 let codeWait = null;
 function haveCode() {
-  if (!DATA.show.requireBandCode || bandCode()) return Promise.resolve(true);
+  if (!DATA.show.requireBandCode || bandCode(SHOW)) return Promise.resolve(true);
   $("codebox").classList.remove("hide");
   $("code").focus();
   return new Promise((resolve) => { codeWait = resolve; });
@@ -917,7 +917,7 @@ function haveCode() {
 $("codeok").onclick = () => {
   const c = $("code").value.trim();
   if (!c) return;
-  setBandCode(c);
+  setBandCode(SHOW, c);
   $("codebox").classList.add("hide");
   if (codeWait) { codeWait(true); codeWait = null; }
 };

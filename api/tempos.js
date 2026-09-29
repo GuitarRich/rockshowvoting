@@ -15,7 +15,6 @@ export default async function handler(req, res) {
     const body = await readBody(req);
     const show = await resolveShow(showParam(req, body));
     requireWritable(show);
-    requireBand(show, body);
 
     const bpm = Number(body.bpm);
     const beats = Number(body.beats ?? 4);
@@ -26,6 +25,7 @@ export default async function handler(req, res) {
       return fail(res, 400, "Beats per bar must be a whole number from 1 to 12.");
     }
     const state = await readAll(show);
+    requireBand(show, body, state.settings);
     const song = keyResolver(state.songs)(body.key);
     if (!song) return fail(res, 404, "No such song in this show.");
     await writeTempo({ key: song.k, song: song.song, artist: song.artist, bpm, beats });

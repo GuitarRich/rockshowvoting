@@ -211,9 +211,9 @@ function backToGate(msg) {
 async function begin() {
   if (!ME) { $("gateErr").textContent = "Pick your name first."; $("gateErr").classList.remove("hide"); return; }
   if (DATA.show.requireBandCode) {
-    const c = $("codeIn").value.trim() || bandCode();
+    const c = $("codeIn").value.trim() || bandCode(SHOW);
     if (!c) { $("gateErr").textContent = "Enter the band code, then tap Start."; $("gateErr").classList.remove("hide"); return; }
-    setBandCode(c);
+    setBandCode(SHOW, c);
   }
   setMe(ME);
   $("gateErr").classList.add("hide");
@@ -398,7 +398,8 @@ $("copy").onclick = () => {
   gateNote();
   if (DATA.show.requireBandCode) {
     $("codeIn").classList.remove("hide");
-    $("codeIn").value = bandCode();
+    $("codeIn").value = bandCode(SHOW);
+    $("codeIn").placeholder = "Band code for " + (DATA.show.name || "this show");
   }
   const remembered = me();
   if (remembered && DATA.voters.includes(remembered)) ME = remembered;

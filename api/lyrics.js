@@ -30,8 +30,8 @@ export default async function handler(req, res) {
     const body = await readBody(req);
     const show = await resolveShow(showParam(req, body));
     requireWritable(show);
-    requireBand(show, body);
     const state = await readAll(show);
+    requireBand(show, body, state.settings);
 
     if (body.addBlankRows) {
       const inSet = new Set(buildPayload(state).rows.filter((r) => r.inSet).map((r) => r.k));

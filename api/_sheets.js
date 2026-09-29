@@ -96,6 +96,9 @@ export const SETTINGS_DEFAULTS = Object.freeze({
   tieBreak: "energy",
   // Which running-order engine: "pacing" (October) or "curve" (Band Vote).
   orderEngine: "pacing",
+  // This show's own band code. Never sent to a page; blank falls back to
+  // BAND_SECRET. Separate codes keep one band from saving to another's show.
+  bandCode: "",
   warnings: ["waiting", "vocalBalance", "flatStretch", "leadRun", "dedication", "cuts"],
   leads: ["V1", "V2", "DUET"],
   eras: [],
@@ -103,7 +106,7 @@ export const SETTINGS_DEFAULTS = Object.freeze({
 
 const JSON_SETTINGS = ["lockedKeys", "voters", "band", "warnings", "leads", "eras"];
 const NUMBER_SETTINGS = ["maxSongs", "budgetSeconds", "gapSeconds", "maxPerArtist"];
-const STRING_SETTINGS = ["showName", "occasion", "bandName", "owner", "tieBreak", "orderEngine"];
+const STRING_SETTINGS = ["showName", "occasion", "bandName", "owner", "tieBreak", "orderEngine", "bandCode"];
 export const SETTING_KEYS = [
   "locked", "gigDate", ...JSON_SETTINGS, ...NUMBER_SETTINGS, ...STRING_SETTINGS,
 ];
@@ -252,6 +255,20 @@ export async function appendShow(show) {
       ]],
     },
   });
+}
+
+/** One show's Settings, without the rest of its tabs. */
+export async function readShowSettings(show) {
+  const sheets = sheetsClient();
+  try {
+    const res = await sheets.spreadsheets.values.get({
+      spreadsheetId: sheetId(),
+      range: `${T(show, SETTINGS_TAB)}!A2:B50`,
+    });
+    return parseSettings(res.data.values || []);
+  } catch (e) {
+    return parseSettings([]);
+  }
 }
 
 /** Change fields on one registry row, found by id. */

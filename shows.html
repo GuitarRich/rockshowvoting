@@ -61,7 +61,8 @@
           <div><label>Gig date</label><input id="nGig" type="date"></div>
           <div><label>Short id (for links)</label><input id="nId" placeholder="xmas26"></div>
           <div><label>Copy songs &amp; settings from</label><select id="nFrom"></select></div>
-          <div style="grid-column:span 2;align-self:end"><label class="chk"><input type="checkbox" id="nCode" checked> Saving needs the band code</label></div>
+          <div><label>Band code for this show</label><input id="nBandCode" type="password" autocomplete="new-password" placeholder="Its own code (4+ characters)"></div>
+          <div style="align-self:end"><label class="chk"><input type="checkbox" id="nCode" checked> Saving needs a band code</label></div>
         </div>
         <div class="row2"><button class="btn go" id="create">Create the show</button></div>
         <div class="msg" id="newMsg"></div>
@@ -89,7 +90,7 @@ async function api(body) {
   return d;
 }
 async function load() {
-  const d = await (await fetch(API + "/shows", { cache: "no-store" })).json();
+  const d = await (await fetch(API + "/shows?detail=1", { cache: "no-store" })).json();
   if (!d.ok) throw new Error(d.error || "Could not load the shows.");
   SHOWS = d.shows; DEFAULT = d.defaultId;
 }
@@ -120,10 +121,16 @@ function draw() {
           <option value="past"${s.status === "past" ? " selected" : ""}>Finished (read-only)</option></select></div>
       </div>
       <div class="row2">
-        <label class="chk"><input type="checkbox" data-f="requireBandCode"${s.requireBandCode ? " checked" : ""}> Saving needs the band code</label>
+        <label class="chk"><input type="checkbox" data-f="requireBandCode"${s.requireBandCode ? " checked" : ""}> Saving needs a band code</label>
+        <input data-f="bandCode" type="password" autocomplete="new-password" style="max-width:260px;margin:0"
+          placeholder="${s.hasOwnBandCode ? "Own code set — type to change it" : "Give this show its own code"}">
+        ${s.hasOwnBandCode ? '<button class="btn ghost" data-clearcode>Remove own code</button>' : ""}
         <button class="btn" data-save>Save</button>
         <span class="msg" data-msg></span>
       </div>
+      <p class="note2">${s.hasOwnBandCode
+        ? "This show has its <b>own band code</b>: only people who have it can save here, and it works for this show only."
+        : "No code of its own yet, so it uses the shared code. Give it one so another band can't save to it."}</p>
       <div class="row2">
         <a href="${esc(link("vote.html", s.id))}">Ballot</a>
         <a href="${esc(link("setlist.html", s.id))}">Setlist</a>
@@ -138,6 +145,13 @@ function draw() {
 }
 
 $("list").addEventListener("click", async (e) => {
+  const clr = e.target.closest("[data-clearcode]");
+  if (clr) {
+    const card = clr.closest(".show");
+    try { await api({ update: { id: card.dataset.id, bandCode: "" } }); await load(); draw(); }
+    catch (err) { card.querySelector("[data-msg]").className = "msg err"; card.querySelector("[data-msg]").textContent = err.message; }
+    return;
+  }
   const btn = e.target.closest("[data-save]");
   if (!btn) return;
   const card = btn.closest(".show");
@@ -148,6 +162,7 @@ $("list").addEventListener("click", async (e) => {
     await api({ update: {
       id: card.dataset.id, name: val("name").value.trim(), gigDate: val("gigDate").value,
       status: val("status").value, requireBandCode: val("requireBandCode").checked,
+      ...(val("bandCode").value.trim() ? { bandCode: val("bandCode").value.trim() } : {}),
     } });
     await load(); draw();
   } catch (err) {
@@ -175,11 +190,12 @@ $("create").onclick = async () => {
     const d = await api({ create: {
       id, name: $("nName").value.trim(), gigDate: $("nGig").value,
       copyFrom: $("nFrom").value || undefined, requireBandCode: $("nCode").checked,
+      bandCode: $("nBandCode").value.trim() || undefined,
     } });
     await load(); draw();
     m.className = "msg ok";
     m.innerHTML = `Created <b>${esc(d.show.name)}</b>. Next: <a href="${esc(link("admin.html", d.show.id))}">set who votes and plays, and the songs →</a>`;
-    ["nName", "nGig", "nId"].forEach((x) => { $(x).value = ""; });
+    ["nName", "nGig", "nId", "nBandCode"].forEach((x) => { $(x).value = ""; });
     idTouched = false;
   } catch (err) {
     m.className = "msg err"; m.textContent = "Not created: " + err.message;

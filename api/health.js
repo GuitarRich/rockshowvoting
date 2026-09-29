@@ -1,4 +1,4 @@
-import { sheetsClient, sheetId, ensureTabs, readShows, tabName, TABS } from "./_sheets.js";
+import { sheetsClient, sheetId, ensureTabs, readShows, readShowSettings, tabName, TABS } from "./_sheets.js";
 
 /**
  * Diagnosis endpoint. Build and check this before anything else — it turns
@@ -48,8 +48,15 @@ export default async function handler(req, res) {
     }));
     out.libraryTabs = [TABS.TUNINGS_TAB, TABS.LYRICS_TAB, TABS.TEMPOS_TAB, TABS.LIBRARY_TAB]
       .map((t) => t + (all.has(t) ? "" : " (missing)"));
-    if (shows.some((s) => s.requireBandCode) && !process.env.BAND_SECRET) {
-      out.warning = "A show asks for the band code but BAND_SECRET is not set, so its saves will fail. Set it in Vercel and redeploy.";
+    // A show that asks for a code needs its own, or the shared BAND_SECRET.
+    const stuck = [];
+    for (const s of shows.filter((x) => x.requireBandCode)) {
+      const own = String((await readShowSettings(s)).bandCode || "").trim();
+      out.shows.find((x) => x.id === s.id).hasOwnBandCode = !!own;
+      if (!own && !process.env.BAND_SECRET) stuck.push(s.name);
+    }
+    if (stuck.length) {
+      out.warning = "No band code for: " + stuck.join(", ") + ". Their saves will fail — set a code on the shows page.";
     }
     out.ok = true;
   } catch (e) {

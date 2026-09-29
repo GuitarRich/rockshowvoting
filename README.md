@@ -63,7 +63,8 @@ Two shared codes. Neither is a login; they stop a stranger with the link writing
 
 | Env var | Needed for |
 |---|---|
-| `BAND_SECRET` | Every save on a show with `RequireBandCode` TRUE. Asked once per device. |
+| a show's own band code | Set on the shows page (stored in that show's Settings as `bandCode`, never sent to a page). Every save on that show, and **only** that show — one band can't save to another band's show. Asked once per device, per show. |
+| `BAND_SECRET` | Fallback code for a show that asks for one but has none of its own. |
 | `OWNER_SECRET` | Changing the set, the songs, the settings, creating shows, pooling others' votes. Falls back to `APP_SECRET` if unset. |
 
 Typing the owner's name grants nothing — only the owner code does.

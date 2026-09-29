@@ -195,13 +195,13 @@ function drawGate() {
     b.onclick = () => { ME = n; begin(); };
     $("names").appendChild(b);
   });
-  if (DATA.show.requireBandCode) { $("codeIn").classList.remove("hide"); $("codeIn").value = bandCode(); }
+  if (DATA.show.requireBandCode) { $("codeIn").classList.remove("hide"); $("codeIn").value = bandCode(SHOW); $("codeIn").placeholder = "Band code for " + (DATA.show.name || "this show"); }
 }
 function begin() {
   if (DATA.show.requireBandCode && ME) {
-    const c = $("codeIn").value.trim() || bandCode();
+    const c = $("codeIn").value.trim() || bandCode(SHOW);
     if (!c) { $("gateErr").textContent = "Enter the band code too."; $("gateErr").classList.remove("hide"); return; }
-    setBandCode(c);
+    setBandCode(SHOW, c);
   }
   if (ME) setMe(ME);
   $("gate").classList.add("hide");
@@ -752,7 +752,7 @@ $("copyDiag").onclick = () => put($("diagOut").textContent || "(run the check fi
   showTab(TABS.some(([t]) => t === tab) ? tab : "tabSet");
   const remembered = me();
   if (remembered && (DATA.voters.includes(remembered) || DATA.band.includes(remembered)) &&
-      (!DATA.show.requireBandCode || bandCode())) {
+      (!DATA.show.requireBandCode || bandCode(SHOW))) {
     ME = remembered;
     begin();
   } else {

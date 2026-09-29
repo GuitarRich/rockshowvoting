@@ -54,9 +54,9 @@ export async function currentShowId() {
   }
 }
 
-/* ----- band code: remembered, per device ----- */
-export const bandCode = () => store.get("rs_code");
-export const setBandCode = (c) => store.set("rs_code", String(c || "").trim());
+/* ----- band code: remembered per device, per show — each band has its own ----- */
+export const bandCode = (show) => store.get("rs_code_" + show);
+export const setBandCode = (show, c) => store.set("rs_code_" + show, String(c || "").trim());
 
 /* ----- who I am: the key the learn and availability pages already use ----- */
 export const me = () => store.get("setlist.me");
@@ -95,10 +95,10 @@ export async function post(path, show, body) {
   const r = await fetch(API + path, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ show, code: bandCode(), ...body }),
+    body: JSON.stringify({ show, code: bandCode(show), ...body }),
   });
   const d = await r.json().catch(() => ({}));
-  if (r.status === 401) setBandCode("");
+  if (r.status === 401) setBandCode(show, "");
   if (!r.ok || !d.ok) throw apiError(r, d);
   return d;
 }
