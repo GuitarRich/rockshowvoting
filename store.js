@@ -119,6 +119,7 @@ export const PAGES = [
   ["lyrics.html", "Lyrics"],
   ["click.html", "Click"],
   ["availability.html", "Rehearsals"],
+  ["shows.html", "Admin"],
 ];
 
 /** Kept so older links still resolve: every show now uses the same pages. */

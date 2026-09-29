@@ -79,6 +79,12 @@ export default async function handler(req, res) {
       }
       if (u.requireBandCode !== undefined) patch.requireBandCode = !!u.requireBandCode;
       const next = await updateShow(id, patch);
+      // The show's own Settings carry its name and date for the pages; keep
+      // them in step so a rename or a new date shows up everywhere at once.
+      const mirror = {};
+      if (patch.name !== undefined) mirror.showName = patch.name;
+      if (patch.gigDate !== undefined) mirror.gigDate = patch.gigDate;
+      if (Object.keys(mirror).length) await writeSettings(next, mirror);
       return ok(res, { show: pub(next) });
     }
     return fail(res, 400, "Nothing to do: send create or update.");

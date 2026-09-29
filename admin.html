@@ -73,7 +73,7 @@
   <h1><span id="showName">Setlist Vote</span> — <span>Admin</span></h1>
   <p class="sub">Edit the song list and the show's settings. Changes write to the Google Sheet and every page picks them up on next load &middot;
     <a href="vote.html" data-page="vote.html">ballot</a> &middot; <a href="setlist.html" data-page="setlist.html">results</a>
-    &middot; <span id="showPick"></span></p>
+    &middot; <span id="showPick"></span> &middot; <a href="shows.html">all shows</a></p>
 </header>
 
 <div class="card" id="gate">
@@ -169,17 +169,9 @@
   </div>
 
   <div class="card">
-    <h2>Start a new show</h2>
-    <p>A new show gets its own ballot, votes, set, learning and rehearsal calendar. Copying from an earlier show brings its
-      songs and settings, never its votes. Lyrics, tempos and tunings are shared by every show already.</p>
-    <div class="grid3">
-      <div><label>Short id (letters, numbers, dashes)</label><input id="nId" placeholder="dec"></div>
-      <div><label>Name</label><input id="nName" placeholder="Christmas party"></div>
-      <div><label>Gig date</label><input id="nGig" type="date"></div>
-      <div><label>Copy songs and settings from</label><select id="nFrom"><option value="">— start empty —</option></select></div>
-    </div>
-    <div class="btnrow"><button class="btn" id="newShow">Create the show</button></div>
-    <div class="status" id="newStatus"></div>
+    <h2>Other shows</h2>
+    <p>Create a show, rename it, change its date or mark it finished on the <a href="shows.html">shows page</a>.</p>
+  </div>
   </div>
 
 </div>
@@ -217,8 +209,6 @@ async function loadShows(){
   document.querySelectorAll('header .sub a[data-page]').forEach(a=>{
     a.href = a.dataset.page + '?show=' + encodeURIComponent(SHOW);
   });
-  document.getElementById('nFrom').innerHTML = '<option value="">— start empty —</option>' +
-    SHOWS.map(x=>'<option value="'+esc(x.id)+'">'+esc(x.name)+'</option>').join('');
 }
 const adminBody = extra => JSON.stringify({show:SHOW, ownerCode:KEY, ...extra});
 const pendingAdd = [];      // rows queued but not yet in the sheet
@@ -476,20 +466,6 @@ document.getElementById('saveSettings').onclick = async ()=>{
     STATE = j.data; fillSettings(); draw();
     st.className='status ok'; st.textContent='Saved.';
   }catch(e){ st.className='status err'; st.textContent='Not saved: '+e.message; }
-};
-
-// ---------------- new show ----------------
-document.getElementById('newShow').onclick = async ()=>{
-  const g = id => document.getElementById(id).value.trim();
-  const st = document.getElementById('newStatus');
-  st.className='status'; st.textContent='Creating…';
-  try{
-    const r = await fetch(API+'/shows',{method:'POST',headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({ownerCode:KEY, create:{id:g('nId').toLowerCase(), name:g('nName'), gigDate:g('nGig'), copyFrom:g('nFrom')||undefined}})});
-    const j = await r.json();
-    if(!j.ok) throw new Error(j.error||'unknown error');
-    st.className='status ok'; st.innerHTML='Created. <a href="?show='+encodeURIComponent(j.show.id)+'">Open its settings →</a>';
-  }catch(e){ st.className='status err'; st.textContent='Not created: '+e.message; }
 };
 
 loadShows();

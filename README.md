@@ -16,9 +16,10 @@ Every page takes `?show=<id>`. A link with no show opens the next show by gig da
 | `lyrics.html` | The lyric book: words and chords in set order, chord shapes in the song's tuning, autoscroll, print. |
 | `click.html` | The click track: a flashing lamp and a click at the song's tempo, tap tempo, saved per song. |
 | `availability.html` | Rehearsal calendar up to the gig. |
-| `admin.html` | Songs (add, bulk paste, edit, remove), the show's settings, and starting a new show. |
+| `shows.html` | **Admin** in the nav. Every show: rename, re-date, open or finished, band code on or off, and start a new one (copying an earlier show's songs and settings). Owner code. |
+| `admin.html` | One show's songs (add, bulk paste, edit, remove) and settings (who votes, who plays, set size, budget, cap, warnings). Owner code. |
 
-`index.html` and `results.html` are October's original ballot and results pages, kept unchanged until its gig on 24 Oct 2026. They send any other show to `vote.html` / `setlist.html`, and retire afterwards.
+The home page (`index.html`) opens the ballot for whichever show is **next up** — the soonest gig that hasn't happened, skipping finished ones. `results.html` redirects to `setlist.html`; both keep `?show=`.
 
 ## Shows
 
@@ -26,7 +27,7 @@ The `Shows` tab lists every show: `Id, Prefix, Name, GigDate, Status, RequireBan
 
 - Each show's own tabs are named with its prefix: November's votes live on `nov·Votes`. October's prefix is empty, so it kept its original tab names.
 - `Status` `past` makes a show read-only.
-- Start a new show from the admin page ("Start a new show"). Copying from an earlier show brings its songs and settings, never its votes.
+- Manage shows on `shows.html` (Admin in the nav). Copying from an earlier show brings its songs and settings, never its votes. Nothing is ever deleted: a finished show stays viewable, read-only.
 
 ### Per-show tabs
 

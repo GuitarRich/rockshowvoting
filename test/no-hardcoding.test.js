@@ -7,7 +7,7 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 import fs from "node:fs";
 
-const SHARED = ["vote.html", "setlist.html", "lyrics.html", "click.html", "admin.html", "store.js"];
+const SHARED = ["vote.html", "setlist.html", "lyrics.html", "click.html", "admin.html", "shows.html", "index.html", "store.js"];
 const BANNED = /October|Anniversary|Bun's|BUN'S|Bun&#39;s|Creed|Nickelback|90:00|two per band|\bJoel\b|\bAnders\b|\bAshley\b/;
 
 for (const f of SHARED) {

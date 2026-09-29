@@ -2,8 +2,21 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Setlist</title>
-<!-- Every show uses vote.html now. Old links and bookmarks land here and move on,
-     keeping ?show= so a link to one show still opens that show. -->
-<script>location.replace("vote.html" + location.search + location.hash);</script>
+<!-- The home page: the ballot for whichever show is next up — the soonest
+     gig that hasn't happened yet. A link naming a show (?show=nov) opens
+     that one instead, so old links and bookmarks still work. -->
+<script>
+(function () {
+  var go = function (id) {
+    location.replace("vote.html" + (id ? "?show=" + encodeURIComponent(id) : "") + location.hash);
+  };
+  var named = new URLSearchParams(location.search).get("show");
+  if (named) return go(named);
+  fetch("/api/shows", { cache: "no-store" })
+    .then(function (r) { return r.json(); })
+    .then(function (d) { go(d && d.ok ? d.defaultId : ""); })
+    .catch(function () { go(""); });
+})();
+</script>
 <noscript><meta http-equiv="refresh" content="0; url=vote.html"></noscript>
-<p><a href="vote.html">Open the ballot</a></p>
+<p style="font-family:system-ui;padding:24px">Opening the next show&hellip; <a href="vote.html">continue</a></p>

@@ -1,0 +1,225 @@
+<!doctype html>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Shows — Admin</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700&family=Barlow:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<link href="./app.css" rel="stylesheet">
+<style>
+  #sv .card{border:1px solid var(--line);background:var(--panel);border-radius:10px;padding:16px;margin:0 0 16px}
+  #sv .card h2{font-family:'Barlow Condensed',sans-serif;text-transform:uppercase;letter-spacing:.05em;font-size:20px;margin:0 0 8px}
+  #sv .note2{color:var(--muted,#9a927f);font-size:14px;margin:6px 0}
+  #sv .show{border:1px solid var(--line);border-radius:10px;padding:14px;margin:0 0 12px;background:var(--panel2)}
+  #sv .show.past{opacity:.7}
+  #sv .show .top{display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin-bottom:10px}
+  #sv .show .top b{font-size:18px}
+  #sv .badge{font-size:11px;letter-spacing:.06em;text-transform:uppercase;border:1px solid var(--line);border-radius:999px;padding:2px 8px}
+  #sv .badge.next{border-color:var(--lamp);color:var(--lamp)}
+  #sv .badge.past{border-color:#b03a2e;color:#e58b80}
+  #sv .fields{display:grid;grid-template-columns:2fr 1fr 1fr;gap:10px}
+  #sv .fields label{display:block;font-size:12px;color:var(--muted,#9a927f);margin-bottom:4px}
+  #sv .fields input,#sv .fields select{width:100%;margin:0}
+  #sv .row2{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-top:10px}
+  #sv .row2 a{color:var(--lamp);font-size:14px;margin-right:6px}
+  #sv .chk{display:inline-flex;gap:6px;align-items:center;font-size:14px}
+  #sv .chk input{width:auto;margin:0}
+  #sv .msg{font-size:14px;margin-top:8px}
+  #sv .msg.ok{color:#7fd3a0}#sv .msg.err{color:#e58b80}
+  @media (max-width:640px){ #sv .fields{grid-template-columns:1fr} }
+</style>
+
+<div id="sv">
+  <header><div class="wrap">
+    <div class="plate">
+      <div class="lamp"></div>
+      <h1 class="disp">Shows<small>Admin &middot; <span id="ver"></span></small></h1>
+      <div class="status" id="status">Locked</div>
+    </div>
+    <nav id="nav"></nav>
+  </div></header>
+
+  <div class="wrap">
+    <div class="card" id="gate">
+      <h2>Owner code</h2>
+      <p class="note2">Managing shows needs the owner code (OWNER_SECRET in Vercel). It is kept on this page only,
+        never stored &mdash; retype it each visit. It stops a bandmate changing things by accident; it is not a login.</p>
+      <div class="row2"><input id="code" type="password" placeholder="Owner code" autocomplete="off" style="max-width:260px;margin:0">
+        <button class="btn go" id="unlock">Unlock</button></div>
+      <div class="msg" id="gateMsg"></div>
+    </div>
+
+    <div id="main" class="hide">
+      <div class="card">
+        <h2>Every show</h2>
+        <p class="note2">Any number of shows can be open at once, each with its own ballot, votes, set, practice
+          tracker and rehearsal calendar. The home page opens whichever gig is <b>next up</b>. Mark a show
+          <b>finished</b> once it has been played: it stays viewable, read-only. Nothing here deletes anything.</p>
+        <div id="list"></div>
+      </div>
+
+      <div class="card">
+        <h2>Start a new show</h2>
+        <p class="note2">Copying from an earlier show brings its songs and settings (who votes, who plays, set size,
+          warnings) &mdash; never its votes, practice marks or availability. Lyrics, tempos and tunings are shared by
+          every show already.</p>
+        <div class="fields">
+          <div><label>Name</label><input id="nName" placeholder="Christmas party"></div>
+          <div><label>Gig date</label><input id="nGig" type="date"></div>
+          <div><label>Short id (for links)</label><input id="nId" placeholder="xmas26"></div>
+          <div><label>Copy songs &amp; settings from</label><select id="nFrom"></select></div>
+          <div style="grid-column:span 2;align-self:end"><label class="chk"><input type="checkbox" id="nCode" checked> Saving needs the band code</label></div>
+        </div>
+        <div class="row2"><button class="btn go" id="create">Create the show</button></div>
+        <div class="msg" id="newMsg"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script type="module">
+import { VERSION } from "./setlist.js";
+import { API, esc, navHtml, link, currentShowId } from "./store.js";
+
+const $ = (id) => document.getElementById(id);
+let CODE = "";
+let SHOWS = [], DEFAULT = "";
+
+async function api(body) {
+  const r = await fetch(API + "/shows", {
+    method: "POST", headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ ownerCode: CODE, ...body }),
+  });
+  const d = await r.json().catch(() => ({}));
+  if (!r.ok || !d.ok) throw Object.assign(new Error(d.error || "HTTP " + r.status), { status: r.status });
+  return d;
+}
+async function load() {
+  const d = await (await fetch(API + "/shows", { cache: "no-store" })).json();
+  if (!d.ok) throw new Error(d.error || "Could not load the shows.");
+  SHOWS = d.shows; DEFAULT = d.defaultId;
+}
+
+const pretty = (iso) => {
+  if (!iso) return "no date yet";
+  const d = new Date(iso + "T12:00:00");
+  return d.toLocaleDateString(undefined, { weekday: "short", day: "numeric", month: "short", year: "numeric" });
+};
+
+function draw() {
+  // Upcoming first (soonest at the top), then the undated, then finished ones.
+  const rank = (s) => (s.status === "past" ? 2 : s.gigDate ? 0 : 1);
+  const list = SHOWS.slice().sort((a, b) => rank(a) - rank(b) ||
+    (a.status === "past" ? (b.gigDate || "").localeCompare(a.gigDate || "") : (a.gigDate || "").localeCompare(b.gigDate || "")));
+  $("list").innerHTML = list.map((s) => `
+    <div class="show${s.status === "past" ? " past" : ""}" data-id="${esc(s.id)}">
+      <div class="top"><b>${esc(s.name)}</b>
+        ${s.id === DEFAULT ? '<span class="badge next">next up — the home page</span>' : ""}
+        ${s.status === "past" ? '<span class="badge past">finished</span>' : ""}
+        <span class="badge">${esc(pretty(s.gigDate))}</span>
+        <span class="note2" style="margin:0">id: <code>${esc(s.id)}</code></span></div>
+      <div class="fields">
+        <div><label>Name</label><input data-f="name" value="${esc(s.name)}"></div>
+        <div><label>Gig date</label><input data-f="gigDate" type="date" value="${esc(s.gigDate)}"></div>
+        <div><label>Status</label><select data-f="status">
+          <option value="current"${s.status !== "past" ? " selected" : ""}>Open</option>
+          <option value="past"${s.status === "past" ? " selected" : ""}>Finished (read-only)</option></select></div>
+      </div>
+      <div class="row2">
+        <label class="chk"><input type="checkbox" data-f="requireBandCode"${s.requireBandCode ? " checked" : ""}> Saving needs the band code</label>
+        <button class="btn" data-save>Save</button>
+        <span class="msg" data-msg></span>
+      </div>
+      <div class="row2">
+        <a href="${esc(link("vote.html", s.id))}">Ballot</a>
+        <a href="${esc(link("setlist.html", s.id))}">Setlist</a>
+        <a href="${esc(link("learn.html", s.id))}">Learn</a>
+        <a href="${esc(link("lyrics.html", s.id))}">Lyrics</a>
+        <a href="${esc(link("availability.html", s.id))}">Rehearsals</a>
+        <a href="${esc(link("admin.html", s.id))}"><b>Songs &amp; settings →</b></a>
+      </div>
+    </div>`).join("");
+  $("nFrom").innerHTML = '<option value="">— start empty —</option>' +
+    list.map((s) => `<option value="${esc(s.id)}">${esc(s.name)}</option>`).join("");
+}
+
+$("list").addEventListener("click", async (e) => {
+  const btn = e.target.closest("[data-save]");
+  if (!btn) return;
+  const card = btn.closest(".show");
+  const val = (f) => card.querySelector(`[data-f="${f}"]`);
+  const m = card.querySelector("[data-msg]");
+  btn.disabled = true; m.className = "msg"; m.textContent = "Saving…";
+  try {
+    await api({ update: {
+      id: card.dataset.id, name: val("name").value.trim(), gigDate: val("gigDate").value,
+      status: val("status").value, requireBandCode: val("requireBandCode").checked,
+    } });
+    await load(); draw();
+  } catch (err) {
+    m.className = "msg err"; m.textContent = "Not saved: " + err.message;
+    if (err.status === 403) relock();
+  } finally { btn.disabled = false; }
+});
+
+// A short id from the name, until the owner types their own.
+let idTouched = false;
+$("nId").oninput = () => { idTouched = true; };
+$("nName").oninput = () => {
+  if (idTouched) return;
+  const y = ($("nGig").value || "").slice(2, 4);
+  $("nId").value = ($("nName").value.toLowerCase().replace(/[^a-z0-9]+/g, "").slice(0, 17) + y).slice(0, 20);
+};
+$("nGig").onchange = $("nName").oninput;
+
+$("create").onclick = async () => {
+  const m = $("newMsg");
+  const id = $("nId").value.trim().toLowerCase();
+  if (!$("nName").value.trim() || !id) { m.className = "msg err"; m.textContent = "Give it a name and a short id."; return; }
+  m.className = "msg"; m.textContent = "Creating…";
+  try {
+    const d = await api({ create: {
+      id, name: $("nName").value.trim(), gigDate: $("nGig").value,
+      copyFrom: $("nFrom").value || undefined, requireBandCode: $("nCode").checked,
+    } });
+    await load(); draw();
+    m.className = "msg ok";
+    m.innerHTML = `Created <b>${esc(d.show.name)}</b>. Next: <a href="${esc(link("admin.html", d.show.id))}">set who votes and plays, and the songs →</a>`;
+    ["nName", "nGig", "nId"].forEach((x) => { $(x).value = ""; });
+    idTouched = false;
+  } catch (err) {
+    m.className = "msg err"; m.textContent = "Not created: " + err.message;
+    if (err.status === 403) relock();
+  }
+};
+
+function relock() {
+  CODE = "";
+  $("main").classList.add("hide"); $("gate").classList.remove("hide");
+  $("gateMsg").className = "msg err"; $("gateMsg").textContent = "That owner code wasn't accepted.";
+  $("status").textContent = "Locked"; $("status").className = "status";
+}
+async function unlock() {
+  CODE = $("code").value.trim();
+  if (!CODE) return;
+  $("gateMsg").className = "msg"; $("gateMsg").textContent = "Checking…";
+  try {
+    // A no-op update is the cheapest way to ask whether the code is right.
+    await load();
+    await api({ update: { id: DEFAULT || (SHOWS[0] && SHOWS[0].id) } });
+    $("gate").classList.add("hide"); $("main").classList.remove("hide");
+    $("status").textContent = "Owner"; $("status").className = "status ok";
+    draw();
+  } catch (err) {
+    relock();
+    if (err.status !== 403) $("gateMsg").textContent = "Couldn't check: " + err.message;
+  }
+}
+$("unlock").onclick = unlock;
+$("code").onkeydown = (e) => { if (e.key === "Enter") unlock(); };
+
+(async function boot() {
+  $("ver").textContent = VERSION;
+  $("nav").innerHTML = navHtml(await currentShowId(), "shows.html");
+})();
+</script>

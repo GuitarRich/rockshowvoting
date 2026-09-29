@@ -63,3 +63,12 @@ test("a song added to a show without lead labels gets no lead", async () => {
   const d = (await call(data, { query: { show: "nov" } })).json.data;
   assert.equal(d.rows.find((x) => x.k === "paranoid-blacksabbath").lead, "");
 });
+
+test("renaming or re-dating a show updates what its pages show", async () => {
+  fresh();
+  const u = await call(shows, { method: "POST", body: { ownerCode: "owner", update: { id: "nov", name: "Bun's Xmas", gigDate: "2026-12-12" } } });
+  assert.equal(u.status, 200, JSON.stringify(u.json));
+  const d = (await call(data, { query: { show: "nov" } })).json.data;
+  assert.equal(d.show.name, "Bun's Xmas");
+  assert.equal(d.show.gigDate, "2026-12-12");
+});
