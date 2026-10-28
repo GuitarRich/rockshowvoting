@@ -59,7 +59,8 @@
   color:var(--dim)}
 #lb .tag.tune{color:var(--lamp);border-color:rgba(245,166,35,.45)}
 #lb .no{font-family:'IBM Plex Mono',monospace;color:var(--lamp);font-size:13px}
-#lb .words{margin-top:var(--s3);font-size:15px;line-height:1.75}
+/* --lyr is the reader's text size (the A− / A+ buttons), 1 = as designed. */
+#lb .words{margin-top:var(--s3);font-size:calc(15px * var(--lyr, 1));line-height:1.75}
 #lb .block{break-inside:avoid;page-break-inside:avoid;margin-bottom:1.1em}
 #lb .block:last-child{margin-bottom:0}
 /* A line of plain words wraps like prose. "anywhere" is the backstop: one
@@ -72,7 +73,7 @@
    word; the row itself wraps word by word, so a long line runs down the screen
    instead of off the side of it. Blocks with no chords keep the proportional
    reading face. */
-#lb .block.chorded{font-family:'IBM Plex Mono',monospace;font-size:13.5px;line-height:1.3}
+#lb .block.chorded{font-family:'IBM Plex Mono',monospace;font-size:calc(13.5px * var(--lyr, 1));line-height:1.3}
 #lb .block.chorded .ln{white-space:pre}
 /* Flex, not inline-block: there is no whitespace between the pieces to break
    at — the spacing lives inside them — so the row needs a layout that can wrap
@@ -150,6 +151,9 @@
 #lb .deck .dbar i{display:block;height:100%;width:0;background:var(--lamp)}
 #lb .deck .dleft{font-family:'IBM Plex Mono',monospace;font-size:12px;color:var(--dim);min-width:42px;
   text-align:right}
+#lb .tsize{display:inline-flex;align-items:center;gap:6px}
+#lb .tsize .tval{font-family:'IBM Plex Mono',monospace;font-size:12px;color:var(--lamp);min-width:40px;
+  text-align:center;cursor:pointer;-webkit-tap-highlight-color:transparent}
 #lb .ln-section{font-family:var(--sans);text-transform:uppercase;
   letter-spacing:.14em;font-size:12px;font-weight:600;color:var(--dim);margin-bottom:5px}
 #lb .missing{margin-top:var(--s3);font-size:14px;color:var(--dim);font-style:italic}
@@ -175,6 +179,7 @@
   #lb .bar{display:grid;grid-template-columns:1fr 1fr;gap:var(--s2)}
   #lb .bar .btn{width:100%;text-align:center;padding:12px 10px}
   #lb .bar #print{grid-column:1 / -1}
+  #lb .bar .tsize{grid-column:1 / -1;justify-content:center}
   #lb .spacer{display:none}
 
   /* Long tunings were breaking contents entries mid-line. The tuning gets its
@@ -187,8 +192,8 @@
   #lb .cover h2{font-size:18px}
   #lb .song{padding:var(--s3)}
   #lb .song h3{font-size:20px}
-  #lb .words{font-size:14px}
-  #lb .block.chorded{font-size:11.5px}
+  #lb .words{font-size:calc(14px * var(--lyr, 1))}
+  #lb .block.chorded{font-size:calc(11.5px * var(--lyr, 1))}
   /* A finger has to land on the chip, so it gets real height on a phone
      without taking any width — width is what holds the grid together. */
   #lb .chip{padding:5px 3px;margin:-5px -3px}
@@ -203,6 +208,7 @@
   #lb .deck .pp{order:4}
   #lb .deck .step{order:5}
   #lb .deck .rate{order:6}
+  #lb .deck .tsize{order:7}
   #lb .deck .stop{order:8;margin-left:auto}
   #lb .edit textarea{min-height:150px;font-size:12px}
   /* The deck is a full-width bar down here, so the button clears it by more. */
@@ -252,6 +258,7 @@
         <button class="btn" id="copy">Copy as text</button>
         <button class="btn" id="seed">Add blank rows to the sheet</button>
         <span class="spacer"></span>
+        <span class="tsize" data-tsize></span>
         <a class="btn" id="back" href="./setlist.html">Back to the setlist</a>
       </div>
       <div id="codebox" class="msg noprint hide">
@@ -271,7 +278,7 @@
         them inline as <span class="mono">[G]like this</span>. Hover or tap any chord to see how
         it's fingered — in that song's tuning, not standard. <b>Scroll it</b> runs the words past
         you over the song's own running time; nudge the speed with &minus; and + if the band plays
-        it faster than the record, and tap the number to go back to the song's pace. Print with
+        it faster than the record, and tap the number to go back to the song's pace. <b>A&minus;</b> and <b>A+</b> change the size of the words (this device remembers it); a song mid-scroll keeps its place and its running time. Print with
         backgrounds off for a clean black-on-white book; each song starts on its own page.
       </p>
     </div>
@@ -693,6 +700,7 @@ deck.innerHTML =
   '<button class="step" type="button" aria-label="Slower">&minus;</button>' +
   '<span class="rate" role="button" tabindex="0" title="Back to the song’s own pace">1.0&times;</span>' +
   '<button class="step" type="button" aria-label="Faster">+</button>' +
+  '<span class="tsize" data-tsize></span>' +
   '<button class="stop" type="button">Stop</button>';
 $("lb").appendChild(deck);
 
@@ -833,6 +841,60 @@ book.addEventListener("click", (e) => {
   if (roll && roll.song === song) { stopRoll(); return; }
   startRoll(song);
 });
+
+/* ---------- text size: A− / A+, remembered on this device ---------- */
+const SIZES = [0.8, 0.9, 1, 1.15, 1.3, 1.5, 1.75, 2, 2.4];
+let size = 1;
+try { size = Number(localStorage.getItem("rs_lyric_size")) || 1; } catch (e) { /* storage off */ }
+if (!SIZES.includes(size)) size = 1;
+
+/**
+ * Re-measure the song being scrolled after its height changes. The run keeps
+ * its place — the same fraction of the way through — and still takes the song's
+ * own running time, so bigger words simply move past faster.
+ */
+function refit() {
+  if (!roll) return;
+  const p = roll.plan;
+  const through = p.distance > 0 ? Math.max(0, Math.min(1, (roll.pos - p.from) / p.distance)) : 0;
+  const rect = roll.song.getBoundingClientRect();
+  roll.plan = scrollPlan(rect.top + window.scrollY, rect.height, window.innerHeight, Number(roll.song.dataset.dur));
+  roll.pos = roll.plan.from + through * roll.plan.distance;
+  window.scrollTo(0, roll.pos);
+  roll.applied = window.scrollY;
+  if (!roll.plan.pxPerSec) { dLeft.textContent = "—"; dFill.style.width = "100%"; }
+  else if (roll.paused) dLeft.textContent = mmss(Math.round((roll.plan.to - roll.pos) / (roll.plan.pxPerSec * mult)));
+}
+
+function setSize(next) {
+  // Not scrolling: keep whatever is at the top of the screen in view.
+  const anchor = roll ? null : [...book.querySelectorAll(".song")].find((el) => el.getBoundingClientRect().bottom > 0);
+  const before = anchor ? anchor.getBoundingClientRect() : null;
+  size = next;
+  $("lb").style.setProperty("--lyr", String(size));
+  try { localStorage.setItem("rs_lyric_size", String(size)); } catch (e) { /* storage off */ }
+  document.querySelectorAll("[data-tsize] .tval").forEach((el) => { el.textContent = Math.round(size * 100) + "%"; });
+  document.querySelectorAll("[data-tsize] .tdown").forEach((b) => { b.disabled = size <= SIZES[0]; });
+  document.querySelectorAll("[data-tsize] .tup").forEach((b) => { b.disabled = size >= SIZES[SIZES.length - 1]; });
+  if (roll) refit();
+  else if (anchor) {
+    const after = anchor.getBoundingClientRect();
+    const through = before.height > 0 ? -before.top / before.height : 0;
+    window.scrollBy(0, after.top + Math.max(0, through) * after.height);
+  }
+}
+const sizeStep = (by) => setSize(SIZES[Math.max(0, Math.min(SIZES.length - 1, SIZES.indexOf(size) + by))]);
+document.querySelectorAll("[data-tsize]").forEach((box) => {
+  box.innerHTML = '<button class="btn small tdown" type="button" aria-label="Smaller text">A&minus;</button>' +
+    '<span class="tval" role="button" tabindex="0" title="Back to normal size"></span>' +
+    '<button class="btn small tup" type="button" aria-label="Bigger text">A+</button>';
+  box.querySelector(".tdown").onclick = () => sizeStep(-1);
+  box.querySelector(".tup").onclick = () => sizeStep(1);
+  box.querySelector(".tval").onclick = () => setSize(1);
+});
+setSize(size);
+// Turning the phone changes how the words wrap, and so how far there is to scroll.
+window.addEventListener("resize", () => { if (roll) refit(); });
 
 dPP.onclick = () => setPaused(!roll || !roll.paused);
 dStop.onclick = stopRoll;
