@@ -440,7 +440,8 @@ function warnings(list) {
       "and retype the values.");
     return out;
   }
-  if (on.has("waiting")) {
+  // Nobody is still to vote once voting has closed.
+  if (on.has("waiting") && !DATA.show.votingClosed) {
     const missing = DATA.voters.filter((n) => !DATA.rows.some((r) => ["MUST", "YES", "NO", "X"].includes(r.votes[n])));
     if (missing.length) out.push("Still waiting on: <b>" + missing.map(esc).join(", ") + "</b>. The set will move as they vote.");
   }
