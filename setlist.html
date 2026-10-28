@@ -440,8 +440,8 @@ function warnings(list) {
       "and retype the values.");
     return out;
   }
-  // Nobody is still to vote once voting has closed.
-  if (on.has("waiting") && !DATA.show.votingClosed) {
+  // Nobody is still to vote once voting has closed, and a locked set won't move however they vote.
+  if (on.has("waiting") && !DATA.show.votingClosed && !DATA.set.locked) {
     const missing = DATA.voters.filter((n) => !DATA.rows.some((r) => ["MUST", "YES", "NO", "X"].includes(r.votes[n])));
     if (missing.length) out.push("Still waiting on: <b>" + missing.map(esc).join(", ") + "</b>. The set will move as they vote.");
   }
