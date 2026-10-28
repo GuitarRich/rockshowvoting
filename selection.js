@@ -1,4 +1,10 @@
-import { WEIGHTS, MAX_PER_ARTIST, lenSecs } from "../setlist.js";
+import { WEIGHTS, MAX_PER_ARTIST, lenSecs, runningOrder } from "./setlist.js";
+
+/*
+ * Which songs make the set, and in what order. Shared by the API and the
+ * setlist page: the page runs the same code on a change the moment it is
+ * made, so the screen moves at once and the save catches up behind it.
+ */
 
 // Same numbers the results page runs on: a 90-minute set, 25 seconds of
 // shuffling between songs.
@@ -169,4 +175,33 @@ export function selectSet(rows, roster, opts = {}) {
   for (const s of scored) if (!inSet.has(s.k) && !cut[s.k]) cut[s.k] = "room";
 
   return { inSet, blocked: false, badLengths, seconds: dur(), locked: false, cut };
+}
+
+/**
+ * Mark each row in or out of the set (r.inSet, r.cut) and work out the
+ * running order. Returns the payload's `set` fields that depend on them.
+ */
+export function layoutSet(rows, roster, settings = {}) {
+  const sel = selectSet(rows, roster, { settings });
+  for (const r of rows) {
+    r.inSet = sel.inSet.has(r.k);
+    r.cut = r.inSet ? null : (sel.cut && sel.cut[r.k]) || null;
+  }
+  const ordered = sel.blocked
+    ? { order: [], mode: "auto" }
+    : runningOrder(rows.filter((r) => r.inSet), {
+      engine: settings.orderEngine === "curve" ? "curve" : "pacing",
+      roster,
+      weights: WEIGHTS,
+    });
+  return {
+    count: sel.inSet.size,
+    seconds: sel.seconds,
+    locked: !!sel.locked,
+    blocked: sel.blocked,
+    badLengths: sel.badLengths,
+    inSet: sel.inSet,
+    order: ordered.order,
+    orderMode: ordered.mode,
+  };
 }

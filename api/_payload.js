@@ -1,5 +1,5 @@
-import { WEIGHTS, LEARN_VALUES, songKey, runningOrder } from "../setlist.js";
-import { selectSet } from "./_selection.js";
+import { WEIGHTS, LEARN_VALUES, songKey } from "../setlist.js";
+import { layoutSet } from "../selection.js";
 
 /**
  * The wire shape every page speaks: one row per song with a votes map and a
@@ -68,19 +68,7 @@ export function buildPayload(state) {
 
   // Which songs are actually in the set, worked out here so every page agrees
   // on it rather than each deciding for itself.
-  const sel = selectSet(rows, roster, { settings });
-  for (const r of rows) {
-    r.inSet = sel.inSet.has(r.k);
-    r.cut = r.inSet ? null : (sel.cut && sel.cut[r.k]) || null;
-  }
-  const inSetRows = rows.filter((r) => r.inSet);
-  const ordered = sel.blocked
-    ? { order: [], mode: "auto" }
-    : runningOrder(inSetRows, {
-      engine: settings.orderEngine === "curve" ? "curve" : "pacing",
-      roster,
-      weights: WEIGHTS,
-    });
+  const sel = layoutSet(rows, roster, settings);
 
   return {
     voters: roster,
@@ -107,8 +95,10 @@ export function buildPayload(state) {
       // bind, so no song can honestly be called in or out.
       blocked: sel.blocked,
       badLengths: sel.badLengths,
-      order: ordered.order,
-      orderMode: ordered.mode,
+      order: sel.order,
+      orderMode: sel.orderMode,
+      // What a lock froze, so the setlist page can rework the set itself.
+      lockedKeys: settings.locked ? settings.lockedKeys || [] : [],
     },
     show: {
       id: show.id || "oct",
@@ -130,6 +120,7 @@ export function buildPayload(state) {
       leads: settings.leads || [],
       eras: settings.eras || [],
       orderEngine: settings.orderEngine === "curve" ? "curve" : "pacing",
+      tieBreak: settings.tieBreak === "shorter" ? "shorter" : "energy",
     },
     rows,
   };

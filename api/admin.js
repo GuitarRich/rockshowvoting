@@ -12,7 +12,7 @@ import {
   upsertLibrary,
   SETTING_KEYS,
 } from "./_sheets.js";
-import { selectSet } from "./_selection.js";
+import { selectSet } from "../selection.js";
 import { songKey, keyboardValue } from "../setlist.js";
 import { requireOwner, requireWritable } from "./_auth.js";
 import {

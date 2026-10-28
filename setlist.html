@@ -200,6 +200,7 @@ import {
   VERSION, mmss, lenSecs, esc, searchLinks, moveKey, scoreRow, songMeta,
 } from "./setlist.js";
 import { mkCode, rdCode, readVotesCSV } from "./codes.js";
+import { layoutSet } from "./selection.js";
 import {
   API, currentShowId, getData, post, bandCode, setBandCode, me, setMe, navHtml, link, showSwitcher, wireSwitcher,
   ownerSession, ownerLogin, ownerLogout, ownerExpired,
@@ -234,27 +235,50 @@ function setStatus() {
   else { $("banner").innerHTML = "<b>That didn't save — " + esc(lastErr) + ".</b>"; $("banner").classList.remove("hide"); }
 }
 
-/** Every write returns the fresh payload, so the page redraws from the truth. */
-async function write(path, body) {
+/** Rework the set from DATA.rows as they stand now, with the same code the API runs. */
+function relayout() {
+  const settings = {
+    ...DATA.settings, maxSongs: DATA.set.maxSongs, locked: DATA.set.locked, lockedKeys: DATA.set.lockedKeys || [],
+  };
+  const { inSet, ...set } = layoutSet(DATA.rows, DATA.voters, settings);
+  DATA.set = { ...DATA.set, ...set };
+}
+
+/**
+ * Save a change. `change` applies it to DATA first, so the page moves at once
+ * instead of waiting on the sheet. Saves go one at a time, in the order they
+ * were made: two at once would each read the sheet before the other wrote.
+ * Each save returns the fresh payload, but only the last of a burst redraws
+ * from it, since earlier answers are already behind the screen. A save that
+ * fails reloads what the sheet really says.
+ */
+let queue = Promise.resolve();
+function write(path, body, change) {
+  if (change) { change(); relayout(); draw(); }
   saving++;
   setStatus();
-  try {
-    const d = await post(path, SHOW, body);
-    if (d.data) DATA = d.data;
-    lastOk = true;
-    return d;
-  } catch (e) {
-    lastOk = false;
-    lastErr = e.message || String(e);
-    if (e.status === 403 && path === "/admin") { OWNER = false; ownerExpired(); drawOwner(); }
-    return null;
-  } finally {
-    saving--;
-    setStatus();
-    draw();
-  }
+  const run = queue.then(async () => {
+    try {
+      const d = await post(path, SHOW, body);
+      if (d.data && saving === 1) DATA = d.data;
+      lastOk = true;
+      return d;
+    } catch (e) {
+      lastOk = false;
+      lastErr = e.message || String(e);
+      if (e.status === 403 && path === "/admin") { OWNER = false; ownerExpired(); }
+      try { DATA = await getData(SHOW); } catch (e2) { /* keep what is on screen */ }
+      return null;
+    } finally {
+      saving--;
+      setStatus();
+      if (!saving) draw();
+    }
+  });
+  queue = run;
+  return run;
 }
-const admin = (body) => write("/admin", body);
+const admin = (body, change) => write("/admin", body, change);
 const isOwner = () => OWNER;
 
 /* ---------- gate ---------- */
@@ -293,7 +317,7 @@ function drawOwner() {
       '<button class="btn ghost" id="ownVote">' + (closed ? "Reopen voting" : "Close voting") + '</button>' +
       '<button class="btn ghost" id="ownOff">Sign out</button>' +
       (closed ? '<span class="note2">Voting is closed: only you can change votes now.</span>' : "");
-    $("ownVote").onclick = () => admin({ settings: { votingClosed: !closed } });
+    $("ownVote").onclick = () => admin({ settings: { votingClosed: !closed } }, () => { DATA.show.votingClosed = !closed; });
     $("ownOff").onclick = async () => { await ownerLogout(); location.reload(); };
     return;
   }
@@ -341,11 +365,24 @@ const savedOrder = () => DATA.set.orderMode === "saved";
 
 function setForce(r, st) {
   const next = r.force === st ? "" : st;
-  admin({ force: [{ key: r.k, value: next }] });
+  admin({ force: [{ key: r.k, value: next }] }, () => { r.force = next; });
 }
 function reorder(from, to) {
   const keys = moveKey(ordered().map((r) => r.k), from, to);
-  admin({ order: keys.map((k, i) => ({ key: k, pos: i + 1 })) });
+  const pos = new Map(keys.map((k, i) => [k, i + 1]));
+  admin({ order: keys.map((k, i) => ({ key: k, pos: i + 1 })) },
+    () => DATA.rows.forEach((r) => { r.order = pos.get(r.k) || 0; }));
+}
+/** Freeze exactly what is in the set now, worked out as if unlocked — as the API does. */
+function lockSet(lock) {
+  admin({ lockSet: lock }, DATA.set.blocked ? null : () => {
+    DATA.set.locked = false;
+    DATA.set.lockedKeys = [];
+    if (!lock) return;
+    relayout();
+    DATA.set.lockedKeys = DATA.rows.filter((r) => r.inSet).map((r) => r.k);
+    DATA.set.locked = true;
+  });
 }
 
 /* ---------- row pieces ---------- */
@@ -389,7 +426,11 @@ function learnButtons(r) {
     const b = document.createElement("button");
     b.textContent = t;
     if (mine === v) b.classList.add("on");
-    b.onclick = (e) => { e.stopPropagation(); write("/learn", { person: ME, learn: { [r.k]: mine === v ? "" : v } }); };
+    b.onclick = (e) => {
+      e.stopPropagation();
+      const next = mine === v ? "" : v;
+      write("/learn", { person: ME, learn: { [r.k]: next } }, () => { r.learn = { ...(r.learn || {}), [ME]: next }; });
+    };
     el.appendChild(b);
   });
   return el;
@@ -423,7 +464,12 @@ function voteEditor(r) {
       if (isPick(r) && mine !== v) {
         DATA.rows.filter((x) => isPick(x) && x.artist === r.artist && x.k !== r.k).forEach((x) => { votes[x.k] = ""; });
       }
-      write("/vote", { voter: ME, votes });
+      write("/vote", { voter: ME, votes }, () => {
+        for (const [k, val] of Object.entries(votes)) {
+          const row = DATA.rows.find((x) => x.k === k);
+          if (row) row.votes = { ...row.votes, [ME]: val };
+        }
+      });
     };
     ed.querySelector(".opts").appendChild(b);
   });
@@ -486,7 +532,10 @@ function limitControl() {
       '<span class="note" style="margin:0">Set by ' + esc(DATA.show.owner || "the owner") + '</span>');
     return box;
   }
-  const apply = (v) => admin({ maxSongs: Math.max(0, Math.min(60, v)) });
+  const apply = (v) => {
+    const max = Math.max(0, Math.min(60, v));
+    admin({ maxSongs: max }, () => { DATA.set.maxSongs = max; DATA.settings.maxSongs = max; });
+  };
   const minus = document.createElement("button"); minus.textContent = "−"; minus.onclick = () => apply((n || DATA.set.count) - 1);
   const input = document.createElement("input"); input.type = "number"; input.className = "val mono"; input.min = 0; input.max = 60;
   input.value = n; input.onchange = () => apply(Math.round(Number(input.value) || 0));
@@ -524,7 +573,7 @@ function drawSet() {
     const b = document.createElement("button");
     b.className = "btn ghost";
     b.textContent = DATA.set.locked ? "Unlock & follow the vote" : "Lock this set";
-    b.onclick = () => admin({ lockSet: !DATA.set.locked });
+    b.onclick = () => lockSet(!DATA.set.locked);
     lock.appendChild(b);
   }
   el.appendChild(lock);
@@ -537,11 +586,13 @@ function drawSet() {
   if (isOwner()) {
     if (savedOrder()) {
       const b = document.createElement("button"); b.textContent = "Back to automatic";
-      b.onclick = () => admin({ clearOrder: true }); bar.appendChild(b);
+      b.onclick = () => admin({ clearOrder: true }, () => DATA.rows.forEach((r) => { r.order = 0; }));
+      bar.appendChild(b);
     }
     if (DATA.rows.some((r) => r.force)) {
       const b = document.createElement("button"); b.textContent = "Clear in/out";
-      b.onclick = () => admin({ force: DATA.rows.filter((r) => r.force).map((r) => ({ key: r.k, value: "" })) });
+      b.onclick = () => admin({ force: DATA.rows.filter((r) => r.force).map((r) => ({ key: r.k, value: "" })) },
+        () => DATA.rows.forEach((r) => { r.force = ""; }));
       bar.appendChild(b);
     }
   }
@@ -717,9 +768,7 @@ $("lrows").addEventListener("click", (e) => {
   const r = DATA.rows.find((x) => x.k === k);
   const cur = (r.learn && r.learn[ME]) || "";
   const next = cur === b.dataset.v ? "" : b.dataset.v;
-  r.learn = { ...(r.learn || {}), [ME]: next };   // show it now; the save redraws from the sheet
-  drawLearn();
-  write("/learn", { person: ME, learn: { [k]: next } });
+  write("/learn", { person: ME, learn: { [k]: next } }, () => { r.learn = { ...(r.learn || {}), [ME]: next }; });
 });
 
 const cellClass = { MUST: "v3", YES: "v2", MAYBE: "v1", NO: "v0", X: "v3" };
