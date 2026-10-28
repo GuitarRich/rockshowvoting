@@ -10,7 +10,9 @@
 /* Screen: the app's stage. Print: a clean black-on-white book. */
 #lb{background:var(--stage);color:var(--cream);font-family:var(--sans);
   min-height:100vh;padding-bottom:var(--s6);font-size:16px;line-height:1.5}
-#lb .wrap{max-width:820px;margin:0 auto;padding:0 var(--s4)}
+/* The column grows with the text size (--lyr), so a line that fits at 100%
+   still fits bigger; only the edge of the browser makes it wrap. */
+#lb .wrap{max-width:calc(1100px * var(--lyr, 1));margin:0 auto;padding:0 var(--s4)}
 /* The header is shared chrome, so it lines up with the other two pages rather
    than with the book column — the logo shouldn't shift when you navigate. The
    narrow column below is a reading measure for the words themselves. */
