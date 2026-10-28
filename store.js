@@ -97,12 +97,24 @@ function apiError(res, d) {
   return Object.assign(new Error((d && d.error) || "HTTP " + res.status), { status: res.status });
 }
 
+/**
+ * The owner never needs a band code (the server takes the owner's session in
+ * its place), so for the owner every show reads as one that asks for none,
+ * and no page ever prompts for it.
+ */
+async function ownerView(data) {
+  if (data && data.show && data.show.requireBandCode && await ownerSession()) {
+    data.show.requireBandCode = false;
+  }
+  return data;
+}
+
 export async function getData(show) {
   const r = await fetch(API + "/data?show=" + encodeURIComponent(show), { cache: "no-store" });
   const d = await r.json().catch(() => ({}));
   if (!r.ok || !d.ok) throw apiError(r, d);
   try { localStorage.setItem("rs_last_" + show, JSON.stringify(d.data)); } catch (e) { /* optional */ }
-  return d.data;
+  return ownerView(d.data);
 }
 
 /** The last payload this device saw, for drawing something while offline. */
@@ -130,6 +142,7 @@ export async function post(path, show, body) {
   const d = await r.json().catch(() => ({}));
   if (r.status === 401) setBandCode(show, "");
   if (!r.ok || !d.ok) throw apiError(r, d);
+  if (d.data) await ownerView(d.data);
   return d;
 }
 

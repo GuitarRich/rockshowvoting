@@ -68,6 +68,8 @@ Two shared codes. Neither is a login; they stop a stranger with the link writing
 
 Typing the owner's name grants nothing — only the owner code does.
 
+The owner code also stands in for any band code: once signed in as the owner, no page asks for one.
+
 The owner code is typed once per device: `/api/session` checks it and sets an HttpOnly `rs_owner` cookie, good for 30 days, that every owner call accepts in place of the code. The header shows **Owner · sign out** while it is live. The cookie is an expiry signed with the owner code, so changing `OWNER_SECRET` signs every device out.
 
 **Closing voting** (setlist owner bar, or the admin page's settings) stops the ballot for that show: the vote page says so and the API refuses votes. The owner can still change anything, votes included. Learning, rehearsals and lyrics carry on as normal.

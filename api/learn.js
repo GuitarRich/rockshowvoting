@@ -22,7 +22,7 @@ export default async function handler(req, res) {
     const person = String(body.person || body.name || body.voter || "").trim();
     if (!person) return fail(res, 400, "No name supplied.");
     const state = await readAll(show);
-    requireBand(show, body, state.settings);
+    requireBand(show, body, state.settings, req);
     // Only the band practises: voting on the setlist does not put you on stage.
     const known = onList(state.settings.band, person);
     if (!known) {

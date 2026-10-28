@@ -23,7 +23,7 @@ export default async function handler(req, res) {
     const voter = String(body.voter || body.name || "").trim();
     if (!voter) return fail(res, 400, "No voter name supplied.");
     const state = await readAll(show);
-    requireBand(show, body, state.settings);
+    requireBand(show, body, state.settings, req);
     requireVotingOpen(state.settings, body, req);
     const known = onList(state.settings.voters, voter);
     if (!known) {

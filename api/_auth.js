@@ -7,6 +7,7 @@
  *               BAND_SECRET where a show has none. Every write, on shows that
  *               ask for it. A show's own code works for that show only, so
  *               one band cannot save to another band's show.
+ *               The owner code (or session) passes wherever the band code would.
  *   owner code  OWNER_SECRET every owner action (falls back to APP_SECRET, the
  *                            key October's admin page has always used)
  *
@@ -23,8 +24,10 @@ import { createHmac, timingSafeEqual } from "node:crypto";
 const clean = (v) => String(v ?? "").trim().replace(/^(['"])(.*)\1$/, "$2").trim();
 const err = (status, message) => Object.assign(new Error(message), { status });
 
-export function requireBand(show, body, settings) {
+/** The band code, on shows that ask for one. The owner never needs it. */
+export function requireBand(show, body, settings, req) {
   if (!show || !show.requireBandCode) return;
+  if (isOwner(body, req)) return;
   const secret = clean(settings && settings.bandCode) || clean(process.env.BAND_SECRET);
   if (!secret) throw err(500, "This show has no band code yet. Set one on the shows page.");
   if (clean(body && body.code) !== secret) throw err(401, "Wrong band code.");

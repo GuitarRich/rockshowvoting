@@ -91,3 +91,12 @@ test("closing voting stops band votes, but not the owner", async () => {
   await call(admin, { method: "POST", body: { show: "nov", ownerCode: "owner", settings: { votingClosed: false } } });
   assert.equal((await call(vote, { method: "POST", body: ballot })).status, 200);
 });
+
+test("the owner never needs the band code", async () => {
+  fresh();
+  const cookie = "rs_owner=" + sessionToken();
+  const ballot = { show: "nov", voter: "Rich", votes: {} };
+  assert.equal((await call(vote, { method: "POST", body: ballot })).status, 401, "a bandmate still does");
+  assert.equal((await call(vote, { method: "POST", body: ballot, headers: { cookie } })).status, 200);
+  assert.equal((await call(vote, { method: "POST", body: { ...ballot, ownerCode: "owner" } })).status, 200);
+});
