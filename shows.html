@@ -35,8 +35,8 @@
   <div class="wrap">
     <div class="card" id="gate">
       <h2>Owner code</h2>
-      <p class="note2">Managing shows needs the owner code (OWNER_SECRET in Vercel). It is kept on this page only,
-        never stored &mdash; retype it each visit. It stops a bandmate changing things by accident; it is not a login.</p>
+      <p class="note2">Managing shows needs the owner code (OWNER_SECRET in Vercel). Typed once, this device
+        stays signed in for 30 days (sign out from the header). It stops a bandmate changing things by accident; it is not real security.</p>
       <div class="row2"><input id="code" type="password" placeholder="Owner code" autocomplete="off" style="max-width:260px;margin:0">
         <button class="btn go" id="unlock">Unlock</button></div>
       <div class="msg" id="gateMsg"></div>
@@ -74,16 +74,15 @@
 <script type="module">
 import "./header.js";
 import { VERSION } from "./setlist.js";
-import { API, esc, navHtml, link, currentShowId } from "./store.js";
+import { API, esc, navHtml, link, currentShowId, ownerSession, ownerLogin, ownerExpired } from "./store.js";
 
 const $ = (id) => document.getElementById(id);
-let CODE = "";
 let SHOWS = [], DEFAULT = "";
 
 async function api(body) {
   const r = await fetch(API + "/shows", {
     method: "POST", headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ ownerCode: CODE, ...body }),
+    body: JSON.stringify(body),
   });
   const d = await r.json().catch(() => ({}));
   if (!r.ok || !d.ok) throw Object.assign(new Error(d.error || "HTTP " + r.status), { status: r.status });
@@ -204,22 +203,24 @@ $("create").onclick = async () => {
 };
 
 function relock() {
-  CODE = "";
+  ownerExpired();
   $("main").classList.add("hide"); $("gate").classList.remove("hide");
   $("gateMsg").className = "msg err"; $("gateMsg").textContent = "That owner code wasn't accepted.";
   $("status").textContent = "Locked"; $("status").className = "status";
 }
+function enter() {
+  $("gate").classList.add("hide"); $("main").classList.remove("hide");
+  $("status").textContent = "Owner"; $("status").className = "status ok";
+  draw();
+}
 async function unlock() {
-  CODE = $("code").value.trim();
-  if (!CODE) return;
+  const code = $("code").value.trim();
+  if (!code) return;
   $("gateMsg").className = "msg"; $("gateMsg").textContent = "Checking…";
   try {
-    // A no-op update is the cheapest way to ask whether the code is right.
-    await load();
-    await api({ update: { id: DEFAULT || (SHOWS[0] && SHOWS[0].id) } });
-    $("gate").classList.add("hide"); $("main").classList.remove("hide");
-    $("status").textContent = "Owner"; $("status").className = "status ok";
-    draw();
+    await ownerLogin(code);
+    // Reload so the header shows the session too; boot lets us straight in.
+    location.reload();
   } catch (err) {
     relock();
     if (err.status !== 403) $("gateMsg").textContent = "Couldn't check: " + err.message;
@@ -231,5 +232,9 @@ $("code").onkeydown = (e) => { if (e.key === "Enter") unlock(); };
 (async function boot() {
   $("ver").textContent = VERSION;
   $("nav").innerHTML = navHtml(await currentShowId(), "shows.html");
+  // Already signed in on this device: skip the gate.
+  if (await ownerSession()) {
+    try { await load(); enter(); } catch (err) { $("gateMsg").className = "msg err"; $("gateMsg").textContent = "Couldn't load the shows: " + err.message; }
+  }
 })();
 </script>

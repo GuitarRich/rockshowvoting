@@ -7,11 +7,11 @@ process.env.SHEET_ID = "test";
 process.env.BAND_SECRET = "band";
 process.env.OWNER_SECRET = "owner";
 
-export async function call(handler, { method = "GET", query = {}, body } = {}) {
+export async function call(handler, { method = "GET", query = {}, body, headers: reqHeaders = {} } = {}) {
   const headers = {};
   let status = 200;
   let json;
-  const req = { method, query, body: body || {}, headers: {} };
+  const req = { method, query, body: body || {}, headers: reqHeaders };
   const res = {
     setHeader(k, v) {
       headers[k.toLowerCase()] = v;

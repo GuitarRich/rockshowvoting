@@ -62,6 +62,36 @@ export const setBandCode = (show, c) => store.set("rs_code_" + show, String(c ||
 export const me = () => store.get("setlist.me");
 export const setMe = (n) => store.set("setlist.me", n);
 
+/* ----- owner session: the server's rs_owner cookie, typed once per device ----- */
+let OWNER = null;
+/** Resolves to true when this browser holds a live owner session. */
+export function ownerSession() {
+  OWNER ||= fetch(API + "/session", { cache: "no-store" })
+    .then((r) => r.json()).then((d) => !!(d && d.owner)).catch(() => false);
+  return OWNER;
+}
+/** Check the owner code and start a session; throws on a wrong code. */
+export async function ownerLogin(code) {
+  const r = await fetch(API + "/session", {
+    method: "POST", headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ ownerCode: String(code || "").trim() }),
+  });
+  const d = await r.json().catch(() => ({}));
+  if (!r.ok || !d.ok) throw apiError(r, d);
+  OWNER = Promise.resolve(true);
+  return true;
+}
+export async function ownerLogout() {
+  OWNER = Promise.resolve(false);
+  await fetch(API + "/session", {
+    method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ logout: true }),
+  }).catch(() => {});
+}
+/** Forget a session the server has stopped accepting (a 403 on an owner call). */
+export function ownerExpired() {
+  OWNER = Promise.resolve(false);
+}
+
 /** An error that knows its HTTP status, so a 401 can ask for the code again. */
 function apiError(res, d) {
   return Object.assign(new Error((d && d.error) || "HTTP " + res.status), { status: res.status });

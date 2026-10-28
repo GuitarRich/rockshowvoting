@@ -77,7 +77,7 @@
 <div class="card" id="gate">
   <h2>Owner code</h2>
   <p>The owner code (<strong>OWNER_SECRET</strong> in Vercel, or the old admin key if that is all that is set).
-    Not stored anywhere &mdash; retype it each visit. It stops a bandmate changing the list by accident; it is not a login.</p>
+    Typed once, this device stays signed in for 30 days (sign out from the header). It stops a bandmate changing the list by accident; it is not real security.</p>
   <div style="max-width:340px"><input type="password" id="key" placeholder="owner code" autocomplete="off"></div>
   <div class="btnrow"><button class="btn" id="unlock">Unlock</button></div>
   <div class="status" id="gateStatus"></div>
@@ -159,6 +159,8 @@
       <div><label>Running order engine</label><select id="sEngine"><option value="pacing">Pacing — best fit to a set shape, ends protected</option><option value="curve">Energy curve — seed and repair</option></select></div>
       <div style="grid-column:1/-1"><label>Lead singer labels (comma separated; blank = no lead column)</label><input id="sLeads"></div>
       <div style="grid-column:1/-1"><label>Era labels (comma separated)</label><input id="sEras"></div>
+      <div style="grid-column:1/-1"><label style="display:inline-flex;gap:6px;align-items:center;text-transform:none;letter-spacing:0;font-size:13px;color:inherit">
+        <input type="checkbox" id="sClosed" style="width:auto"> Voting closed &mdash; the ballot stops taking votes; you can still change anything</label></div>
     </div>
     <div style="margin-top:10px"><label>Warnings on the setlist page</label>
       <div id="sWarn" class="btnrow"></div></div>
@@ -186,7 +188,7 @@
 <script src="config.js"></script>
 <script>
 const API = (window.SETLIST_API || '').trim();
-let KEY = '', STATE = null;
+let STATE = null;
 const LINKED_SHOW = (new URLSearchParams(location.search).get('show') || '').trim().toLowerCase();
 let SHOW = LINKED_SHOW || 'oct';
 let SHOWS = [];
@@ -200,7 +202,8 @@ async function loadShows(){
   }catch(ignore){}
   // The shared header (header.js) shows the show's name, the switcher and the nav.
 }
-const adminBody = extra => JSON.stringify({show:SHOW, ownerCode:KEY, ...extra});
+// The owner's session cookie rides along with every call; no code in the body.
+const adminBody = extra => JSON.stringify({show:SHOW, ...extra});
 const pendingAdd = [];      // rows queued but not yet in the sheet
 const removals = new Set(); // 'Song|Artist'
 const edits = {};           // 'Song|Artist' -> {field: value}
@@ -390,23 +393,31 @@ document.getElementById('apply').onclick = async ()=>{
 
 document.getElementById('reload').onclick = ()=>load().catch(e=>msg('Reload failed: '+esc(e.message),'err'));
 
+// A no-op admin call: it succeeds only for the owner, and brings the data back.
+async function enter(){
+  const r = await fetch(API+'/admin',{method:'POST',headers:{'Content-Type':'application/json'},
+    body:adminBody({add:[], update:[], remove:[]})});
+  const j = await r.json();
+  if(!j.ok) throw new Error(j.error||'unknown error');
+  document.getElementById('gate').classList.add('hide');
+  document.getElementById('main').classList.remove('hide');
+  STATE = j.data; fillSettings(); draw();
+  const secs=[...new Set(STATE.rows.map(x=>x.section).filter(Boolean))];
+  document.getElementById('sections').innerHTML = secs.map(s=>'<option value="'+esc(s)+'">').join('');
+  syncFooter();
+}
 document.getElementById('unlock').onclick = async ()=>{
-  KEY = document.getElementById('key').value;
+  const code = document.getElementById('key').value.trim();
   const st = document.getElementById('gateStatus');
-  if(!KEY){ st.className='status err'; st.textContent='Enter the key first.'; return; }
+  if(!code){ st.className='status err'; st.textContent='Enter the owner code first.'; return; }
   st.className='status'; st.textContent='Checking…';
   try{
-    // a no-op admin call — succeeds only if the key is right
-    const r = await fetch(API+'/admin',{method:'POST',headers:{'Content-Type':'application/json'},
-      body:adminBody({add:[], update:[], remove:[]})});
+    const r = await fetch(API+'/session',{method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({ownerCode:code})});
     const j = await r.json();
     if(!j.ok) throw new Error(j.error||'unknown error');
-    document.getElementById('gate').classList.add('hide');
-    document.getElementById('main').classList.remove('hide');
-    STATE = j.data; fillSettings(); draw();
-    const secs=[...new Set(STATE.rows.map(x=>x.section).filter(Boolean))];
-    document.getElementById('sections').innerHTML = secs.map(s=>'<option value="'+esc(s)+'">').join('');
-    syncFooter();
+    // Reload so the header shows the session too; the boot below lets us straight in.
+    location.reload();
   }catch(e){
     st.className='status err';
     st.textContent = /owner code|admin key/i.test(e.message) ? 'That code is not right.' : 'Could not reach the backend: '+e.message;
@@ -425,6 +436,7 @@ function fillSettings(){
   v('sOwner', sh.owner); v('sMax', s.maxSongs); v('sBudget', Math.round((s.budgetSeconds||0)/60));
   v('sGap', s.gapSeconds); v('sCap', s.maxPerArtist); v('sEngine', s.orderEngine||'pacing');
   v('sLeads', (s.leads||[]).join(', ')); v('sEras', (s.eras||[]).join(', '));
+  document.getElementById('sClosed').checked = !!sh.votingClosed;
   document.getElementById('sWarn').innerHTML = WARNINGS.map(([id,label]) =>
     '<label style="display:inline-flex;gap:6px;align-items:center;margin-right:14px"><input type="checkbox" data-w="'+id+'"'+
     ((s.warnings||[]).includes(id)?' checked':'')+' style="width:auto"> '+esc(label)+'</label>').join('');
@@ -444,6 +456,7 @@ document.getElementById('saveSettings').onclick = async ()=>{
     voters:list('sVoters'), band:list('sPlayers'), maxSongs:+g('sMax')||0,
     budgetSeconds:Math.round((+g('sBudget')||0)*60), gapSeconds:+g('sGap')||0, maxPerArtist:+g('sCap')||0,
     orderEngine:g('sEngine'), leads:list('sLeads'), eras:list('sEras'),
+    votingClosed:document.getElementById('sClosed').checked,
     warnings:[...document.querySelectorAll('#sWarn input:checked')].map(x=>x.dataset.w),
   };
   try{
@@ -452,13 +465,20 @@ document.getElementById('saveSettings').onclick = async ()=>{
     const j = await r.json();
     if(!j.ok) throw new Error(j.error||'unknown error');
     if(g('sName')) await fetch(API+'/shows',{method:'POST',headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({ownerCode:KEY, update:{id:SHOW, name:g('sName')}})});
+      body:JSON.stringify({update:{id:SHOW, name:g('sName')}})});
     STATE = j.data; fillSettings(); draw();
     st.className='status ok'; st.textContent='Saved.';
   }catch(e){ st.className='status err'; st.textContent='Not saved: '+e.message; }
 };
 
-loadShows();
+// Already signed in on this device: skip the gate.
+(async ()=>{
+  await loadShows();
+  try{
+    const j = await (await fetch(API+'/session',{cache:'no-store'})).json();
+    if(j.ok && j.owner) await enter();
+  }catch(ignore){ /* the gate stays up */ }
+})();
 if(!API){ msg('config.js has no SETLIST_API path — set that up first.','err'); }
 </script>
 </body>

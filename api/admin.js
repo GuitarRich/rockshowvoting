@@ -31,13 +31,13 @@ import {
  *        order:[{key, pos}], clearOrder:true,
  *        force:[{key, value:'IN'|'OUT'|''}], maxSongs:20, lockSet:true|false,
  *        keyboard:[{key, value:'ESSENTIAL'|'ADDS'|'NONE'|''}], gigDate:'2026-10-24',
- *        settings:{showName, voters:[...], ...}}
+ *        settings:{showName, voters:[...], votingClosed:true|false, ...}}
  */
 export default async function handler(req, res) {
   if (methodGuard(req, res, "POST")) return;
   return guarded(res, async () => {
     const body = await readBody(req);
-    requireOwner(body);
+    requireOwner(body, req);
     const show = await resolveShow(showParam(req, body));
     requireWritable(show);
 
@@ -246,6 +246,7 @@ export default async function handler(req, res) {
 const LIST_KEYS = ["voters", "band", "warnings", "leads", "eras"];
 const NUMBER_KEYS = ["budgetSeconds", "gapSeconds", "maxPerArtist", "maxSongs"];
 const TEXT_KEYS = ["showName", "occasion", "bandName", "owner"];
+const BOOL_KEYS = ["votingClosed"];
 const CHOICE_KEYS = { tieBreak: ["energy", "shorter"], orderEngine: ["pacing", "curve"] };
 
 /**
@@ -267,6 +268,8 @@ export function validSettings(input, current) {
       values[k] = Math.floor(n);
     } else if (TEXT_KEYS.includes(k)) {
       values[k] = String(raw ?? "").trim().slice(0, 120);
+    } else if (BOOL_KEYS.includes(k)) {
+      values[k] = raw === true || /^(true|yes|1)$/i.test(String(raw ?? "").trim());
     } else if (CHOICE_KEYS[k]) {
       if (!CHOICE_KEYS[k].includes(raw)) return { error: `${k} must be one of ${CHOICE_KEYS[k].join(", ")}.` };
       values[k] = raw;

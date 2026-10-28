@@ -119,6 +119,7 @@ export function buildPayload(state) {
       gigDate: settings.gigDate || show.gigDate || "",
       status: show.status || "current",
       requireBandCode: !!show.requireBandCode,
+      votingClosed: !!settings.votingClosed,
     },
     settings: {
       budgetSeconds: Number(settings.budgetSeconds) || 0,

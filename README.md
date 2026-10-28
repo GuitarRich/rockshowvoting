@@ -11,12 +11,12 @@ Every page takes `?show=<id>`. A link with no show opens the next show by gig da
 | Page | What it is |
 |---|---|
 | `vote.html` | The ballot. One song at a time (with a track list on a desktop) or the whole list. Must play / Yes / Maybe / Pass, pick-one groups, organiser-locked songs. |
-| `setlist.html` | The set; **Learn** (who knows what — each player marks songs Not started / In progress / Know it, with the band chart and filters); the full ranking with why each song missed; who voted what; and Tools (vote pooling, CSV export, storage check). Owner controls: song count, In/Out, drag reorder, lock. |
+| `setlist.html` | The set; **Learn** (who knows what — each player marks songs Not started / In progress / Know it, with the band chart and filters); the full ranking with why each song missed; who voted what; and Tools (vote pooling, CSV export, storage check). Owner controls: song count, In/Out, drag reorder, lock, close voting. |
 | `lyrics.html` | The lyric book: words and chords in set order, chord shapes in the song's tuning, autoscroll, print. |
 | `click.html` | The click track: a flashing lamp and a click at the song's tempo, tap tempo, saved per song. |
 | `availability.html` | Rehearsal calendar up to the gig. |
 | `shows.html` | **Admin** in the nav. Every show: rename, re-date, open or finished, band code on or off, and start a new one (copying an earlier show's songs and settings). Owner code. |
-| `admin.html` | One show's songs (add, bulk paste, edit, remove) and settings (who votes, who plays, set size, budget, cap, warnings). Owner code. |
+| `admin.html` | One show's songs (add, bulk paste, edit, remove) and settings (who votes, who plays, set size, budget, cap, warnings, voting closed). Owner code. |
 
 The home page (`index.html`) opens the ballot for whichever show is **next up** — the soonest gig that hasn't happened, skipping finished ones. `results.html` redirects to `setlist.html`, and `learn.html` to its Learn tab; all keep `?show=`.
 
@@ -41,7 +41,7 @@ The `Shows` tab lists every show: `Id, Prefix, Name, GigDate, Status, RequireBan
 
 ### Settings (per show)
 
-`showName`, `occasion`, `bandName`, `owner`, `gigDate`, `voters` and `band` (JSON lists — the band must also be voters), `maxSongs` (0 = use the time budget), `budgetSeconds` (0 = no clock), `gapSeconds`, `maxPerArtist` (0 = no limit), `orderEngine` (`pacing` or `curve`), `tieBreak` (`energy` or `shorter`), `warnings`, `leads`, `eras`, `locked`, `lockedKeys`. A missing key falls back to its default.
+`showName`, `occasion`, `bandName`, `owner`, `gigDate`, `voters` and `band` (JSON lists — the band must also be voters), `maxSongs` (0 = use the time budget), `budgetSeconds` (0 = no clock), `gapSeconds`, `maxPerArtist` (0 = no limit), `orderEngine` (`pacing` or `curve`), `tieBreak` (`energy` or `shorter`), `warnings`, `leads`, `eras`, `locked`, `lockedKeys`, `votingClosed` (`TRUE` = the ballot refuses votes from everyone but the owner). A missing key falls back to its default.
 
 The lists are the only authority on who counts. Taking a name off stops that person counting but deletes nothing; putting it back restores them.
 
@@ -67,6 +67,10 @@ Two shared codes. Neither is a login; they stop a stranger with the link writing
 | `OWNER_SECRET` | Changing the set, the songs, the settings, creating shows, pooling others' votes. Falls back to `APP_SECRET` if unset. |
 
 Typing the owner's name grants nothing — only the owner code does.
+
+The owner code is typed once per device: `/api/session` checks it and sets an HttpOnly `rs_owner` cookie, good for 30 days, that every owner call accepts in place of the code. The header shows **Owner · sign out** while it is live. The cookie is an expiry signed with the owner code, so changing `OWNER_SECRET` signs every device out.
+
+**Closing voting** (setlist owner bar, or the admin page's settings) stops the ballot for that show: the vote page says so and the API refuses votes. The owner can still change anything, votes included. Learning, rehearsals and lyrics carry on as normal.
 
 ## Scoring and the set
 

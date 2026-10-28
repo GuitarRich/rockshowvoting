@@ -81,6 +81,8 @@ export const SETTINGS_DEFAULTS = Object.freeze({
   maxSongs: 0,
   locked: false,
   lockedKeys: [],
+  // Closed: the ballot stops taking votes. Only the owner can still write one.
+  votingClosed: false,
   gigDate: "",
   showName: "",
   occasion: "",
@@ -108,7 +110,7 @@ const JSON_SETTINGS = ["lockedKeys", "voters", "band", "warnings", "leads", "era
 const NUMBER_SETTINGS = ["maxSongs", "budgetSeconds", "gapSeconds", "maxPerArtist"];
 const STRING_SETTINGS = ["showName", "occasion", "bandName", "owner", "tieBreak", "orderEngine", "bandCode"];
 export const SETTING_KEYS = [
-  "locked", "gigDate", ...JSON_SETTINGS, ...NUMBER_SETTINGS, ...STRING_SETTINGS,
+  "locked", "votingClosed", "gigDate", ...JSON_SETTINGS, ...NUMBER_SETTINGS, ...STRING_SETTINGS,
 ];
 
 let cached = null;
@@ -542,6 +544,7 @@ export function parseSettings(rows) {
     const key = String(r[0] || "").trim();
     const raw = String(r[1] ?? "").trim();
     if (key === "locked") out.locked = truthy(raw);
+    else if (key === "votingClosed") out.votingClosed = truthy(raw);
     else if (key === "gigDate") out.gigDate = /^\d{4}-\d{2}-\d{2}$/.test(raw) ? raw : "";
     else if (key === "maxSongs") out.maxSongs = Math.max(0, Number(raw) || 0);
     else if (NUMBER_SETTINGS.includes(key)) {

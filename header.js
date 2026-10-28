@@ -9,7 +9,9 @@
  * `data-status="none"` hides the save pill on pages that have no saving.
  */
 import { VERSION, esc } from "./setlist.js";
-import { currentShowId, getShows, navHtml, showSwitcher, wireSwitcher } from "./store.js";
+import {
+  currentShowId, getShows, navHtml, showSwitcher, wireSwitcher, ownerSession, ownerLogout,
+} from "./store.js";
 
 const el = document.querySelector("header.apphdr");
 const page = (el && el.dataset.page) || "";
@@ -19,7 +21,7 @@ if (el) {
   el.innerHTML =
     '<div class="wrap"><div class="plate"><div class="lamp"></div>' +
     '<h1><span id="brand">' + esc(title) + '</span><small><span>' + esc(title) + '</span><span>&middot;</span>' +
-    '<span class="v" id="ver">' + esc(VERSION) + '</span><span id="switch"></span></small></h1>' +
+    '<span class="v" id="ver">' + esc(VERSION) + '</span><span id="switch"></span><span id="ownerTag"></span></small></h1>' +
     '<div class="status' + (el.dataset.status === "none" ? " hide" : "") + '" id="status"' +
     (el.dataset.status === "none" ? ' style="display:none"' : "") + '>Checking</div></div>' +
     '<nav id="nav"></nav></div>';
@@ -42,6 +44,16 @@ export const ready = (async () => {
   const sw = document.getElementById("switch");
   sw.innerHTML = await showSwitcher(show);
   wireSwitcher(sw);
+  // Signed in as the owner: say so, and offer the way out, on every page.
+  if (await ownerSession()) {
+    const t = document.getElementById("ownerTag");
+    t.innerHTML = '<span>&middot;</span> Owner <a href="#" id="ownerOut">sign out</a>';
+    document.getElementById("ownerOut").onclick = async (e) => {
+      e.preventDefault();
+      await ownerLogout();
+      location.reload();
+    };
+  }
   return show;
 })();
 

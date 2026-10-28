@@ -37,7 +37,7 @@ export default async function handler(req, res) {
       return ok(res, { shows: out, defaultId: defaultShowId(shows) });
     }
     const body = await readBody(req);
-    requireOwner(body);
+    requireOwner(body, req);
     const shows = await readShows();
 
     if (body.create) {
@@ -64,7 +64,7 @@ export default async function handler(req, res) {
         // were decisions about the old show, so they start clear.
         await writeSongs(show, src.songs.map((s) => ({ ...s, order: 0, force: "" })));
         for (const k of SETTING_KEYS) {
-          if (["locked", "lockedKeys", "gigDate", "showName", "bandCode"].includes(k)) continue;
+          if (["locked", "lockedKeys", "votingClosed", "gigDate", "showName", "bandCode"].includes(k)) continue;
           if (src.settings[k] !== undefined) settings[k] = src.settings[k];
         }
       }

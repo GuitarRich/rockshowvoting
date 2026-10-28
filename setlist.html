@@ -202,6 +202,7 @@ import {
 import { mkCode, rdCode, readVotesCSV } from "./codes.js";
 import {
   API, currentShowId, getData, post, bandCode, setBandCode, me, setMe, navHtml, link, showSwitcher, wireSwitcher,
+  ownerSession, ownerLogin, ownerLogout, ownerExpired,
 } from "./store.js";
 
 const $ = (id) => document.getElementById(id);
@@ -209,13 +210,15 @@ const LABEL = { MUST: "Must play", YES: "Yes", MAYBE: "Maybe", NO: "Pass", X: "P
 const LEARN = [["NOT STARTED", "Not started"], ["IN PROGRESS", "Learning"], ["KNOW", "Know it"]];
 const CUT = { veto: ["neg", "veto"], cap: ["cap", "CAP"], room: ["count", "no room"], out: ["out", "held out"] };
 
-let SHOW = "", DATA = null, ME = "", OWNER_CODE = "";
+let SHOW = "", DATA = null, ME = "", OWNER = false;
 let openRow = null, poolFilter = "", saving = 0, lastOk = null, lastErr = "";
 
 const isLocked = (r) => /^LOCKED/i.test(r.section || "") && !/pick ONE/i.test(r.section || "");
 const isPick = (r) => /pick ONE/i.test(r.section || "");
 const inBand = () => DATA.band.includes(ME);
 const isVoter = () => DATA.voters.includes(ME);
+// Once the owner closes voting, only the owner's own edits still go through.
+const canVote = (r) => isVoter() && !isLocked(r) && DATA.show.status !== "past" && (!DATA.show.votingClosed || isOwner());
 const score = (r) => scoreRow(r.votes, DATA.voters, DATA.weights);
 const secs = (r) => lenSecs(r.len);
 const gap = () => DATA.settings.gapSeconds || 0;
@@ -243,7 +246,7 @@ async function write(path, body) {
   } catch (e) {
     lastOk = false;
     lastErr = e.message || String(e);
-    if (e.status === 403 && path === "/admin") { OWNER_CODE = ""; drawOwner(); }
+    if (e.status === 403 && path === "/admin") { OWNER = false; ownerExpired(); drawOwner(); }
     return null;
   } finally {
     saving--;
@@ -251,8 +254,8 @@ async function write(path, body) {
     draw();
   }
 }
-const admin = (body) => write("/admin", { ownerCode: OWNER_CODE, ...body });
-const isOwner = () => !!OWNER_CODE;
+const admin = (body) => write("/admin", body);
+const isOwner = () => OWNER;
 
 /* ---------- gate ---------- */
 function drawGate() {
@@ -284,21 +287,31 @@ $("justLook").onclick = () => { ME = ""; begin(); };
 function drawOwner() {
   const bar = $("ownerbar");
   if (DATA.show.status === "past") { bar.innerHTML = '<span class="note2">This show has finished — everything here is read-only.</span>'; return; }
+  const closed = DATA.show.votingClosed;
   if (isOwner()) {
-    bar.innerHTML = '<span>Owner controls on.</span><button class="btn ghost" id="ownOff">Lock them again</button>';
-    $("ownOff").onclick = () => { OWNER_CODE = ""; draw(); };
+    bar.innerHTML = '<span>Owner controls on.</span>' +
+      '<button class="btn ghost" id="ownVote">' + (closed ? "Reopen voting" : "Close voting") + '</button>' +
+      '<button class="btn ghost" id="ownOff">Sign out</button>' +
+      (closed ? '<span class="note2">Voting is closed: only you can change votes now.</span>' : "");
+    $("ownVote").onclick = () => admin({ settings: { votingClosed: !closed } });
+    $("ownOff").onclick = async () => { await ownerLogout(); location.reload(); };
     return;
   }
-  bar.innerHTML = '<input id="ownIn" type="password" placeholder="Owner code" autocomplete="off">' +
+  bar.innerHTML = (closed ? '<span><b>Voting has closed.</b></span>' : "") +
+    '<input id="ownIn" type="password" placeholder="Owner code" autocomplete="off">' +
     '<button class="btn ghost" id="ownOn">Unlock owner controls</button>' +
     '<span class="note2">Changing the set is ' + esc(DATA.show.owner || "the owner") + '’s job.</span>';
   const go = async () => {
     const c = $("ownIn").value.trim();
     if (!c) return;
-    OWNER_CODE = c;
-    const ok = await admin({});
-    if (!ok) { OWNER_CODE = ""; $("banner").innerHTML = "<b>Wrong owner code.</b>"; $("banner").classList.remove("hide"); }
-    draw();
+    try {
+      await ownerLogin(c);
+      // Reload so the header and every owner control pick the session up.
+      location.reload();
+    } catch (e) {
+      $("banner").innerHTML = "<b>" + (e.status === 403 ? "Wrong owner code." : esc(e.message)) + "</b>";
+      $("banner").classList.remove("hide");
+    }
   };
   $("ownOn").onclick = go;
   $("ownIn").onkeydown = (e) => { if (e.key === "Enter") go(); };
@@ -589,7 +602,7 @@ function drawSet() {
     row.ondrop = (e) => { e.preventDefault(); if (dragFrom >= 0 && dragFrom !== k) reorder(dragFrom, k); dragFrom = -1; };
     row.onclick = (e) => { if (e.target.closest("a,button,.handle")) return; openRow = open ? null : r.k; draw(); };
     body.appendChild(row);
-    if (open && isVoter() && !isLocked(r) && DATA.show.status !== "past") body.appendChild(voteEditor(r));
+    if (open && canVote(r)) body.appendChild(voteEditor(r));
   });
   el.appendChild(body);
   box.appendChild(el);
@@ -734,7 +747,7 @@ function drawPool() {
     if (isOwner()) row.insertBefore(inOut(r), row.querySelector(".grid"));
     row.onclick = (e) => { if (e.target.closest("a,button")) return; openRow = openRow === r.k ? null : r.k; draw(); };
     list.appendChild(row);
-    if (openRow === r.k && isVoter() && !isLocked(r) && DATA.show.status !== "past") list.appendChild(voteEditor(r));
+    if (openRow === r.k && canVote(r)) list.appendChild(voteEditor(r));
   };
   keep.forEach((r, k) => add(r, k));
   if (rest.length) {
@@ -845,7 +858,7 @@ async function ingest(text) {
   const names = Object.keys(byName);
   const saved = [], refused = [];
   for (const n of names) {
-    const d = await write("/vote", { voter: n, votes: byName[n], pool: true, ownerCode: OWNER_CODE });
+    const d = await write("/vote", { voter: n, votes: byName[n], pool: true });
     (d ? saved : refused).push(n);
   }
   m.textContent = (saved.length ? "Saved votes for " + saved.join(", ") + "." : "Nothing saved.") +
@@ -894,7 +907,7 @@ $("copyDiag").onclick = () => put($("diagOut").textContent || "(run the check fi
   $("toLyrics").href = link("lyrics.html", SHOW);
   $("ver").textContent = VERSION;
   try {
-    DATA = await getData(SHOW);
+    [DATA, OWNER] = await Promise.all([getData(SHOW), ownerSession()]);
     lastOk = true;
   } catch (e) {
     lastOk = false; lastErr = e.message || String(e);

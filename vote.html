@@ -106,6 +106,7 @@ import { VERSION, CHANGES, mmss, lenSecs, esc } from "./setlist.js";
 import { mkCode } from "./codes.js";
 import {
   currentShowId, getData, post, bandCode, setBandCode, me, setMe, navHtml, showSwitcher, wireSwitcher, link,
+  ownerSession,
 } from "./store.js";
 
 const $ = (id) => document.getElementById(id);
@@ -148,6 +149,7 @@ async function send(votes) {
     lastOk = false;
     lastErr = e.message || String(e);
     if (e.status === 401) backToGate("Wrong band code — type it again.");
+    else if (e.status === 409 && /closed/i.test(lastErr)) location.reload();
   } finally {
     saving--;
     setStatus();
@@ -395,7 +397,18 @@ $("copy").onclick = () => {
     $("names").innerHTML = '<a class="btn" href="' + esc(link("setlist.html", SHOW)) + '">See the final set</a>';
     return;
   }
+  // Closed voting turns the ballot away — except for the owner, who can still fix anything.
+  const owner = DATA.show.votingClosed && await ownerSession();
+  if (DATA.show.votingClosed && !owner) {
+    $("gateNote").innerHTML = "<b>Voting has closed.</b> Thanks — the votes are in. See where everything landed on the setlist page.";
+    $("start").classList.add("hide");
+    $("names").innerHTML = '<a class="btn" href="' + esc(link("setlist.html", SHOW)) + '">See the set</a>';
+    lastOk = true;
+    setStatus();
+    return;
+  }
   gateNote();
+  if (owner) $("gateNote").innerHTML += " <b>Voting is closed for everyone else;</b> as the owner, your changes still save.";
   if (DATA.show.requireBandCode) {
     $("codeIn").classList.remove("hide");
     $("codeIn").value = bandCode(SHOW);
