@@ -139,7 +139,9 @@ export async function getData(show, ms = 0) {
   const d = await getJson(API + "/data?show=" + encodeURIComponent(show), ms);
   keep("last", show, d.data);
   store.set("rs_last_show", show);
-  return ownerView(d.data);
+  await ownerView(d.data);
+  await noteBallot(show, d.data);
+  return d.data;
 }
 
 /** The last set this device loaded for a show: { at, value } or null. */
@@ -167,13 +169,29 @@ export async function post(path, show, body) {
   const d = await r.json().catch(() => ({}));
   if (r.status === 401) setBandCode(show, "");
   if (!r.ok || !d.ok) throw apiError(r, d);
-  if (d.data) await ownerView(d.data);
+  if (d.data) { await ownerView(d.data); await noteBallot(show, d.data); }
   return d;
 }
 
 export const saveLyric = (show, key, lyrics) => post("/lyrics", show, { key, lyrics });
 export const addBlankLyricRows = (show) => post("/lyrics", show, { addBlankRows: true });
 export const saveTempo = (show, key, bpm, beats) => post("/tempos", show, { key, bpm, beats });
+
+/* ----- closed voting: the ballot is no page to visit, so the nav drops it ----- */
+const BALLOT = "vote.html";
+/** True when this device last saw the show's voting closed (the owner never does). */
+export const ballotShut = (show) => store.get("rs_shut_" + show) === "1";
+/**
+ * Remember whether the ballot is shut to this viewer and show or hide the
+ * Vote link to match. Pages without the show's data (rehearsals, admin) go by
+ * what this device saw last.
+ */
+async function noteBallot(show, data) {
+  const shut = !!(data && data.show && data.show.votingClosed) && !(await ownerSession());
+  store.set("rs_shut_" + show, shut ? "1" : "");
+  if (typeof document === "undefined") return;
+  document.querySelectorAll('#nav a[data-page="' + BALLOT + '"]').forEach((a) => { a.style.display = shut ? "none" : ""; });
+}
 
 /** A link to another page of the same show. */
 export function link(page, show) {
@@ -198,7 +216,8 @@ export function pageFor(page) {
 export function navHtml(show, current) {
   return PAGES.map(([page, label]) => {
     const real = pageFor(page, show);
-    return '<a href="' + esc(link(real, show)) + '"' +
+    return '<a href="' + esc(link(real, show)) + '" data-page="' + esc(page) + '"' +
+      (page === BALLOT && ballotShut(show) ? ' style="display:none"' : "") +
       (page === current || real === current ? ' aria-current="page"' : "") + ">" + esc(label) + "</a>";
   }).join("");
 }

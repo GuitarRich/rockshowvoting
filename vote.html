@@ -400,11 +400,8 @@ $("copy").onclick = () => {
   // Closed voting turns the ballot away — except for the owner, who can still fix anything.
   const owner = DATA.show.votingClosed && await ownerSession();
   if (DATA.show.votingClosed && !owner) {
-    $("gateNote").innerHTML = "<b>Voting has closed.</b> Thanks — the votes are in. See where everything landed on the setlist page.";
-    $("start").classList.add("hide");
-    $("names").innerHTML = '<a class="btn" href="' + esc(link("setlist.html", SHOW)) + '">See the set</a>';
-    lastOk = true;
-    setStatus();
+    // No ballot to fill in: an old link or bookmark lands on the set instead.
+    location.replace(link("setlist.html", SHOW));
     return;
   }
   gateNote();
