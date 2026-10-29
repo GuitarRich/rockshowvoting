@@ -12,13 +12,19 @@ Every page takes `?show=<id>`. A link with no show opens the next show by gig da
 |---|---|
 | `vote.html` | The ballot. One song at a time (with a track list on a desktop) or the whole list. Must play / Yes / Maybe / Pass, pick-one groups, organiser-locked songs. |
 | `setlist.html` | The set; **Learn** (who knows what — each player marks songs Not started / In progress / Know it, with the band chart and filters); the full ranking with why each song missed; who voted what; and Tools (vote pooling, CSV export, storage check). Owner controls: song count, In/Out, drag reorder, lock, close voting. |
-| `lyrics.html` | The lyric book: words and chords in set order, chord shapes in the song's tuning, autoscroll, print. |
+| `lyrics.html` | The lyric book: words and chords in set order, chord shapes in the song's tuning, autoscroll, text size, foot-pedal control, print. Works offline (see below). |
 | `click.html` | The click track: a flashing lamp and a click at the song's tempo, tap tempo, saved per song. |
 | `availability.html` | Rehearsal calendar up to the gig. |
 | `shows.html` | **Admin** in the nav. Every show: rename, re-date, open or finished, band code on or off, and start a new one (copying an earlier show's songs and settings). Owner code. |
 | `admin.html` | One show's songs (add, bulk paste, edit, remove) and settings (who votes, who plays, set size, budget, cap, warnings, voting closed). Owner code. |
 
 The home page (`index.html`) opens the ballot for whichever show is **next up** — the soonest gig that hasn't happened, skipping finished ones. `results.html` redirects to `setlist.html`, and `learn.html` to its Learn tab; all keep `?show=`.
+
+### Offline lyric book
+
+A stage often has no signal. `sw.js`, a service worker registered by every page, saves the lyric book's page, styles and scripts. It always tries the network first and falls back to the saved copy after 4 seconds. `store.js` keeps the last set and lyrics each device loaded, per show, in localStorage. When the API doesn't answer within 6 seconds, the lyrics page draws that copy under a "No signal" line. Scrolling, chords, text size and the pedal all work. Edits don't save until the signal is back.
+
+So: open the gig's lyrics page once with a signal, on each device, before leaving. `/api` is never cached by the worker. `vercel.json` serves `sw.js` with `no-cache`, so a deploy reaches devices on their next load.
 
 ## Shows
 

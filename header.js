@@ -27,6 +27,10 @@ if (el) {
     '<nav id="nav"></nav></div>';
 }
 
+// Any page opened with a signal saves the lyric book's files for later, so the
+// lyrics page still opens at a gig with none (sw.js).
+if ("serviceWorker" in navigator) navigator.serviceWorker.register("./sw.js").catch(() => {});
+
 /** Resolves to the show id once the header is filled in. */
 export const ready = (async () => {
   const show = await currentShowId();

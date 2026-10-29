@@ -269,6 +269,7 @@
         <div class="editbar"><input id="code" type="password" autocomplete="off" placeholder="Band code">
         <button class="btn go small" id="codeok" type="button">Use this code</button></div>
       </div>
+      <div id="offline" class="msg fail noprint hide"></div>
       <div id="msg" class="msg noprint hide"></div>
       <div id="book"></div>
       <p class="note noprint" style="margin-top:var(--s4)">
@@ -280,7 +281,7 @@
         them inline as <span class="mono">[G]like this</span>. Hover or tap any chord to see how
         it's fingered — in that song's tuning, not standard. <b>Scroll it</b> runs the words past
         you over the song's own running time; nudge the speed with &minus; and + if the band plays
-        it faster than the record, and tap the number to go back to the song's pace. <b>A&minus;</b> and <b>A+</b> change the size of the words (this device remembers it); a song mid-scroll keeps its place and its running time. <b>Foot pedal</b> (a Bluetooth page turner such as the JOYO SP-01, any mode): left starts and stops the scroll, right goes to the next song. Space and Enter, or &larr; and &rarr;, do the same on a keyboard. Print with
+        it faster than the record, and tap the number to go back to the song's pace. <b>A&minus;</b> and <b>A+</b> change the size of the words (this device remembers it); a song mid-scroll keeps its place and its running time. <b>Foot pedal</b> (a Bluetooth page turner such as the JOYO SP-01, any mode): left starts and stops the scroll, right goes to the next song. Space and Enter, or &larr; and &rarr;, do the same on a keyboard. <b>No signal at the gig?</b> Open this page once beforehand with a signal; after that it opens on this device without one, showing the copy it saved. Print with
         backgrounds off for a clean black-on-white book; each song starts on its own page.
       </p>
     </div>
@@ -296,7 +297,7 @@ import {
 import { chordShape, stringsFor } from "./chords.js";
 import {
   currentShowId, getData, getLyrics, saveLyric, addBlankLyricRows, bandCode, setBandCode,
-  navHtml, link, showSwitcher, wireSwitcher,
+  navHtml, link, showSwitcher, wireSwitcher, lastData, lastLyrics,
 } from "./store.js";
 
 const $ = (id) => document.getElementById(id);
@@ -1034,28 +1035,52 @@ async function boot() {
   $("back").href = link("setlist.html", SHOW);
   $("main").classList.remove("hide");
 
-  let okSet = false;
+  // One bar of signal can leave a request hanging for a minute. Give up after a
+  // few seconds and draw the copy this device saved last time it loaded.
+  const WAIT = 6000;
+  // Both at once, so a dead signal costs one wait, not two.
+  const lyricsReq = getLyrics(SHOW, false, WAIT).then((value) => ({ value }), (error) => ({ error }));
+  let okSet = false, savedAt = 0;
   try {
-    DATA = await getData(SHOW);
+    DATA = await getData(SHOW, WAIT);
     okSet = true;
   } catch (e) {
-    say("<b>Couldn't load the set — " + esc(e.message || e) + ".</b>", true);
-    ok = false;
-    setStatus();
-    return;
+    const last = lastData(SHOW);
+    if (!last) {
+      say("<b>Couldn't load the set — " + esc(e.message || e) + ".</b> This device has no saved copy of it yet: open this page once with a signal and it will keep one.", true);
+      ok = false;
+      setStatus();
+      return;
+    }
+    DATA = last.value;
+    savedAt = last.at;
   }
   const brand = DATA.show.bandName || DATA.show.name || "Lyric book";
   $("brand").textContent = brand;
   document.title = brand + " — Lyric book";
-  $("switch").innerHTML = await showSwitcher(SHOW);
-  wireSwitcher($("switch"));
+  // Not awaited: the show list must never hold up the words.
+  showSwitcher(SHOW).then((html) => { $("switch").innerHTML = html; wireSwitcher($("switch")); });
 
   let okLyrics = false;
-  try {
-    LYRICS = await getLyrics(SHOW);
+  const got = await lyricsReq;
+  if (!got.error) {
+    LYRICS = got.value;
     okLyrics = true;
-  } catch (e) {
-    say("<b>Couldn't load the lyrics — " + esc(e.message || e) + ".</b>", true);
+  } else {
+    const e = got.error;
+    const last = lastLyrics(SHOW);
+    if (last) {
+      LYRICS = last.value;
+      savedAt = savedAt ? Math.min(savedAt, last.at) : last.at;
+    } else {
+      say("<b>Couldn't load the lyrics — " + esc(e.message || e) + ".</b>", true);
+    }
+  }
+  if (savedAt) {
+    const when = new Date(savedAt).toLocaleString([], { weekday: "short", day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" });
+    // Its own line: the page's other messages come and go, this one must stay.
+    $("offline").innerHTML = "<b>No signal — showing the copy saved on this device " + esc(when) + ".</b> Scrolling, chords and the pedal all work; edits won't save until the signal is back.";
+    $("offline").classList.remove("hide");
   }
   ok = okSet && okLyrics;
   setStatus();

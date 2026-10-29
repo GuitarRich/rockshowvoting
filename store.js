@@ -50,7 +50,7 @@ export async function currentShowId() {
   try {
     return (await getShows()).defaultId || "oct";
   } catch (e) {
-    return "oct";
+    return store.get("rs_last_show") || "oct";   // offline: the show this device last opened
   }
 }
 
@@ -109,25 +109,50 @@ async function ownerView(data) {
   return data;
 }
 
-export async function getData(show) {
-  const r = await fetch(API + "/data?show=" + encodeURIComponent(show), { cache: "no-store" });
-  const d = await r.json().catch(() => ({}));
-  if (!r.ok || !d.ok) throw apiError(r, d);
-  try { localStorage.setItem("rs_last_" + show, JSON.stringify(d.data)); } catch (e) { /* optional */ }
+/**
+ * A GET that gives up after `ms` (0 = wait as long as the browser does). On a
+ * stage with one bar of signal a request can hang for a minute; better to fall
+ * back to the saved copy in a few seconds.
+ */
+async function getJson(url, ms) {
+  const ctl = ms ? new AbortController() : null;
+  const timer = ctl && setTimeout(() => ctl.abort(), ms);
+  try {
+    const r = await fetch(url, { cache: "no-store", signal: ctl ? ctl.signal : undefined });
+    const d = await r.json().catch(() => ({}));
+    if (!r.ok || !d.ok) throw apiError(r, d);
+    return d;
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
+/* ----- the last copy this device saw, kept for when there is no signal ----- */
+function keep(kind, show, value) {
+  try { localStorage.setItem("rs_" + kind + "_" + show, JSON.stringify({ at: Date.now(), value })); } catch (e) { /* full or off */ }
+}
+function kept(kind, show) {
+  try { return JSON.parse(localStorage.getItem("rs_" + kind + "_" + show) || "null"); } catch (e) { return null; }
+}
+
+export async function getData(show, ms = 0) {
+  const d = await getJson(API + "/data?show=" + encodeURIComponent(show), ms);
+  keep("last", show, d.data);
+  store.set("rs_last_show", show);
   return ownerView(d.data);
 }
 
-/** The last payload this device saw, for drawing something while offline. */
-export function lastData(show) {
-  try { return JSON.parse(localStorage.getItem("rs_last_" + show) || "null"); } catch (e) { return null; }
-}
+/** The last set this device loaded for a show: { at, value } or null. */
+export const lastData = (show) => kept("last", show);
 
-export async function getLyrics(show, all) {
-  const r = await fetch(API + "/lyrics?show=" + encodeURIComponent(show) + (all ? "&all=1" : ""), { cache: "no-store" });
-  const d = await r.json().catch(() => ({}));
-  if (!r.ok || !d.ok) throw apiError(r, d);
+export async function getLyrics(show, all, ms = 0) {
+  const d = await getJson(API + "/lyrics?show=" + encodeURIComponent(show) + (all ? "&all=1" : ""), ms);
+  if (!all) keep("lyrics", show, d.lyrics || {});
   return d.lyrics || {};
 }
+
+/** The last lyrics this device loaded for a show: { at, value } or null. */
+export const lastLyrics = (show) => kept("lyrics", show);
 
 /**
  * POST to the API with the show and the band code attached. A 401 forgets
