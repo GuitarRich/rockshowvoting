@@ -280,7 +280,7 @@
         them inline as <span class="mono">[G]like this</span>. Hover or tap any chord to see how
         it's fingered — in that song's tuning, not standard. <b>Scroll it</b> runs the words past
         you over the song's own running time; nudge the speed with &minus; and + if the band plays
-        it faster than the record, and tap the number to go back to the song's pace. <b>A&minus;</b> and <b>A+</b> change the size of the words (this device remembers it); a song mid-scroll keeps its place and its running time. Print with
+        it faster than the record, and tap the number to go back to the song's pace. <b>A&minus;</b> and <b>A+</b> change the size of the words (this device remembers it); a song mid-scroll keeps its place and its running time. <b>Foot pedal</b> (a Bluetooth page turner such as the JOYO SP-01, any mode): left starts and stops the scroll, right goes to the next song. Space and Enter, or &larr; and &rarr;, do the same on a keyboard. Print with
         backgrounds off for a clean black-on-white book; each song starts on its own page.
       </p>
     </div>
@@ -807,6 +807,7 @@ function step(ts) {
 
 function startRoll(song) {
   stopRoll();
+  lastSong = song;
   const rect = song.getBoundingClientRect();
   const top = rect.top + window.scrollY;
   const plan = scrollPlan(top, rect.height, window.innerHeight, Number(song.dataset.dur));
@@ -906,12 +907,51 @@ dFaster.onclick = () => nudge(0.1);
 dRate.onclick = () => { mult = 1; showRate(); };
 dRate.onkeydown = (e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); dRate.click(); } };
 
+/* ---------- foot pedal: a page turner such as the JOYO SP-01 ----------
+   These pair as a Bluetooth keyboard, and the mode button picks which keys the
+   two pedals send. Every key pair maps the same way, so any mode works: the
+   left pedal starts and stops the scroll, the right one goes to the next song.
+   Up/Down arrows stay as plain scrolling for anyone reading with a keyboard. */
+const PEDAL_GO = new Set([" ", "PageUp", "ArrowLeft"]);
+const PEDAL_NEXT = new Set(["Enter", "PageDown", "ArrowRight"]);
+let lastSong = null;   // the song most recently scrolled
+
+const songs = () => [...book.querySelectorAll(".song")];
+const onScreen = (el) => {
+  const r = el.getBoundingClientRect();
+  return r.bottom > 0 && r.top < window.innerHeight;
+};
+// Nothing scrolling: the song filling the top of the screen.
+const songInView = () => songs().find((el) => el.getBoundingClientRect().bottom > window.innerHeight * 0.25) || null;
+
+function pedalGo() {
+  if (roll) { setPaused(!roll.paused); return; }
+  const song = songInView();
+  if (song) startRoll(song);
+}
+
+function pedalNext() {
+  // After a song runs out it is still on screen; carry on from it, not from
+  // whatever happens to sit at the top.
+  const from = roll ? roll.song : (lastSong && lastSong.isConnected && onScreen(lastSong) ? lastSong : songInView());
+  const list = songs();
+  const next = from ? list[list.indexOf(from) + 1] : list[0];
+  if (next) startRoll(next);
+  else stopRoll();   // past the last song
+}
+
 document.addEventListener("keydown", (e) => {
-  if (!roll) return;
-  const typing = /^(INPUT|TEXTAREA)$/.test(e.target.tagName);
-  if (typing) return;
-  if (e.key === " ") { e.preventDefault(); setPaused(!roll.paused); }
-  else if (e.key === "Escape") stopRoll();
+  if (e.defaultPrevented || e.metaKey || e.ctrlKey || e.altKey) return;   // a control already took it
+  const t = e.target;
+  if (/^(INPUT|TEXTAREA|SELECT)$/.test(t.tagName) || t.isContentEditable) return;
+  if (e.key === "Escape") { if (roll) stopRoll(); return; }
+  const go = PEDAL_GO.has(e.key), next = PEDAL_NEXT.has(e.key);
+  if (!go && !next) return;
+  // Swallow the key either way: a focused button must not also click, and a
+  // pedal held down must not skip three songs.
+  e.preventDefault();
+  if (e.repeat) return;
+  if (go) pedalGo(); else pedalNext();
 });
 
 /* A tab sent to the background stops getting frames; come back paused rather
