@@ -958,6 +958,24 @@ document.addEventListener("keydown", (e) => {
   if (go) pedalGo(); else pedalNext();
 });
 
+/* lyrics.html?keys shows every key event the page receives, for finding out
+   what a pedal actually sends. */
+if (new URLSearchParams(location.search).has("keys")) {
+  const box = document.createElement("pre");
+  box.style.cssText = "position:fixed;left:8px;right:8px;bottom:8px;z-index:9999;max-height:40vh;overflow:auto;margin:0;padding:8px;font:12px/1.4 ui-monospace,monospace;background:#000d;color:#0f0;border-radius:6px;pointer-events:none";
+  box.textContent = "Key log: press the pedals.\n";
+  document.body.append(box);
+  const log = (line) => { box.textContent = line + "\n" + box.textContent.split("\n").slice(0, 30).join("\n"); };
+  for (const type of ["keydown", "keyup", "keypress"]) {
+    window.addEventListener(type, (e) => {
+      // Read defaultPrevented once the page's own handlers have run.
+      setTimeout(() => log(`${type} key=${JSON.stringify(e.key)} code=${JSON.stringify(e.code)} keyCode=${e.keyCode} target=${e.target.tagName} prevented=${e.defaultPrevented} repeat=${e.repeat}`));
+    }, true);
+  }
+  let lastY = scrollY;
+  window.addEventListener("scroll", () => { if (Math.abs(scrollY - lastY) > 200) { log(`scroll ${lastY} → ${Math.round(scrollY)} focus=${document.hasFocus()}`); lastY = scrollY; } }, { passive: true });
+}
+
 /* A tab sent to the background stops getting frames; come back paused rather
    than jumping forward. */
 document.addEventListener("visibilitychange", () => {
