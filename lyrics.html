@@ -912,9 +912,12 @@ dRate.onkeydown = (e) => { if (e.key === "Enter" || e.key === " ") { e.preventDe
    These pair as a Bluetooth keyboard, and the mode button picks which keys the
    two pedals send. Every key pair maps the same way, so any mode works: the
    left pedal starts and stops the scroll, the right one goes to the next song.
-   Up/Down arrows stay as plain scrolling for anyone reading with a keyboard. */
-const PEDAL_GO = new Set([" ", "PageUp", "ArrowLeft"]);
-const PEDAL_NEXT = new Set(["Enter", "PageDown", "ArrowRight"]);
+   Up/Down arrows stay as plain scrolling for anyone reading with a keyboard.
+   iPad Safari names some keys from a Bluetooth keyboard the old iOS way
+   ("UIKeyInputPageDown"), so match on e.code and keyCode as well as e.key. */
+const PEDAL_GO = new Set([" ", "Spacebar", "Space", "PageUp", "ArrowLeft", "Left", "UIKeyInputPageUp", "UIKeyInputLeftArrow", 32, 33, 37]);
+const PEDAL_NEXT = new Set(["Enter", "NumpadEnter", "PageDown", "ArrowRight", "Right", "UIKeyInputPageDown", "UIKeyInputRightArrow", 13, 34, 39]);
+const pedalHas = (set, e) => set.has(e.key) || set.has(e.code) || set.has(e.keyCode);
 let lastSong = null;   // the song most recently scrolled
 
 const songs = () => [...book.querySelectorAll(".song")];
@@ -946,7 +949,7 @@ document.addEventListener("keydown", (e) => {
   const t = e.target;
   if (/^(INPUT|TEXTAREA|SELECT)$/.test(t.tagName) || t.isContentEditable) return;
   if (e.key === "Escape") { if (roll) stopRoll(); return; }
-  const go = PEDAL_GO.has(e.key), next = PEDAL_NEXT.has(e.key);
+  const go = pedalHas(PEDAL_GO, e), next = pedalHas(PEDAL_NEXT, e);
   if (!go && !next) return;
   // Swallow the key either way: a focused button must not also click, and a
   // pedal held down must not skip three songs.

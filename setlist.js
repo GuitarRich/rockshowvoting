@@ -6,7 +6,7 @@
 // Script version this replaced, so historic votes keep their exact weight.
 // Shown on every page. Continues Band Vote's numbering (it reached v32), since
 // this app now carries everything that one did.
-export const VERSION = "v33";
+export const VERSION = "v34";
 
 /** What changed, newest first. Shown on the ballot. */
 export const CHANGES = {
