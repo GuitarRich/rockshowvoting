@@ -334,6 +334,21 @@ function audioLive() {
 }
 
 /**
+ * Throw the context away so the next tap builds a fresh one.
+ *
+ * iOS hands the audio to whatever app took it — Spotify, a call — and on the
+ * way back the old context can report "running" with a clock that never moves
+ * again. Every beat is then booked against a frozen time and nothing plays or
+ * flashes. Nothing short of a new context brings it back.
+ */
+function dropAudio() {
+  if (!ctx) return;
+  const old = ctx;
+  ctx = null;
+  try { old.close().catch(() => {}); } catch (e) {}
+}
+
+/**
  * The clock the beats are counted against.
  *
  * The audio clock when there is one — it is the only one accurate enough to
@@ -385,6 +400,14 @@ function tick() {
   // the clock underneath has changed. Re-base rather than mixing the two.
   if (audioLive() !== run.live) { retime(); return; }
 
+  // A context that says it is running but whose clock has stopped is dead, not
+  // slow: give it up and fall back to the wall clock so the lamp carries on.
+  if (run.live) {
+    const wall = performance.now();
+    if (ctx.currentTime !== run.seen) { run.seen = ctx.currentTime; run.seenAt = wall; }
+    else if (wall - run.seenAt > 500) { dropAudio(); retime(); soundNote(); return; }
+  }
+
   const now = clockNow();
   const due = beatsDue(run.plan, run.at, now + LOOKAHEAD, run.zero);
   due.forEach((b) => {
@@ -407,7 +430,8 @@ function start() {
   // Never wait on the audio to start the lamp: on a phone the resume can be
   // refused outright, and a dark screen is worse than a silent one.
   const zero = clockNow() + 0.12;
-  run = { plan: beatPlan(bpm, beats), zero, at: zero, live: audioLive() };
+  run = { plan: beatPlan(bpm, beats), zero, at: zero, live: audioLive(),
+          seen: ctx ? ctx.currentTime : 0, seenAt: performance.now() };
   if (timer) clearInterval(timer);
   timer = setInterval(tick, TICK);
   $("sRun").textContent = "Stop";
@@ -579,9 +603,10 @@ document.addEventListener("keydown", (e) => {
 });
 
 /* A backgrounded tab gets no timers worth trusting; come back stopped rather
-   than sprinting to catch up. */
+   than sprinting to catch up. The audio context goes too: another app may take
+   the sound while we're away, and the one left behind can't be trusted. */
 document.addEventListener("visibilitychange", () => {
-  if (document.hidden) { if (run) stop(); releaseWake(); }
+  if (document.hidden) { if (run) stop(); releaseWake(); dropAudio(); }
   else if (!$("stage").classList.contains("hide")) {
     keepAwake();
     if (ctx && ctx.state !== "running") soundNote();
