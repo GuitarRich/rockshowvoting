@@ -972,6 +972,21 @@ if (new URLSearchParams(location.search).has("keys")) {
       setTimeout(() => log(`${type} key=${JSON.stringify(e.key)} code=${JSON.stringify(e.code)} keyCode=${e.keyCode} target=${e.target.tagName} prevented=${e.defaultPrevented} repeat=${e.repeat}`));
     }, true);
   }
+  // iPad Safari may keep page keys for itself unless a text box has focus;
+  // this button tests whether a hidden one catches the pedal.
+  const catcher = document.createElement("input");
+  catcher.setAttribute("inputmode", "none");
+  catcher.autocomplete = "off";
+  catcher.style.cssText = "position:fixed;top:0;left:0;width:1px;height:1px;opacity:0;font-size:16px;border:0;padding:0";
+  catcher.addEventListener("input", () => { log(`input data=${JSON.stringify(catcher.value)}`); catcher.value = ""; });
+  catcher.addEventListener("focus", () => log("catcher focused"));
+  catcher.addEventListener("blur", () => log("catcher lost focus"));
+  const btn = document.createElement("button");
+  btn.textContent = "Catch keys";
+  btn.style.cssText = "position:fixed;right:8px;top:8px;z-index:10000;padding:10px 14px;font:16px sans-serif";
+  btn.onclick = () => catcher.focus();
+  document.body.append(catcher, btn);
+
   let lastY = scrollY;
   window.addEventListener("scroll", () => { if (Math.abs(scrollY - lastY) > 200) { log(`scroll ${lastY} → ${Math.round(scrollY)} focus=${document.hasFocus()}`); lastY = scrollY; } }, { passive: true });
 }
