@@ -281,7 +281,7 @@
         them inline as <span class="mono">[G]like this</span>. Hover or tap any chord to see how
         it's fingered — in that song's tuning, not standard. <b>Scroll it</b> runs the words past
         you over the song's own running time; nudge the speed with &minus; and + if the band plays
-        it faster than the record, and tap the number to go back to the song's pace. <b>A&minus;</b> and <b>A+</b> change the size of the words (this device remembers it); a song mid-scroll keeps its place and its running time. <b>Foot pedal</b> (a Bluetooth page turner such as the JOYO SP-01, any mode): left starts and stops the scroll, right goes to the next song. Space and Enter, or &larr; and &rarr;, do the same on a keyboard. <b>No signal at the gig?</b> Open this page once beforehand with a signal; after that it opens on this device without one, showing the copy it saved. Print with
+        it faster than the record, and tap the number to go back to the song's pace. <b>A&minus;</b> and <b>A+</b> change the size of the words (this device remembers it); a song mid-scroll keeps its place and its running time. <b>Foot pedal</b> (a Bluetooth page turner such as the JOYO SP-01, any mode): left starts and stops the scroll, right goes to the next song. On an iPad, tap <b>Pedal: off</b> first so it turns green; the iPad only lets the page hear the pedal while that's on. Space and Enter, or &larr; and &rarr;, do the same on a keyboard. <b>No signal at the gig?</b> Open this page once beforehand with a signal; after that it opens on this device without one, showing the copy it saved. Print with
         backgrounds off for a clean black-on-white book; each song starts on its own page.
       </p>
     </div>
@@ -944,10 +944,53 @@ function pedalNext() {
   else stopRoll();   // past the last song
 }
 
+/* iPad Safari keeps a Bluetooth keyboard's keys for itself (scrolling, or
+   nothing) and never shows them to the page, in any of the pedal's modes,
+   unless a text box has focus. The Pedal button focuses a hidden one; with a
+   hardware keyboard paired, iPadOS brings up no on-screen keyboard for it.
+   Tapping the page takes the focus away, so a tap while the pedal is on
+   hands it straight back (focus only works from inside a tap on iOS). */
+const catcher = document.createElement("input");
+catcher.className = "noprint";
+catcher.setAttribute("inputmode", "none");
+catcher.setAttribute("aria-hidden", "true");
+catcher.tabIndex = -1;
+catcher.autocomplete = "off";
+catcher.style.cssText = "position:fixed;top:0;left:0;width:1px;height:1px;opacity:0;font-size:16px;border:0;padding:0";
+catcher.addEventListener("input", () => { catcher.value = ""; });
+document.body.append(catcher);
+
+const pedalBtn = document.createElement("button");
+pedalBtn.className = "btn";
+pedalBtn.type = "button";
+let pedalOn = false;
+const showPedal = () => {
+  const live = pedalOn && document.activeElement === catcher;
+  pedalBtn.textContent = live ? "Pedal: on" : "Pedal: off";
+  pedalBtn.classList.toggle("go", live);
+  pedalBtn.setAttribute("aria-pressed", String(live));
+};
+const armPedal = () => { if (pedalOn && document.activeElement !== catcher) catcher.focus({ preventScroll: true }); };
+pedalBtn.onclick = () => {
+  pedalOn = !pedalOn;
+  if (pedalOn) armPedal(); else catcher.blur();
+  showPedal();
+};
+catcher.addEventListener("focus", showPedal);
+catcher.addEventListener("blur", () => setTimeout(showPedal));
+document.addEventListener("pointerup", (e) => {
+  const t = e.target;
+  if (t === pedalBtn || t.closest("input, textarea, select, [contenteditable]")) return;
+  // After the tap's own click has run, or the button it hit keeps the focus.
+  setTimeout(armPedal);
+});
+document.querySelector(".bar .tsize").before(pedalBtn);
+showPedal();
+
 document.addEventListener("keydown", (e) => {
   if (e.defaultPrevented || e.metaKey || e.ctrlKey || e.altKey) return;   // a control already took it
   const t = e.target;
-  if (/^(INPUT|TEXTAREA|SELECT)$/.test(t.tagName) || t.isContentEditable) return;
+  if (t !== catcher && (/^(INPUT|TEXTAREA|SELECT)$/.test(t.tagName) || t.isContentEditable)) return;
   if (e.key === "Escape") { if (roll) stopRoll(); return; }
   const go = pedalHas(PEDAL_GO, e), next = pedalHas(PEDAL_NEXT, e);
   if (!go && !next) return;
@@ -972,21 +1015,6 @@ if (new URLSearchParams(location.search).has("keys")) {
       setTimeout(() => log(`${type} key=${JSON.stringify(e.key)} code=${JSON.stringify(e.code)} keyCode=${e.keyCode} target=${e.target.tagName} prevented=${e.defaultPrevented} repeat=${e.repeat}`));
     }, true);
   }
-  // iPad Safari may keep page keys for itself unless a text box has focus;
-  // this button tests whether a hidden one catches the pedal.
-  const catcher = document.createElement("input");
-  catcher.setAttribute("inputmode", "none");
-  catcher.autocomplete = "off";
-  catcher.style.cssText = "position:fixed;top:0;left:0;width:1px;height:1px;opacity:0;font-size:16px;border:0;padding:0";
-  catcher.addEventListener("input", () => { log(`input data=${JSON.stringify(catcher.value)}`); catcher.value = ""; });
-  catcher.addEventListener("focus", () => log("catcher focused"));
-  catcher.addEventListener("blur", () => log("catcher lost focus"));
-  const btn = document.createElement("button");
-  btn.textContent = "Catch keys";
-  btn.style.cssText = "position:fixed;right:8px;top:8px;z-index:10000;padding:10px 14px;font:16px sans-serif";
-  btn.onclick = () => catcher.focus();
-  document.body.append(catcher, btn);
-
   let lastY = scrollY;
   window.addEventListener("scroll", () => { if (Math.abs(scrollY - lastY) > 200) { log(`scroll ${lastY} → ${Math.round(scrollY)} focus=${document.hasFocus()}`); lastY = scrollY; } }, { passive: true });
 }
